@@ -23,6 +23,9 @@ public class Minerva {
 		Scanner scanner = new Scanner(source);
 		List<Token> tokens = scanner.scanTokens();
 		Parser parser = new Parser(tokens);
-		parser.parse();
+		List<Stmt> statements = parser.parse();
+		for (Stmt statement : statements) {
+			System.out.println(statement.toString());
+		}
 	}
 }

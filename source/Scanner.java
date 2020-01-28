@@ -32,6 +32,10 @@ public class Scanner {
             case '{': addToken(TokenType.LEFT_BRACE); break;
             case '}': addToken(TokenType.RIGHT_BRACE); break;
             case '+': addToken(TokenType.ADD); break;
+
+            case '/': {
+                if (peekNext() == '/') break;
+            }
         
             default:
                 if (isDigit(c)) {
