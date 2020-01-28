@@ -6,6 +6,11 @@ public class Scanner {
     private final List<Token> tokens = new ArrayList<Token>();
     private int start = 0, current = 0, line = 1;
 
+    private final static Map<String, TokenType> keywords = new HashMap<String, TokenType>();
+    static {
+        keywords.put("class", TokenType.CLASS);
+    }
+
     public Scanner(String source) {
         this.source = source;
     }
@@ -29,6 +34,10 @@ public class Scanner {
 
         
             default:
+                if (isAlpha(c)) {
+                    identifier();
+                    break;
+                }
                 break;
         }
     }
@@ -42,9 +51,41 @@ public class Scanner {
         tokens.add(new Token(type, text, literal, line));
     }
 
+    private boolean isAlpha(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
+    public void identifier() {
+        while (isAlpha(peek())) advance();
+        String literal = source.substring(start, current);
+        boolean isKeyword = keywords.containsKey(literal);
+        if (isKeyword) {
+            addToken(keywords.get(literal));
+        } else {
+            addToken(TokenType.IDENTIFIER, literal);
+        }
+    }
+
     private char advance() {
         current++;
         return source.charAt(current-1);
+    }
+
+    private char peek() {
+        if (isAtEnd()) return '\0';
+        return source.charAt(current);
+    }
+
+    private char peekNext() {
+        if (current >= source.length() - 1) return '\0';
+        return source.charAt(current + 1);
+    }
+
+    private boolean match(char expected) {
+        if (current >= source.length() -1) return false;
+        if (source.charAt(current) != expected) return false;
+        current++;
+        return true;
     }
 
     private boolean isAtEnd() {
