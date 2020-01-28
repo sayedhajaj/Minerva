@@ -31,10 +31,12 @@ public class Scanner {
             case ')': addToken(TokenType.RIGHT_PAREN); break;
             case '{': addToken(TokenType.LEFT_BRACE); break;
             case '}': addToken(TokenType.RIGHT_BRACE); break;
-
+            case '+': addToken(TokenType.ADD); break;
         
             default:
-                if (isAlpha(c)) {
+                if (isDigit(c)) {
+                    number();
+                } else if (isAlpha(c)) {
                     identifier();
                     break;
                 }
@@ -52,11 +54,22 @@ public class Scanner {
     }
 
     private boolean isAlpha(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+        return 
+        (c >= 'a' && c <= 'z') || 
+        (c >= 'A' && c <= 'Z') ||
+        (c == '_');
+    }
+
+    private boolean isAlphaNumeric(char c) {
+        return isAlpha(c) || isDigit(c);
+    }
+
+    private boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
     }
 
     public void identifier() {
-        while (isAlpha(peek())) advance();
+        while (isAlphaNumeric(peek())) advance();
         String literal = source.substring(start, current);
         boolean isKeyword = keywords.containsKey(literal);
         if (isKeyword) {
@@ -64,6 +77,14 @@ public class Scanner {
         } else {
             addToken(TokenType.IDENTIFIER, literal);
         }
+    }
+    
+    public void number() {
+        while (isDigit(peek())) advance();
+        if (match('.')) {
+            while (isDigit(peek())) advance();
+        }
+        addToken(TokenType.NUMBER, Double.parseDouble(source.substring(start, current)));
     }
 
     private char advance() {
@@ -82,7 +103,7 @@ public class Scanner {
     }
 
     private boolean match(char expected) {
-        if (current >= source.length() -1) return false;
+        if (isAtEnd()) return false;
         if (source.charAt(current) != expected) return false;
         current++;
         return true;
