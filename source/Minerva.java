@@ -1,29 +1,30 @@
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 
 public class Minerva {
 
-	public static void main(String[] args) {
-		switch (args.length) {
-			case 0:
-				runRepl();
-				break;
-			case 1: 
-				runFile(args[0]);
-				break;
-			default:
+	public static void main(String[] args) throws IOException {
+		if (args.length != 1) {
 				System.out.println("Usage: Minerva [script]");
+		} else {
+			runFile(args[0]);
 		}
 	}
-	public static void runRepl() {
 
-	}
-
-	public static void runFile(String fileName) {
-
+	public static void runFile(String fileName) throws IOException {
+		byte[] bytes = Files.readAllBytes(Paths.get(fileName));
+		run(new String(bytes, Charset.defaultCharset()));
 	}
 
 	public static void run(String source) {
 		Scanner scanner = new Scanner(source);
-
+		List<Token> tokens = scanner.scanTokens();
+		Parser parser = new Parser(tokens);
+		parser.parse();
 	}
 }
