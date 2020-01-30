@@ -49,7 +49,27 @@ public class Parser {
     }
 
     private Stmt expressionStatement() {
-        
+        Expr expr = expression();
+        consume(TokenType.SEMICOLON, "Expect ';' after expression");
+        return new Stmt.Expression(expr);
+    }
+
+    private Expr expression() {
+        return term();
+    }
+
+    private Expr term() {
+        Expr expr = primary();
+        if (match(TokenType.PLUS)) {
+            Token operator = previous();
+            Expr right = primary();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr primary() {
+        if (match(TokenType.NUMBER)) return new Expr.Literal(previous().literal);
         return null;
     }
 
@@ -89,7 +109,6 @@ public class Parser {
     }
 
     private boolean isAtEnd() {
-        System.out.println(peek().type);
         return peek().type == TokenType.EOF;
     }
 

@@ -31,7 +31,7 @@ abstract class Stmt {
         final Token name;
     }
 
-    class Expression extends Stmt {
+    static class Expression extends Stmt {
         Expression(Expr expression) {
             this.expression = expression; 
         }
