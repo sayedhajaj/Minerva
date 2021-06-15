@@ -1,12 +1,10 @@
 import Minerva.loadFile
-import java.io.File
+import java.io.*
 import kotlin.Throws
-import java.io.IOException
 import kotlin.jvm.JvmStatic
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.charset.Charset
-import java.io.FileOutputStream
 import java.lang.Exception
 
 object Minerva {
@@ -43,7 +41,12 @@ object Minerva {
 
 
 fun main(args: Array<String>) {
-    if(args[0] == "interpret") {
+    if (args.isEmpty()) {
+        val reader = BufferedReader(InputStreamReader(System.`in`))
+        while (true) {
+            Minerva.interpret(Minerva.getSyntaxTree(reader.readLine()))
+        }
+    } else if(args[0] == "interpret") {
         val source = loadFile(args[1])
         val syntaxTree = Minerva.getSyntaxTree(source)
         Minerva.interpret(syntaxTree)
