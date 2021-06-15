@@ -9,7 +9,9 @@ class Interpreter(val statements: List<Stmt>) {
     fun execute(stmt: Stmt) {
         when (stmt) {
             is Stmt.Block -> {
-
+                stmt.statements.forEach {
+                    execute(it)
+                }
             }
             is Stmt.Class -> {
 
@@ -25,6 +27,7 @@ class Interpreter(val statements: List<Stmt>) {
 
     fun evaluate(expr: Expr): Any?  =  when (expr) {
         is Expr.Binary -> (evaluate(expr.left)  as Double) + (evaluate(expr.right) as Double)
+        is Expr.Grouping -> evaluate(expr.expr)
         is Expr.Literal -> expr.value
     }
 }

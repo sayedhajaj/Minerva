@@ -35,8 +35,10 @@ class Parser(private val tokens: List<Token>) {
 
     private fun statement(): Stmt {
         if (match(TokenType.PRINT)) return printStatement()
+        if (match(TokenType.LEFT_BRACE)) return Stmt.Block(block())
         return expressionStatement()
     }
+
 
     private fun printStatement(): Stmt {
         val value = expression()
@@ -66,6 +68,11 @@ class Parser(private val tokens: List<Token>) {
 
     private fun primary(): Expr {
         if (match(TokenType.NUMBER)) return Expr.Literal(previous().literal)
+        if (match(TokenType.LEFT_PAREN)) {
+            val expr = expression()
+            consume(TokenType.RIGHT_PAREN, "Expect ')' after expression. ")
+            return Expr.Grouping(expr)
+        }
         return Expr.Literal(null)
     }
 
