@@ -1,0 +1,116 @@
+import java.util.ArrayList
+import java.util.HashMap
+
+class Scanner(private val source: String) {
+    private val tokens: MutableList<Token> = ArrayList()
+    private var start = 0
+    private var current = 0
+    private val line = 1
+
+    companion object {
+        private val keywords: MutableMap<String, TokenType> = HashMap()
+
+        init {
+            keywords["class"] = TokenType.CLASS
+            keywords["print"] = TokenType.PRINT
+        }
+    }
+
+    fun scanTokens(): List<Token> {
+        while (!isAtEnd) {
+            start = current
+            scanToken()
+        }
+        tokens.add(Token(TokenType.EOF, "", null, line))
+        return tokens
+    }
+
+    private fun scanToken() {
+        when (val c = advance()) {
+            '(' -> addToken(TokenType.LEFT_PAREN)
+            ')' -> addToken(TokenType.RIGHT_PAREN)
+            '{' -> addToken(TokenType.LEFT_BRACE)
+            '}' -> addToken(TokenType.RIGHT_BRACE)
+            '+' -> addToken(TokenType.PLUS)
+            ';' -> addToken(TokenType.SEMICOLON)
+            '/' -> {
+                run {
+                    if (match('/')) {
+                        while (peek() != '\n' && !isAtEnd) advance()
+                    }
+                }
+                if (isDigit(c)) {
+                    number()
+                } else if (isAlpha(c)) {
+                    identifier()
+                }
+            }
+            else -> if (isDigit(c)) {
+                number()
+            } else if (isAlpha(c)) {
+                identifier()
+            }
+        }
+    }
+
+    private fun addToken(type: TokenType?, literal: Any? = null) {
+        val text = source.substring(start, current)
+        type?.let { Token(it, text, literal, line) }?.let { tokens.add(it) }
+    }
+
+    private fun isAlpha(c: Char): Boolean {
+        return c >= 'a' && c <= 'z' ||
+                c >= 'A' && c <= 'Z' ||
+                c == '_'
+    }
+
+    private fun isAlphaNumeric(c: Char): Boolean {
+        return isAlpha(c) || isDigit(c)
+    }
+
+    private fun isDigit(c: Char): Boolean {
+        return c >= '0' && c <= '9'
+    }
+
+    fun identifier() {
+        while (isAlphaNumeric(peek())) advance()
+        val literal = source.substring(start, current)
+        val isKeyword = keywords.containsKey(literal)
+        if (isKeyword) {
+            addToken(keywords[literal])
+        } else {
+            addToken(TokenType.IDENTIFIER, literal)
+        }
+    }
+
+    fun number() {
+        while (isDigit(peek())) advance()
+        if (match('.')) {
+            while (isDigit(peek())) advance()
+        }
+        addToken(TokenType.NUMBER, source.substring(start, current).toDouble())
+    }
+
+    private fun advance(): Char {
+        current++
+        return source[current - 1]
+    }
+
+    private fun peek(): Char {
+        return if (isAtEnd) '\u0000' else source[current]
+    }
+
+    private fun peekNext(): Char {
+        return if (current >= source.length - 1) '\u0000' else source[current + 1]
+    }
+
+    private fun match(expected: Char): Boolean {
+        if (isAtEnd) return false
+        if (source[current] != expected) return false
+        current++
+        return true
+    }
+
+    private val isAtEnd: Boolean
+        private get() = current >= source.length
+}
