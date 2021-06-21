@@ -35,6 +35,7 @@ class Scanner(private val source: String) {
             '}' -> addToken(TokenType.RIGHT_BRACE)
             '+' -> addToken(TokenType.PLUS)
             '-' -> addToken(TokenType.MINUS)
+            '*' -> addToken(TokenType.STAR)
             '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
             '=' -> addToken(if (match('=')) TokenType.EQUAL_EQUAL else TokenType.EQUAL)
 
@@ -42,17 +43,11 @@ class Scanner(private val source: String) {
             '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
             ';' -> addToken(TokenType.SEMICOLON)
             '/' -> {
-                run {
-                    if (match('/')) {
-                        while (peek() != '\n' && !isAtEnd) advance()
-                    }
+                if (match('/')) {
+                    while (peek() != '\n' && !isAtEnd) advance()
+                } else {
+                    addToken(TokenType.SLASH)
                 }
-                if (isDigit(c)) {
-                    number()
-                } else if (isAlpha(c)) {
-                    identifier()
-                }
-
             }
             '"' -> string()
             else -> if (isDigit(c)) {

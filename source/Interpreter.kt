@@ -29,22 +29,38 @@ class Interpreter(val statements: List<Stmt>) {
         is Expr.Binary -> evaluateBinary(expr)
         is Expr.Grouping -> evaluate(expr.expr)
         is Expr.Literal -> expr.value
+        is Expr.Unary -> evaluateUnary(expr)
     }
 
-    fun evaluateBinary(expr: Expr.Binary): Any? =
-        when (expr.operator.type) {
+    fun evaluateUnary(expr: Expr.Unary): Any?  {
+        val right = evaluate(expr.right)
+        return when (expr.operator.type) {
+            TokenType.MINUS -> -(right as Double)
+            TokenType.BANG -> !(right as Boolean)
+            else -> null
+        }
+    }
+
+    fun evaluateBinary(expr: Expr.Binary): Any?  {
+        val left = evaluate(expr.left)
+        val right = evaluate(expr.right)
+
+        return when (expr.operator.type) {
             TokenType.PLUS ->
-                (evaluate(expr.left) as Double) + (evaluate(expr.right) as Double)
+                (left as Double) + (right as Double)
 
-            TokenType.MINUS -> (evaluate(expr.left) as Double) - (evaluate(expr.right) as Double)
+            TokenType.MINUS -> (left as Double) - (right as Double)
+            TokenType.SLASH -> (left as Double) / (right as Double)
+            TokenType.STAR -> (left as Double) * (right as Double)
 
-            TokenType.GREATER -> (evaluate(expr.left) as Double) > (evaluate(expr.right) as Double)
-            TokenType.GREATER_EQUAL -> (evaluate(expr.left) as Double) >= (evaluate(expr.right) as Double)
-            TokenType.LESS -> (evaluate(expr.left) as Double) < (evaluate(expr.right) as Double)
-            TokenType.LESS_EQUAL -> (evaluate(expr.left) as Double) <= (evaluate(expr.right) as Double)
-            TokenType.EQUAL_EQUAL -> evaluate(expr.left) == evaluate(expr.right)
-            TokenType.BANG_EQUAL -> evaluate(expr.left) != evaluate(expr.right)
+            TokenType.GREATER -> (left as Double) > (right as Double)
+            TokenType.GREATER_EQUAL -> (left as Double) >= (right as Double)
+            TokenType.LESS -> (left as Double) < (right as Double)
+            TokenType.LESS_EQUAL -> (left as Double) <= (right as Double)
+            TokenType.EQUAL_EQUAL -> left == right
+            TokenType.BANG_EQUAL -> expr != right
 
             else -> null
         }
+    }
 }
