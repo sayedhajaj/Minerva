@@ -53,7 +53,31 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun expression(): Expr {
-        return term()
+        return equality()
+    }
+
+    private fun equality(): Expr {
+        var expr = comparison()
+
+        while (match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
+            val operator = previous()
+            val right = comparison()
+            expr = Expr.Binary(expr, operator, right)
+        }
+
+        return expr
+    }
+
+    private fun comparison(): Expr {
+        var expr = term()
+
+        while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
+            val operator = previous()
+            val right = term()
+            expr = Expr.Binary(expr, operator, right)
+        }
+
+        return expr
     }
 
     private fun term(): Expr {
@@ -67,6 +91,8 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun primary(): Expr {
+        if (match(TokenType.TRUE)) return Expr.Literal(true)
+        if (match(TokenType.FALSE)) return Expr.Literal(false)
         if (match(TokenType.NUMBER, TokenType.STRING)) return Expr.Literal(previous().literal)
         if (match(TokenType.LEFT_PAREN)) {
             val expr = expression()

@@ -1,9 +1,11 @@
 print 9+10;
-
+print true;
 {
 print 1+2;
 print 4;
 print (1+2) + (3);
 
 print "Hello World!";
+
+print ((1+3) != (2+3));
 }

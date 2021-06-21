@@ -26,8 +26,25 @@ class Interpreter(val statements: List<Stmt>) {
     }
 
     fun evaluate(expr: Expr): Any?  =  when (expr) {
-        is Expr.Binary -> (evaluate(expr.left)  as Double) + (evaluate(expr.right) as Double)
+        is Expr.Binary -> evaluateBinary(expr)
         is Expr.Grouping -> evaluate(expr.expr)
         is Expr.Literal -> expr.value
     }
+
+    fun evaluateBinary(expr: Expr.Binary): Any? =
+        when (expr.operator.type) {
+            TokenType.PLUS ->
+                (evaluate(expr.left) as Double) + (evaluate(expr.right) as Double)
+
+            TokenType.MINUS -> (evaluate(expr.left) as Double) - (evaluate(expr.right) as Double)
+
+            TokenType.GREATER -> (evaluate(expr.left) as Double) > (evaluate(expr.right) as Double)
+            TokenType.GREATER_EQUAL -> (evaluate(expr.left) as Double) >= (evaluate(expr.right) as Double)
+            TokenType.LESS -> (evaluate(expr.left) as Double) < (evaluate(expr.right) as Double)
+            TokenType.LESS_EQUAL -> (evaluate(expr.left) as Double) <= (evaluate(expr.right) as Double)
+            TokenType.EQUAL_EQUAL -> evaluate(expr.left) == evaluate(expr.right)
+            TokenType.BANG_EQUAL -> evaluate(expr.left) != evaluate(expr.right)
+
+            else -> null
+        }
 }

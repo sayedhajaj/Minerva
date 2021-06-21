@@ -13,6 +13,8 @@ class Scanner(private val source: String) {
         init {
             keywords["class"] = TokenType.CLASS
             keywords["print"] = TokenType.PRINT
+            keywords["true"] = TokenType.TRUE
+            keywords["false"] = TokenType.FALSE
         }
     }
 
@@ -32,6 +34,12 @@ class Scanner(private val source: String) {
             '{' -> addToken(TokenType.LEFT_BRACE)
             '}' -> addToken(TokenType.RIGHT_BRACE)
             '+' -> addToken(TokenType.PLUS)
+            '-' -> addToken(TokenType.MINUS)
+            '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
+            '=' -> addToken(if (match('=')) TokenType.EQUAL_EQUAL else TokenType.EQUAL)
+
+            '>' -> addToken(if (match('=')) TokenType.GREATER_EQUAL else TokenType.GREATER)
+            '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
             ';' -> addToken(TokenType.SEMICOLON)
             '/' -> {
                 run {
@@ -44,6 +52,7 @@ class Scanner(private val source: String) {
                 } else if (isAlpha(c)) {
                     identifier()
                 }
+
             }
             '"' -> string()
             else -> if (isDigit(c)) {
