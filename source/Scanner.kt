@@ -5,7 +5,7 @@ class Scanner(private val source: String) {
     private val tokens: MutableList<Token> = ArrayList()
     private var start = 0
     private var current = 0
-    private val line = 1
+    private var line = 1
 
     companion object {
         private val keywords: MutableMap<String, TokenType> = HashMap()
@@ -45,6 +45,7 @@ class Scanner(private val source: String) {
                     identifier()
                 }
             }
+            '"' -> string()
             else -> if (isDigit(c)) {
                 number()
             } else if (isAlpha(c)) {
@@ -89,6 +90,21 @@ class Scanner(private val source: String) {
             while (isDigit(peek())) advance()
         }
         addToken(TokenType.NUMBER, source.substring(start, current).toDouble())
+    }
+
+    fun string() {
+        while (peek() != '"' && !isAtEnd) {
+            if (peek() == '\n') line++
+            advance()
+        }
+
+        if (isAtEnd) {
+            error("Unterminated string")
+            return
+        }
+        advance()
+        val value = source.substring(start+1, current-1)
+        addToken(TokenType.STRING, value)
     }
 
     private fun advance(): Char {

@@ -67,7 +67,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun primary(): Expr {
-        if (match(TokenType.NUMBER)) return Expr.Literal(previous().literal)
+        if (match(TokenType.NUMBER, TokenType.STRING)) return Expr.Literal(previous().literal)
         if (match(TokenType.LEFT_PAREN)) {
             val expr = expression()
             consume(TokenType.RIGHT_PAREN, "Expect ')' after expression. ")
