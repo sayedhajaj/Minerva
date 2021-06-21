@@ -6,4 +6,6 @@ sealed class Stmt {
     class Print(val expression: Expr): Stmt()
 
     class Expression(val expression: Expr) : Stmt()
+
+    class Var(val name: Token, val initializer: Expr): Stmt()
 }

@@ -15,6 +15,7 @@ class Scanner(private val source: String) {
             keywords["print"] = TokenType.PRINT
             keywords["true"] = TokenType.TRUE
             keywords["false"] = TokenType.FALSE
+            keywords["var"] = TokenType.VAR
         }
     }
 

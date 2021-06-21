@@ -1,4 +1,7 @@
 class Interpreter(val statements: List<Stmt>) {
+
+    var environment = Environment()
+
     fun interpet() {
         statements.forEach {
             execute(it)
@@ -9,15 +12,17 @@ class Interpreter(val statements: List<Stmt>) {
     fun execute(stmt: Stmt) {
         when (stmt) {
             is Stmt.Block -> {
-                stmt.statements.forEach {
-                    execute(it)
-                }
+                executeBlock(stmt.statements, Environment(environment))
             }
             is Stmt.Class -> {
 
             }
             is Stmt.Print -> {
                 println(evaluate(stmt.expression))
+            }
+            is Stmt.Var -> {
+                val value = evaluate(stmt.initializer)
+                environment.define(stmt.name.lexeme, value)
             }
             is Stmt.Expression -> {
                 evaluate(stmt.expression)
@@ -26,10 +31,23 @@ class Interpreter(val statements: List<Stmt>) {
     }
 
     fun evaluate(expr: Expr): Any?  =  when (expr) {
+        is Expr.Assign -> evaluateAssign(expr)
         is Expr.Binary -> evaluateBinary(expr)
         is Expr.Grouping -> evaluate(expr.expr)
         is Expr.Literal -> expr.value
         is Expr.Unary -> evaluateUnary(expr)
+        is Expr.Variable -> evaluateVariable(expr)
+    }
+
+    fun executeBlock(statements: List<Stmt>, environment: Environment) {
+        val previous = this.environment
+
+        this.environment = environment
+
+        statements.forEach {
+            execute(it)
+        }
+        this.environment = previous
     }
 
     fun evaluateUnary(expr: Expr.Unary): Any?  {
@@ -62,5 +80,14 @@ class Interpreter(val statements: List<Stmt>) {
 
             else -> null
         }
+    }
+
+    fun evaluateVariable(variable: Expr.Variable): Any? =
+        environment.get(variable.name)
+
+    fun evaluateAssign(expr: Expr.Assign): Any? {
+        val value = evaluate(expr.value)
+        environment.assign(expr.name, value)
+        return value
     }
 }
