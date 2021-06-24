@@ -1,11 +1,9 @@
 print "Hello World!";
-var name = "John";
-print name;
 
-{
-
-var name = "Wick";
-print name;
+if (9> 10) {
+    print "True";
+} else {
+    print "false";
 }
 
-print name;
+print (false or true);

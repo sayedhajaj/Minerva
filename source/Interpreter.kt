@@ -17,6 +17,13 @@ class Interpreter(val statements: List<Stmt>) {
             is Stmt.Class -> {
 
             }
+            is Stmt.If -> {
+                if (evaluate(stmt.condition) == true) {
+                    execute(stmt.thenBranch)
+                } else {
+                    stmt.elseBranch?.let { execute(it) }
+                }
+            }
             is Stmt.Print -> {
                 println(evaluate(stmt.expression))
             }
@@ -37,6 +44,7 @@ class Interpreter(val statements: List<Stmt>) {
         is Expr.Literal -> expr.value
         is Expr.Unary -> evaluateUnary(expr)
         is Expr.Variable -> evaluateVariable(expr)
+        is Expr.Logical -> evaluateLogical(expr)
     }
 
     fun executeBlock(statements: List<Stmt>, environment: Environment) {
@@ -89,5 +97,16 @@ class Interpreter(val statements: List<Stmt>) {
         val value = evaluate(expr.value)
         environment.assign(expr.name, value)
         return value
+    }
+
+    fun evaluateLogical(expr: Expr.Logical): Any? {
+        val left = evaluate(expr.left)
+
+        if (expr.operator.type == TokenType.OR) {
+            if (left == true) return left
+        } else {
+            if (left == false) return left
+        }
+        return evaluate(expr.right)
     }
 }
