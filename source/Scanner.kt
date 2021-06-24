@@ -20,6 +20,7 @@ class Scanner(private val source: String) {
             keywords["else"] = TokenType.ELSE
             keywords["and"] = TokenType.AND
             keywords["or"] = TokenType.OR
+            keywords["while"] = TokenType.WHILE
         }
     }
 

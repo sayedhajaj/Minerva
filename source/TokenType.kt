@@ -9,7 +9,7 @@ enum class TokenType {
     EQUAL, EQUAL_EQUAL, BANG_EQUAL, BANG,
     GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,
     CLASS, TRUE, FALSE,
-    VAR,
+    VAR, WHILE,
 
     EOF,
 }

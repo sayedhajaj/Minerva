@@ -34,6 +34,11 @@ class Interpreter(val statements: List<Stmt>) {
             is Stmt.Expression -> {
                 evaluate(stmt.expression)
             }
+            is Stmt.While -> {
+                while (evaluate(stmt.condition) == true) {
+                    execute(stmt.body)
+                }
+            }
         }
     }
 

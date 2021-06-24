@@ -1,9 +1,6 @@
-print "Hello World!";
+var i = 0;
 
-if (9> 10) {
-    print "True";
-} else {
-    print "false";
+while (i < 10) {
+    print i;
+    i = i + 1;
 }
-
-print (false or true);
