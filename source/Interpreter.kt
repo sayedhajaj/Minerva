@@ -1,6 +1,7 @@
 class Interpreter(val statements: List<Stmt>) {
 
-    var environment = Environment()
+    val globals = Environment()
+    var environment = globals
 
     fun interpet() {
         statements.forEach {
@@ -27,6 +28,13 @@ class Interpreter(val statements: List<Stmt>) {
             is Stmt.Var -> {
                 val value = evaluate(stmt.initializer)
                 environment.define(stmt.name.lexeme, value)
+            }
+            is Stmt.Function -> {
+                environment.define(stmt.name.lexeme, MinervaFunction(
+                    stmt.functionBody.parameters,
+                    stmt.functionBody.body,
+                    environment)
+                )
             }
             is Stmt.Expression -> {
                 evaluate(stmt.expression)
@@ -55,6 +63,19 @@ class Interpreter(val statements: List<Stmt>) {
         is Expr.Unary -> evaluateUnary(expr)
         is Expr.Variable -> evaluateVariable(expr)
         is Expr.Logical -> evaluateLogical(expr)
+        is Expr.Call -> evaluateCall(expr)
+        is Expr.Function -> MinervaFunction(expr.parameters, expr.body, environment)
+    }
+
+    fun evaluateCall(expr: Expr.Call) : Any? {
+        val callee = evaluate(expr.callee)
+
+        val arguments = expr.arguments.map { evaluate(it) }
+
+        if (callee is MinervaCallable) {
+            return callee.call(this, arguments)
+        }
+        return null
     }
 
     fun executeBlock(statements: List<Stmt>, environment: Environment): Any? {

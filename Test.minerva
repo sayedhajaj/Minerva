@@ -23,3 +23,33 @@ if (1 < 2) {
 };
 
 print c;
+
+function double (number) => number * 2;
+
+var apply = function (lambda, number) => lambda(number);
+
+print apply(double, 3);
+
+function factorial (number) =>
+    if (number == 0)
+        1
+    else
+        number * factorial(number-1);
+
+print factorial(5);
+
+function makeCounter() => {
+    var i = 0;
+
+    function count() => {
+        i = i + 1;
+        print i;
+    };
+
+    count;
+};
+
+var counter = makeCounter();
+counter();
+counter();
+counter();

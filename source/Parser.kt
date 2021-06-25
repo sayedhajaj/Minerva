@@ -11,13 +11,14 @@ class Parser(private val tokens: List<Token>) {
     fun parse(): List<Stmt> {
         val statements: MutableList<Stmt> = ArrayList()
         while (!isAtEnd) {
-            declaration()?.let { statements.add(it) }
+            declaration().let { statements.add(it) }
         }
         return statements
     }
 
     private fun declaration(): Stmt {
         if (match(TokenType.VAR)) return varDeclaration()
+        if (match(TokenType.FUNCTION)) return function()
         return statement()
     }
 
@@ -190,7 +191,51 @@ class Parser(private val tokens: List<Token>) {
             val right = unary()
             return Expr.Unary(operator, right)
         }
-        return primary()
+        return call()
+    }
+
+    private fun lambdaExpression(): Expr.Function {
+        consume(TokenType.LEFT_PAREN, "Expect ')' after function name.")
+        val parameters = mutableListOf<Token>()
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name"))
+            } while (match(TokenType.COMMA))
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters")
+        consume(TokenType.ARROW, "Expect '=> before function body")
+
+        val body = expression()
+        return Expr.Function(parameters, body)
+    }
+
+    private fun call(): Expr {
+        var expr = primary()
+
+        while (true) {
+            if (match(TokenType.LEFT_PAREN)) {
+                expr = finishCall(expr)
+            } else {
+                break
+            }
+        }
+
+        return expr
+    }
+
+    private fun finishCall(callee: Expr): Expr {
+        val arguments = mutableListOf<Expr>()
+
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                arguments.add(expression())
+            } while (match(TokenType.COMMA))
+
+        }
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
+
+        return Expr.Call(callee, arguments)
     }
 
     private fun primary(): Expr {
@@ -213,12 +258,15 @@ class Parser(private val tokens: List<Token>) {
 
         if (match(TokenType.IF)) return ifExpr()
 
+        if (match(TokenType.FUNCTION)) return lambdaExpression()
+
         return Expr.Literal(null)
     }
 
-//    private fun function(): Stmt {
-//        return functionBody()
-//    }
+    private fun function(): Stmt {
+        val name = consume(TokenType.IDENTIFIER, "Expect function name.")
+        return Stmt.Function(name, lambdaExpression())
+    }
 
 //    private fun functionBody(): Stmt {
 //        return Exp.Block(block())
@@ -227,7 +275,7 @@ class Parser(private val tokens: List<Token>) {
     private fun block(): List<Stmt> {
         val statements: MutableList<Stmt> = ArrayList()
         while (!check(TokenType.RIGHT_BRACE) && !isAtEnd) {
-            declaration()?.let { statements.add(it) }
+            declaration().let { statements.add(it) }
         }
         consume(TokenType.RIGHT_BRACE, "Expect '}' after block")
         return statements

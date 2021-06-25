@@ -21,6 +21,7 @@ class Scanner(private val source: String) {
             keywords["and"] = TokenType.AND
             keywords["or"] = TokenType.OR
             keywords["while"] = TokenType.WHILE
+            keywords["function"] = TokenType.FUNCTION
         }
     }
 
@@ -43,11 +44,16 @@ class Scanner(private val source: String) {
             '-' -> addToken(TokenType.MINUS)
             '*' -> addToken(TokenType.STAR)
             '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
-            '=' -> addToken(if (match('=')) TokenType.EQUAL_EQUAL else TokenType.EQUAL)
+            '=' -> when {
+                    match('=') -> addToken(TokenType.EQUAL_EQUAL)
+                    match('>') -> addToken(TokenType.ARROW)
+                    else -> addToken(TokenType.EQUAL)
+                }
 
             '>' -> addToken(if (match('=')) TokenType.GREATER_EQUAL else TokenType.GREATER)
             '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
             ';' -> addToken(TokenType.SEMICOLON)
+            ',' -> addToken(TokenType.COMMA)
             '/' -> {
                 if (match('/')) {
                     while (peek() != '\n' && !isAtEnd) advance()
