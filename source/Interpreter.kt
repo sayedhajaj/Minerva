@@ -11,9 +11,6 @@ class Interpreter(val statements: List<Stmt>) {
     
     fun execute(stmt: Stmt) {
         when (stmt) {
-            is Stmt.Block -> {
-                executeBlock(stmt.statements, Environment(environment))
-            }
             is Stmt.Class -> {
 
             }
@@ -43,6 +40,7 @@ class Interpreter(val statements: List<Stmt>) {
     }
 
     fun evaluate(expr: Expr): Any?  =  when (expr) {
+        is Expr.Block -> executeBlock(expr.statements, Environment(environment))
         is Expr.Assign -> evaluateAssign(expr)
         is Expr.Binary -> evaluateBinary(expr)
         is Expr.Grouping -> evaluate(expr.expr)
@@ -52,15 +50,23 @@ class Interpreter(val statements: List<Stmt>) {
         is Expr.Logical -> evaluateLogical(expr)
     }
 
-    fun executeBlock(statements: List<Stmt>, environment: Environment) {
+    fun executeBlock(statements: List<Stmt>, environment: Environment): Any? {
         val previous = this.environment
+
+        var lastExpr: Any? = null
 
         this.environment = environment
 
         statements.forEach {
-            execute(it)
+            if (it is Stmt.Expression) {
+                lastExpr = evaluate(it.expression)
+            } else {
+                execute(it)
+            }
         }
         this.environment = previous
+
+        return lastExpr
     }
 
     fun evaluateUnary(expr: Expr.Unary): Any?  {

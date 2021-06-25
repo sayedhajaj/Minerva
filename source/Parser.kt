@@ -54,7 +54,6 @@ class Parser(private val tokens: List<Token>) {
         if (match(TokenType.IF)) return ifStatement()
         if (match(TokenType.PRINT)) return printStatement()
         if (match(TokenType.WHILE)) return whileStatement()
-        if (match(TokenType.LEFT_BRACE)) return Stmt.Block(block())
         return expressionStatement()
     }
 
@@ -81,7 +80,7 @@ class Parser(private val tokens: List<Token>) {
     private fun expressionStatement(): Stmt {
         val expr = expression()
         consume(TokenType.SEMICOLON, "Expect ';' after expression")
-        return Stmt.Expression(expr!!)
+        return Stmt.Expression(expr)
     }
 
     private fun expression(): Expr {
@@ -195,16 +194,20 @@ class Parser(private val tokens: List<Token>) {
             consume(TokenType.RIGHT_PAREN, "Expect ')' after expression. ")
             return Expr.Grouping(expr)
         }
+
+
+        if (match(TokenType.LEFT_BRACE)) return Expr.Block(block())
+
         return Expr.Literal(null)
     }
 
-    private fun function(): Stmt {
-        return functionBody()
-    }
+//    private fun function(): Stmt {
+//        return functionBody()
+//    }
 
-    private fun functionBody(): Stmt {
-        return Stmt.Block(block())
-    }
+//    private fun functionBody(): Stmt {
+//        return Exp.Block(block())
+//    }
 
     private fun block(): List<Stmt> {
         val statements: MutableList<Stmt> = ArrayList()
