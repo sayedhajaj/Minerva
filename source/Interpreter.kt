@@ -44,6 +44,13 @@ class Interpreter(val statements: List<Stmt>) {
         is Expr.Assign -> evaluateAssign(expr)
         is Expr.Binary -> evaluateBinary(expr)
         is Expr.Grouping -> evaluate(expr.expr)
+        is Expr.If -> {
+            if (evaluate(expr.condition) == true) {
+                evaluate(expr.thenBranch)
+            } else {
+                evaluate(expr.elseBranch)
+            }
+        }
         is Expr.Literal -> expr.value
         is Expr.Unary -> evaluateUnary(expr)
         is Expr.Variable -> evaluateVariable(expr)

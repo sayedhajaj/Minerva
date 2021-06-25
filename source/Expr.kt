@@ -5,6 +5,7 @@ sealed class Expr {
     class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr()
     class Block(val statements: List<Stmt>) : Expr()
     class Grouping(val expr: Expr): Expr()
+    class If(val condition: Expr, val thenBranch: Expr, val elseBranch: Expr): Expr()
     class Literal(val value: Any?) : Expr()
     class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr()
     class Unary(val operator: Token, val right: Expr) : Expr()

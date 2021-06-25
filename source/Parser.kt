@@ -71,6 +71,19 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.If(condition, thenBranch, elseBranch)
     }
 
+    private fun ifExpr(): Expr {
+        consume(TokenType.LEFT_PAREN, "Expect  '(' after 'if'.")
+        val condition = expression()
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.")
+
+        val thenBranch = expression()
+
+        consume(TokenType.ELSE, "Expect 'else' in if expression.")
+        var elseBranch = expression()
+
+        return Expr.If(condition, thenBranch, elseBranch)
+    }
+
     private fun printStatement(): Stmt {
         val value = expression()
         consume(TokenType.SEMICOLON, "Expect ';' after value.")
@@ -197,6 +210,8 @@ class Parser(private val tokens: List<Token>) {
 
 
         if (match(TokenType.LEFT_BRACE)) return Expr.Block(block())
+
+        if (match(TokenType.IF)) return ifExpr()
 
         return Expr.Literal(null)
     }

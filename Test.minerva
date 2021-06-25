@@ -10,3 +10,16 @@ var b = {
 };
 
 print b;
+
+var c = if (2 < 3) {
+    3;
+} else {
+    5;
+};
+
+if (1 < 2) {
+
+    print "yeah";
+};
+
+print c;
