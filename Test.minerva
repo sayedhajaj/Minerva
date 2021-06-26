@@ -38,10 +38,10 @@ function factorial (number) =>
 
 print factorial(5);
 
-function makeCounter() => {
+var makeCounter = function () => {
     var i = 0;
 
-    function count() => {
+    var count = function () => {
         i = i + 1;
         print i;
     };
@@ -53,3 +53,5 @@ var counter = makeCounter();
 counter();
 counter();
 counter();
+
+print i;

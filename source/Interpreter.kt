@@ -1,4 +1,4 @@
-class Interpreter(val statements: List<Stmt>) {
+class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>) {
 
     val globals = Environment()
     var environment = globals
@@ -130,11 +130,25 @@ class Interpreter(val statements: List<Stmt>) {
     }
 
     fun evaluateVariable(variable: Expr.Variable): Any? =
-        environment.get(variable.name)
+        lookUpVariable(variable.name, variable)
+
+    private fun lookUpVariable(name: Token, expr: Expr): Any? {
+        val distance = locals[expr]
+        return if (distance != null) {
+            environment.getAt(distance, name.lexeme)
+        } else {
+            globals.get(name)
+        }
+    }
 
     fun evaluateAssign(expr: Expr.Assign): Any? {
         val value = evaluate(expr.value)
-        environment.assign(expr.name, value)
+        val distance = locals[expr]
+        if (distance != null) {
+            environment.assignAt(distance, expr.name, value)
+        } else {
+            globals.assign(expr.name, value)
+        }
         return value
     }
 

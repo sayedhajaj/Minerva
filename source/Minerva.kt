@@ -1,11 +1,8 @@
 import Minerva.loadFile
 import java.io.*
-import kotlin.Throws
-import kotlin.jvm.JvmStatic
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.charset.Charset
-import java.lang.Exception
 
 object Minerva {
 
@@ -34,7 +31,9 @@ object Minerva {
     }
 
     fun interpret(syntaxTree: List<Stmt>) {
-        val interpreter = Interpreter(syntaxTree)
+        val resolver = Resolver()
+        resolver.resolve(syntaxTree)
+        val interpreter = Interpreter(syntaxTree, resolver.locals)
         interpreter.interpet()
     }
 }
