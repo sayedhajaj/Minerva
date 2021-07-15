@@ -22,6 +22,8 @@ class Scanner(private val source: String) {
             keywords["or"] = TokenType.OR
             keywords["while"] = TokenType.WHILE
             keywords["function"] = TokenType.FUNCTION
+            keywords["constructor"] = TokenType.CONSTRUCTOR
+            keywords["this"] = TokenType.THIS
         }
     }
 
@@ -54,6 +56,7 @@ class Scanner(private val source: String) {
             '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
             ';' -> addToken(TokenType.SEMICOLON)
             ',' -> addToken(TokenType.COMMA)
+            '.' -> addToken(TokenType.DOT)
             '/' -> {
                 if (match('/')) {
                     while (peek() != '\n' && !isAtEnd) advance()

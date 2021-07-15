@@ -14,7 +14,27 @@ class Resolver {
             is Stmt.Expression -> {
                 resolve(stmt.expression)
             }
-            is Stmt.Class -> {}
+            is Stmt.Class -> {
+                declare(stmt.name)
+                define(stmt.name)
+
+                beginScope()
+                scopes.peek().put("this", true)
+
+                stmt.fields.forEach {
+                    declare(it.key)
+                    define(it.key)
+                    resolve(it.value)
+                }
+
+                stmt.methods.forEach {
+                    resolve(it)
+                }
+
+                resolve(stmt.constructor)
+
+                endScope()
+            }
             is Stmt.Function -> {
                 declare(stmt.name)
                 define(stmt.name)
@@ -37,21 +57,39 @@ class Resolver {
                 resolve(stmt.condition)
                 resolve(stmt.body)
             }
+            is Stmt.Constructor -> {
+                beginScope()
+                stmt.parameters.forEach {
+                    declare(it)
+                    define(it)
+                }
+
+                stmt.fields.values.forEach {
+                    declare(it)
+                }
+
+                resolve(stmt.constructorBody.statements)
+                endScope()
+            }
         }
     }
 
     private fun resolveFunctionBody(functionBody: Expr.Function) {
-        if (functionBody.body !is Expr.Block) {
+//        if (functionBody.body !is Expr.Block) {
             beginScope()
-        }
+//        }
         functionBody.parameters.forEach {
             declare(it)
             define(it)
         }
-        resolve(functionBody.body)
-        if (functionBody.body !is Expr.Block) {
-            endScope()
+        if (functionBody.body is Expr.Block) {
+            resolve(functionBody.body.statements)
+        } else {
+            resolve(functionBody.body)
         }
+//        if (functionBody.body !is Expr.Block) {
+            endScope()
+//        }
     }
 
     fun resolve(expr: Expr) {
@@ -96,6 +134,12 @@ class Resolver {
                 }
                 resolveLocal(expr, expr.name)
             }
+            is Expr.Get -> resolve(expr.obj)
+            is Expr.Set -> {
+                resolve(expr.value)
+                resolve(expr.obj)
+            }
+            is Expr.This -> resolveLocal(expr, expr.keyword)
         }
     }
 

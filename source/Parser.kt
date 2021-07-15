@@ -1,8 +1,6 @@
 import java.lang.RuntimeException
 import Expr.Binary
-import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType.PRINT
 import java.util.ArrayList
-import kotlin.math.exp
 
 class Parser(private val tokens: List<Token>) {
     private class ParseError : RuntimeException()
@@ -17,8 +15,9 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun declaration(): Stmt {
-        if (match(TokenType.VAR)) return varDeclaration()
+        if (match(TokenType.CLASS)) return classDeclaration()
         if (match(TokenType.FUNCTION)) return function()
+        if (match(TokenType.VAR)) return varDeclaration()
         return statement()
     }
 
@@ -44,11 +43,47 @@ class Parser(private val tokens: List<Token>) {
 
     private fun classDeclaration(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect class name.")
+
+
+        var constructorParams = emptyList<Token>()
+        var constructorFields = emptyMap<Int, Token>()
+        var constructorBody: Expr.Block = Expr.Block(emptyList())
+
+        if (check(TokenType.LEFT_PAREN)) {
+            val constructorHeader = constructorParameters()
+            constructorParams = constructorHeader.first
+            constructorFields = constructorHeader.second
+        }
+
+
         consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
-        while (!isAtEnd && !check(TokenType.RIGHT_BRACE)) advance()
+
+        val methods = mutableListOf<Stmt.Function>()
+        val fields = mutableMapOf<Token, Expr>()
+
+        while (!isAtEnd && !check(TokenType.RIGHT_BRACE)) {
+            if (match(TokenType.VAR)) {
+                // add field
+                val name = consume(TokenType.IDENTIFIER, "Expect field name")
+                consume(TokenType.EQUAL, "Expect value in field")
+                val value = expression()
+                fields[name] = value
+            } else if (match(TokenType.FUNCTION)) {
+                methods.add(function())
+            } else if (match(TokenType.CONSTRUCTOR)) {
+                consume(TokenType.LEFT_BRACE, "Expect '{' after constructor.")
+                constructorBody = Expr.Block(block())
+
+            } else {
+                advance()
+            }
+
+        }
+        val constructor = Stmt.Constructor(constructorFields, constructorParams, constructorBody)
+
         consume(TokenType.RIGHT_BRACE, "Expect '}' after class body")
-        advance()
-        return Stmt.Class(name)
+
+        return Stmt.Class(name, constructor, methods, fields)
     }
 
     private fun statement(): Stmt {
@@ -111,7 +146,8 @@ class Parser(private val tokens: List<Token>) {
             if (expr is Expr.Variable) {
                 val name = expr.name
                 return Expr.Assign(name, value)
-            }
+            } else if (expr is Expr.Get)
+                return Expr.Set(expr.obj, expr.name, value)
         }
 
         return expr
@@ -194,6 +230,30 @@ class Parser(private val tokens: List<Token>) {
         return call()
     }
 
+    private fun constructorParameters(): Pair<MutableList<Token>, MutableMap<Int, Token>> {
+        match(TokenType.LEFT_PAREN)
+        var isField = false
+        val parameters = mutableListOf<Token>()
+        val fields = mutableMapOf<Int, Token>()
+
+        var index = 0
+
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (check(TokenType.VAR)) {
+                    advance()
+                    isField = true
+                }
+                parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name"))
+                if (isField) fields[index] = previous()
+                isField = false
+                index++
+            } while (match(TokenType.COMMA))
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters")
+        return Pair(parameters, fields)
+    }
+
     private fun lambdaExpression(): Expr.Function {
         consume(TokenType.LEFT_PAREN, "Expect ')' after function name.")
         val parameters = mutableListOf<Token>()
@@ -215,6 +275,9 @@ class Parser(private val tokens: List<Token>) {
         while (true) {
             if (match(TokenType.LEFT_PAREN)) {
                 expr = finishCall(expr)
+            } else if(match(TokenType.DOT)) {
+                val name = consume(TokenType.IDENTIFIER, "Expect property name after '.'")
+                expr = Expr.Get(expr, name)
             } else {
                 break
             }
@@ -243,6 +306,8 @@ class Parser(private val tokens: List<Token>) {
         if (match(TokenType.FALSE)) return Expr.Literal(false)
         if (match(TokenType.NUMBER, TokenType.STRING)) return Expr.Literal(previous().literal)
 
+        if (match(TokenType.THIS)) return  Expr.This(previous())
+
         if (match(TokenType.IDENTIFIER)) {
             return Expr.Variable(previous())
         }
@@ -263,14 +328,11 @@ class Parser(private val tokens: List<Token>) {
         return Expr.Literal(null)
     }
 
-    private fun function(): Stmt {
+    private fun function(): Stmt.Function {
         val name = consume(TokenType.IDENTIFIER, "Expect function name.")
         return Stmt.Function(name, lambdaExpression())
     }
 
-//    private fun functionBody(): Stmt {
-//        return Exp.Block(block())
-//    }
 
     private fun block(): List<Stmt> {
         val statements: MutableList<Stmt> = ArrayList()
@@ -317,6 +379,7 @@ class Parser(private val tokens: List<Token>) {
 
     private fun error(token: Token, message: String): ParseError {
         // log here
+        println(message)
         return ParseError()
     }
 }

@@ -13,7 +13,23 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
     fun execute(stmt: Stmt) {
         when (stmt) {
             is Stmt.Class -> {
+                environment.define(stmt.name.lexeme, null)
 
+                val methods = stmt.methods.associate {
+                    it.name.lexeme to MinervaFunction(it.name.lexeme, it.functionBody, environment)
+                }
+
+                val fields = stmt.fields.entries.associate {
+                    it.key.lexeme to evaluate(it.value)
+                }
+
+                val constructor = MinervaConstructor(
+                    stmt.constructor.fields, stmt.constructor.parameters,
+                    stmt.constructor.constructorBody, environment
+                )
+
+                val klass = MinervaClass(stmt.name.lexeme, constructor, methods, fields)
+                environment.assign(stmt.name, klass)
             }
             is Stmt.If -> {
                 if (evaluate(stmt.condition) == true) {
@@ -31,8 +47,8 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
             }
             is Stmt.Function -> {
                 environment.define(stmt.name.lexeme, MinervaFunction(
-                    stmt.functionBody.parameters,
-                    stmt.functionBody.body,
+                    stmt.name.lexeme,
+                    stmt.functionBody,
                     environment)
                 )
             }
@@ -44,6 +60,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
                     execute(stmt.body)
                 }
             }
+            is Stmt.Constructor -> {}
         }
     }
 
@@ -64,7 +81,21 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
         is Expr.Variable -> evaluateVariable(expr)
         is Expr.Logical -> evaluateLogical(expr)
         is Expr.Call -> evaluateCall(expr)
-        is Expr.Function -> MinervaFunction(expr.parameters, expr.body, environment)
+        is Expr.Function -> MinervaFunction("", expr, environment)
+        is Expr.Get -> {
+            val obj = evaluate(expr.obj)
+            if (obj is MinervaInstance)  obj.get(expr.name)
+            else null
+        }
+        is Expr.Set -> {
+            val obj = evaluate(expr.obj)
+            if (obj is MinervaInstance) {
+                val value = evaluate(expr.value)
+                obj.set(expr.name, value)
+                value
+            } else null
+        }
+        is Expr.This -> lookUpVariable(expr.keyword, expr)
     }
 
     fun evaluateCall(expr: Expr.Call) : Any? {
@@ -123,7 +154,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
             TokenType.LESS -> (left as Double) < (right as Double)
             TokenType.LESS_EQUAL -> (left as Double) <= (right as Double)
             TokenType.EQUAL_EQUAL -> left == right
-            TokenType.BANG_EQUAL -> expr != right
+            TokenType.BANG_EQUAL -> left != right
 
             else -> null
         }

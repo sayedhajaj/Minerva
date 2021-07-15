@@ -1,57 +1,44 @@
-var i = 0;
+class Node(var item, var next) {};
 
-while (i < 10) {
-    print i;
-    i = i + 1;
+
+class LinkedList {
+    var head = false;
+    size = 0;
+
+    function isEmpty() => this.size == 0;
+
+    function insert(item) => {
+        var newNode = Node(item, this.head);
+        this.head = newNode;
+    }
+
+
 };
 
-var b = {
-    1+1;
+class LinkedListIterator(var list) {
+    var node = false;
+
+    constructor {
+        this.node = list.head;
+    }
+
+    function moveNext() => {
+        var hasNext = this.node.next != false;
+
+        if (hasNext != false)
+            this.node = this.node.next;
+        hasNext;
+    }
+}
+
+var list = LinkedList();
+list.insert(5);
+list.insert(10);
+list.insert(8);
+list.insert(12);
+
+var iterator = LinkedListIterator(list);
+print iterator.node.item;
+while (iterator.moveNext()) {
+    print iterator.node.item;
 };
-
-print b;
-
-var c = if (2 < 3) {
-    3;
-} else {
-    5;
-};
-
-if (1 < 2) {
-
-    print "yeah";
-};
-
-print c;
-
-function double (number) => number * 2;
-
-var apply = function (lambda, number) => lambda(number);
-
-print apply(double, 3);
-
-function factorial (number) =>
-    if (number == 0)
-        1
-    else
-        number * factorial(number-1);
-
-print factorial(5);
-
-var makeCounter = function () => {
-    var i = 0;
-
-    var count = function () => {
-        i = i + 1;
-        print i;
-    };
-
-    count;
-};
-
-var counter = makeCounter();
-counter();
-counter();
-counter();
-
-print i;
