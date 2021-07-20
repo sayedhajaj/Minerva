@@ -1,6 +1,7 @@
 sealed class Stmt {
     class Class(
         val name: Token,
+        val superclass: Expr.Variable?,
         val constructor: Constructor,
         val methods: List<Function>,
         val fields: Map<Token, Expr>) : Stmt()
@@ -14,6 +15,7 @@ sealed class Stmt {
     class Constructor(
         val fields: Map<Int, Token>,
         val parameters: List<Token>,
+        val superArgs: List<Expr>,
         val constructorBody: Expr.Block
     ) : Stmt()
     class Function(val name: Token, val functionBody: Expr.Function): Stmt()

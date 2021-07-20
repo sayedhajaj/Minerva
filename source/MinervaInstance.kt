@@ -7,9 +7,15 @@ class MinervaInstance(val klass: MinervaClass) {
     }
 
     init {
-        klass.fields.entries.forEach {
-            fields[it.key] = it.value
+        setUpFields(klass)
+    }
 
+    fun setUpFields(currentClass: MinervaClass) {
+        if (currentClass.superClass != null) {
+            setUpFields(currentClass.superClass)
+        }
+        currentClass.fields.entries.forEach {
+            fields[it.key] = it.value
         }
     }
 
@@ -18,6 +24,7 @@ class MinervaInstance(val klass: MinervaClass) {
 
         val method = klass.findMethod(name.lexeme)
         if (method != null) return method.bind(this)
+
 
         return null
     }

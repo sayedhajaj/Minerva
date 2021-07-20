@@ -24,6 +24,8 @@ class Scanner(private val source: String) {
             keywords["function"] = TokenType.FUNCTION
             keywords["constructor"] = TokenType.CONSTRUCTOR
             keywords["this"] = TokenType.THIS
+            keywords["extends"] = TokenType.EXTENDS
+            keywords["super"] = TokenType.SUPER
         }
     }
 

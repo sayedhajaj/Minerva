@@ -15,6 +15,15 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
             is Stmt.Class -> {
                 environment.define(stmt.name.lexeme, null)
 
+                var superClass: MinervaClass? = null
+
+                if (stmt.superclass != null) {
+                    superClass = evaluate(stmt.superclass) as MinervaClass
+
+                    environment = Environment(environment)
+                    environment.define("super", superClass)
+                }
+
                 val methods = stmt.methods.associate {
                     it.name.lexeme to MinervaFunction(it.name.lexeme, it.functionBody, environment)
                 }
@@ -28,7 +37,12 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
                     stmt.constructor.constructorBody, environment
                 )
 
-                val klass = MinervaClass(stmt.name.lexeme, constructor, methods, fields)
+                val klass = MinervaClass(stmt.name.lexeme, superClass, stmt.constructor.superArgs, constructor, methods, fields)
+
+                if (superClass != null) {
+                    environment = environment.enclosing!!
+                }
+
                 environment.assign(stmt.name, klass)
             }
             is Stmt.If -> {
@@ -96,6 +110,13 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
             } else null
         }
         is Expr.This -> lookUpVariable(expr.keyword, expr)
+        is Expr.Super -> {
+            val distance = locals[expr]
+            val superclass = distance?.let { environment.getAt(it, "super") } as MinervaClass
+            val obj = environment.getAt(distance -1, "this") as MinervaInstance
+            val method = superclass.findMethod(expr.method.lexeme)
+            method?.bind(obj)
+        }
     }
 
     fun evaluateCall(expr: Expr.Call) : Any? {

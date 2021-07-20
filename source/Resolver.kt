@@ -18,8 +18,16 @@ class Resolver {
                 declare(stmt.name)
                 define(stmt.name)
 
+                if (stmt.superclass != null) {
+                    resolve(stmt.superclass)
+                    beginScope()
+
+                    scopes.peek()["super"] = true
+                }
+
                 beginScope()
                 scopes.peek().put("this", true)
+
 
                 stmt.fields.forEach {
                     declare(it.key)
@@ -34,6 +42,9 @@ class Resolver {
                 resolve(stmt.constructor)
 
                 endScope()
+
+                if (stmt.superclass != null) endScope()
+
             }
             is Stmt.Function -> {
                 declare(stmt.name)
@@ -67,6 +78,9 @@ class Resolver {
                 stmt.fields.values.forEach {
                     declare(it)
                 }
+
+
+                stmt.superArgs.forEach { resolve(it) }
 
                 resolve(stmt.constructorBody.statements)
                 endScope()
@@ -140,6 +154,7 @@ class Resolver {
                 resolve(expr.obj)
             }
             is Expr.This -> resolveLocal(expr, expr.keyword)
+            is Expr.Super -> resolveLocal(expr, expr.keyword)
         }
     }
 

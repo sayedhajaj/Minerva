@@ -1,44 +1,14 @@
-class Node(var item, var next) {};
 
 
-class LinkedList {
-    var head = false;
-    size = 0;
-
-    function isEmpty() => this.size == 0;
-
-    function insert(item) => {
-        var newNode = Node(item, this.head);
-        this.head = newNode;
-    }
-
-
+class Parent(var name) {
 };
 
-class LinkedListIterator(var list) {
-    var node = false;
-
-    constructor {
-        this.node = list.head;
-    }
-
-    function moveNext() => {
-        var hasNext = this.node.next != false;
-
-        if (hasNext != false)
-            this.node = this.node.next;
-        hasNext;
-    }
-}
-
-var list = LinkedList();
-list.insert(5);
-list.insert(10);
-list.insert(8);
-list.insert(12);
-
-var iterator = LinkedListIterator(list);
-print iterator.node.item;
-while (iterator.moveNext()) {
-    print iterator.node.item;
+class Child(name) extends Parent(name) {
 };
+
+class Grandchild(name) extends Child("jack") {
+};
+
+
+var child = Grandchild("john");
+print child.name;

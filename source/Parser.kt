@@ -55,6 +55,25 @@ class Parser(private val tokens: List<Token>) {
             constructorFields = constructorHeader.second
         }
 
+        var superClass: Expr.Variable? = null
+        val superArgs = mutableListOf<Expr>()
+        if (match(TokenType.EXTENDS)) {
+            consume(TokenType.IDENTIFIER, "Expect superclass name.")
+            superClass = Expr.Variable(previous())
+
+            if (match(TokenType.LEFT_PAREN)) {
+                if (!check(TokenType.RIGHT_PAREN)) {
+                    do {
+                        superArgs.add(expression())
+                    } while (match(TokenType.COMMA))
+
+                }
+
+                consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
+            }
+
+        }
+
 
         consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
@@ -79,11 +98,11 @@ class Parser(private val tokens: List<Token>) {
             }
 
         }
-        val constructor = Stmt.Constructor(constructorFields, constructorParams, constructorBody)
+        val constructor = Stmt.Constructor(constructorFields, constructorParams, superArgs, constructorBody)
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after class body")
 
-        return Stmt.Class(name, constructor, methods, fields)
+        return Stmt.Class(name, superClass, constructor, methods, fields)
     }
 
     private fun statement(): Stmt {
@@ -305,6 +324,13 @@ class Parser(private val tokens: List<Token>) {
         if (match(TokenType.TRUE)) return Expr.Literal(true)
         if (match(TokenType.FALSE)) return Expr.Literal(false)
         if (match(TokenType.NUMBER, TokenType.STRING)) return Expr.Literal(previous().literal)
+
+        if (match(TokenType.SUPER)) {
+            val keyword = previous()
+            consume(TokenType.DOT, "Expect '.' after 'super'.")
+            val method = consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+            return Expr.Super(keyword, method)
+        }
 
         if (match(TokenType.THIS)) return  Expr.This(previous())
 
