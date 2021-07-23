@@ -1,3 +1,9 @@
+package backends.treewalk
+
+import Environment
+import frontend.Expr
+import frontend.Token
+
 class MinervaConstructor(
     val fields: Map<Int, Token>, val parameters: List<Token>,
     val body: Expr.Block,

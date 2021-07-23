@@ -1,3 +1,7 @@
+package backends.treewalk
+
+import frontend.Expr
+
 class MinervaClass(
     val name: String,
     val superClass: MinervaClass?,

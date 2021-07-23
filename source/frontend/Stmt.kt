@@ -1,3 +1,5 @@
+package frontend
+
 sealed class Stmt {
     class Class(
         val name: Token,

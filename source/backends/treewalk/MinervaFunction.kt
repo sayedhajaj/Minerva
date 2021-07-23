@@ -1,4 +1,11 @@
-open class MinervaFunction(val name: String, val declaration: Expr.Function, val closure: Environment) : MinervaCallable {
+package backends.treewalk
+
+import Environment
+import frontend.Expr
+import frontend.Stmt
+
+open class MinervaFunction(val name: String, val declaration: Expr.Function, val closure: Environment) :
+    MinervaCallable {
 
 
     override fun arity() = declaration.parameters.size

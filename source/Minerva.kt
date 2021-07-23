@@ -1,4 +1,9 @@
 import Minerva.loadFile
+import backends.jvm.BytecodeGenerator
+import backends.treewalk.Interpreter
+import frontend.Parser
+import frontend.Scanner
+import frontend.Stmt
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths

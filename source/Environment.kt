@@ -1,3 +1,5 @@
+import frontend.Token
+
 class Environment {
     private val values = mutableMapOf<String, Any?>()
 

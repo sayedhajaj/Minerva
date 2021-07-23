@@ -1,5 +1,7 @@
+package frontend
+
 import java.lang.RuntimeException
-import Expr.Binary
+import frontend.Expr.Binary
 import java.util.ArrayList
 
 class Parser(private val tokens: List<Token>) {
@@ -166,7 +168,7 @@ class Parser(private val tokens: List<Token>) {
                 val name = expr.name
                 return Expr.Assign(name, value)
             } else if (expr is Expr.Get)
-                return Expr.Set(expr.obj, expr.name, value)
+                return Expr.Set(expr.obj, expr.name, value, expr.index)
         }
 
         return expr
@@ -296,7 +298,11 @@ class Parser(private val tokens: List<Token>) {
                 expr = finishCall(expr)
             } else if(match(TokenType.DOT)) {
                 val name = consume(TokenType.IDENTIFIER, "Expect property name after '.'")
-                expr = Expr.Get(expr, name)
+                expr = Expr.Get(expr, name, null)
+            } else if (match(TokenType.LEFT_SUB)) {
+                val index = expression()
+                val sub = consume(TokenType.RIGHT_SUB, "Expect closing ']'")
+                expr = Expr.Get(expr, sub, index)
             } else {
                 break
             }
@@ -332,7 +338,7 @@ class Parser(private val tokens: List<Token>) {
             return Expr.Super(keyword, method)
         }
 
-        if (match(TokenType.THIS)) return  Expr.This(previous())
+        if (match(TokenType.THIS)) return Expr.This(previous())
 
         if (match(TokenType.IDENTIFIER)) {
             return Expr.Variable(previous())
@@ -342,6 +348,17 @@ class Parser(private val tokens: List<Token>) {
             val expr = expression()
             consume(TokenType.RIGHT_PAREN, "Expect ')' after expression. ")
             return Expr.Grouping(expr)
+        }
+
+        if (match(TokenType.LEFT_SUB)) {
+            val values = mutableListOf<Expr>()
+            if (!check(TokenType.RIGHT_SUB)) {
+                do {
+                    values.add(expression())
+                } while (match(TokenType.COMMA))
+            }
+            consume(TokenType.RIGHT_SUB, "Expect closing ']'")
+            return Expr.Array(values)
         }
 
 

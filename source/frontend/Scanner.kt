@@ -1,3 +1,5 @@
+package frontend
+
 import java.util.ArrayList
 import java.util.HashMap
 
@@ -44,6 +46,8 @@ class Scanner(private val source: String) {
             ')' -> addToken(TokenType.RIGHT_PAREN)
             '{' -> addToken(TokenType.LEFT_BRACE)
             '}' -> addToken(TokenType.RIGHT_BRACE)
+            '[' -> addToken(TokenType.LEFT_SUB)
+            ']' -> addToken(TokenType.RIGHT_SUB)
             '+' -> addToken(TokenType.PLUS)
             '-' -> addToken(TokenType.MINUS)
             '*' -> addToken(TokenType.STAR)

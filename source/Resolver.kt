@@ -1,3 +1,6 @@
+import frontend.Expr
+import frontend.Stmt
+import frontend.Token
 import java.util.*
 
 class Resolver {
@@ -89,7 +92,7 @@ class Resolver {
     }
 
     private fun resolveFunctionBody(functionBody: Expr.Function) {
-//        if (functionBody.body !is Expr.Block) {
+//        if (functionBody.body !is frontend.Expr.Block) {
             beginScope()
 //        }
         functionBody.parameters.forEach {
@@ -101,7 +104,7 @@ class Resolver {
         } else {
             resolve(functionBody.body)
         }
-//        if (functionBody.body !is Expr.Block) {
+//        if (functionBody.body !is frontend.Expr.Block) {
             endScope()
 //        }
     }
@@ -148,13 +151,24 @@ class Resolver {
                 }
                 resolveLocal(expr, expr.name)
             }
-            is Expr.Get -> resolve(expr.obj)
+            is Expr.Get -> {
+                resolve(expr.obj)
+                if (expr.index != null) {
+                    resolve(expr.index)
+                }
+            }
             is Expr.Set -> {
                 resolve(expr.value)
                 resolve(expr.obj)
+                if (expr.index != null) {
+                    resolve(expr.index)
+                }
             }
             is Expr.This -> resolveLocal(expr, expr.keyword)
             is Expr.Super -> resolveLocal(expr, expr.keyword)
+            is Expr.Array -> {
+                expr.values.forEach { resolve(it) }
+            }
         }
     }
 

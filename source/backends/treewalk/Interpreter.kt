@@ -1,7 +1,32 @@
+package backends.treewalk
+
+import Environment
+import com.intellij.util.containers.toArray
+import frontend.Expr
+import frontend.Stmt
+import frontend.Token
+import frontend.TokenType
+
 class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>) {
 
     val globals = Environment()
     var environment = globals
+
+    init {
+        globals.define("Array", object: MinervaCallable {
+            override fun arity(): Int = 2
+
+            override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                val size = arguments[0] as Double
+                val initialiser = arguments[1] as MinervaCallable
+                val arr = Array(size.toInt()) {
+                        index -> initialiser.call(this@Interpreter, listOf(index.toDouble()))
+
+                }
+                return MinervaArray(arr)
+            }
+        })
+    }
 
     fun interpet() {
         statements.forEach {
@@ -37,7 +62,8 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
                     stmt.constructor.constructorBody, environment
                 )
 
-                val klass = MinervaClass(stmt.name.lexeme, superClass, stmt.constructor.superArgs, constructor, methods, fields)
+                val klass =
+                    MinervaClass(stmt.name.lexeme, superClass, stmt.constructor.superArgs, constructor, methods, fields)
 
                 if (superClass != null) {
                     environment = environment.enclosing!!
@@ -63,7 +89,8 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
                 environment.define(stmt.name.lexeme, MinervaFunction(
                     stmt.name.lexeme,
                     stmt.functionBody,
-                    environment)
+                    environment
+                )
                 )
             }
             is Stmt.Expression -> {
@@ -98,12 +125,17 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
         is Expr.Function -> MinervaFunction("", expr, environment)
         is Expr.Get -> {
             val obj = evaluate(expr.obj)
-            if (obj is MinervaInstance)  obj.get(expr.name)
+            if (obj is MinervaArray && expr.index != null) {
+                val index = evaluate(expr.index) as Double
+                obj.get(index.toInt())
+            } else if (obj is MinervaInstance)  obj.get(expr.name)
             else null
         }
         is Expr.Set -> {
             val obj = evaluate(expr.obj)
-            if (obj is MinervaInstance) {
+            if (obj is MinervaArray && expr.index != null) {
+              obj.set((evaluate(expr.index) as Double).toInt(), evaluate(expr.value))
+            } else if (obj is MinervaInstance) {
                 val value = evaluate(expr.value)
                 obj.set(expr.name, value)
                 value
@@ -116,6 +148,10 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
             val obj = environment.getAt(distance -1, "this") as MinervaInstance
             val method = superclass.findMethod(expr.method.lexeme)
             method?.bind(obj)
+        }
+        is Expr.Array -> {
+            val values = expr.values.map { evaluate(it) }
+            MinervaArray(values.toTypedArray())
         }
     }
 

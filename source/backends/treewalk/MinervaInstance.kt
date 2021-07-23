@@ -1,13 +1,18 @@
-class MinervaInstance(val klass: MinervaClass) {
+package backends.treewalk
+
+import frontend.Token
+
+open class MinervaInstance(val klass: MinervaClass?) {
 
     val fields = mutableMapOf<String, Any?>()
 
     override fun toString(): String {
-        return "${klass.name} instance"
+        return "${klass?.name} instance"
     }
 
     init {
-        setUpFields(klass)
+        if (klass != null)
+            setUpFields(klass)
     }
 
     fun setUpFields(currentClass: MinervaClass) {
@@ -19,10 +24,10 @@ class MinervaInstance(val klass: MinervaClass) {
         }
     }
 
-    fun get(name: Token): Any? {
+    open fun get(name: Token): Any? {
         if (fields.containsKey(name.lexeme)) return fields[name.lexeme]
 
-        val method = klass.findMethod(name.lexeme)
+        val method = klass?.findMethod(name.lexeme)
         if (method != null) return method.bind(this)
 
 

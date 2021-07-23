@@ -1,7 +1,10 @@
+package backends.jvm
+
+import frontend.Expr
 import java.lang.Void
-import Expr.Binary
+import frontend.Expr.Binary
+import frontend.Stmt
 import java.nio.ByteBuffer
-import java.util.ArrayList
 
 class BytecodeGenerator(private val syntaxTree: List<Stmt>) {
     var bytecode: MutableList<Byte>? = null
@@ -51,7 +54,7 @@ class BytecodeGenerator(private val syntaxTree: List<Stmt>) {
         return null
     }
 
-//    fun visitBlockStmt(stmt: Stmt.Block?): Void? {
+//    fun visitBlockStmt(stmt: frontend.Stmt.Block?): Void? {
 //        return null
 //    }
 

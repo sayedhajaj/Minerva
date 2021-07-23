@@ -1,3 +1,7 @@
+package backends.treewalk
+
+import backends.treewalk.Interpreter
+
 interface MinervaCallable {
 
     fun arity(): Int
