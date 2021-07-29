@@ -28,6 +28,11 @@ class Scanner(private val source: String) {
             keywords["this"] = TokenType.THIS
             keywords["extends"] = TokenType.EXTENDS
             keywords["super"] = TokenType.SUPER
+            keywords["null"] = TokenType.NULL
+            keywords["String"] = TokenType.STRING
+            keywords["Int"] = TokenType.INTEGER
+            keywords["Decimal"] = TokenType.DECIMAL
+            keywords["Boolean"] = TokenType.BOOLEAN
         }
     }
 
@@ -61,8 +66,10 @@ class Scanner(private val source: String) {
             '>' -> addToken(if (match('=')) TokenType.GREATER_EQUAL else TokenType.GREATER)
             '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
             ';' -> addToken(TokenType.SEMICOLON)
+            ':' -> addToken(TokenType.COLON)
             ',' -> addToken(TokenType.COMMA)
             '.' -> addToken(TokenType.DOT)
+            '|' -> addToken(TokenType.UNION)
             '/' -> {
                 if (match('/')) {
                     while (peek() != '\n' && !isAtEnd) advance()
@@ -111,10 +118,16 @@ class Scanner(private val source: String) {
 
     fun number() {
         while (isDigit(peek())) advance()
+        var isDecimal = false
         if (match('.')) {
+            isDecimal = true
             while (isDigit(peek())) advance()
         }
-        addToken(TokenType.NUMBER, source.substring(start, current).toDouble())
+        if (isDecimal) {
+            addToken(TokenType.DECIMAL, source.substring(start, current).toDouble())
+        } else {
+            addToken(TokenType.INTEGER, source.substring(start, current).toInt())
+        }
     }
 
     fun string() {

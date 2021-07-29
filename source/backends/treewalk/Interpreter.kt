@@ -17,10 +17,10 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
             override fun arity(): Int = 2
 
             override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                val size = arguments[0] as Double
+                val size = arguments[0] as Int
                 val initialiser = arguments[1] as MinervaCallable
-                val arr = Array(size.toInt()) {
-                        index -> initialiser.call(this@Interpreter, listOf(index.toDouble()))
+                val arr = Array(size) {
+                        index -> initialiser.call(this@Interpreter, listOf(index))
 
                 }
                 return MinervaArray(arr)
@@ -53,12 +53,12 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
                     it.name.lexeme to MinervaFunction(it.name.lexeme, it.functionBody, environment)
                 }
 
-                val fields = stmt.fields.entries.associate {
-                    it.key.lexeme to evaluate(it.value)
+                val fields = stmt.fields.associate {
+                    it.name.lexeme to evaluate(it.initializer)
                 }
 
                 val constructor = MinervaConstructor(
-                    stmt.constructor.fields, stmt.constructor.parameters,
+                    stmt.constructor.fields, stmt.constructor.parameters.map { it.first },
                     stmt.constructor.constructorBody, environment
                 )
 
@@ -126,15 +126,15 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
         is Expr.Get -> {
             val obj = evaluate(expr.obj)
             if (obj is MinervaArray && expr.index != null) {
-                val index = evaluate(expr.index) as Double
-                obj.get(index.toInt())
+                val index = evaluate(expr.index) as Int
+                obj.get(index)
             } else if (obj is MinervaInstance)  obj.get(expr.name)
             else null
         }
         is Expr.Set -> {
             val obj = evaluate(expr.obj)
             if (obj is MinervaArray && expr.index != null) {
-              obj.set((evaluate(expr.index) as Double).toInt(), evaluate(expr.value))
+              obj.set((evaluate(expr.index) as Int), evaluate(expr.value))
             } else if (obj is MinervaInstance) {
                 val value = evaluate(expr.value)
                 obj.set(expr.name, value)
@@ -194,24 +194,55 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
         }
     }
 
-    fun evaluateBinary(expr: Expr.Binary): Any?  {
+    fun evaluateBinary(expr: Expr.Binary): Any? {
         val left = evaluate(expr.left)
         val right = evaluate(expr.right)
 
-        return when (expr.operator.type) {
-            TokenType.PLUS ->
-                (left as Double) + (right as Double)
+        return when (expr.left.type) {
+            is Type.StringType -> {
+                when (expr.operator.type) {
+                    TokenType.PLUS -> (left as String) + (right as String)
+                    TokenType.EQUAL_EQUAL -> left == right
+                    TokenType.BANG_EQUAL -> left != right
+                    else -> null
+                }
+            }
+            is Type.IntegerType -> {
+                when (expr.operator.type) {
+                    TokenType.PLUS -> (left as Int) + (right as Int)
+                    TokenType.MINUS -> (left as Int) - (right as Int)
+                    TokenType.SLASH -> (left as Int) / (right as Int)
+                    TokenType.STAR -> (left as Int) * (right as Int)
 
-            TokenType.MINUS -> (left as Double) - (right as Double)
-            TokenType.SLASH -> (left as Double) / (right as Double)
-            TokenType.STAR -> (left as Double) * (right as Double)
+                    TokenType.GREATER -> (left as Int) > (right as Int)
+                    TokenType.GREATER_EQUAL -> (left as Int) >= (right as Int)
+                    TokenType.LESS -> (left as Int) < (right as Int)
+                    TokenType.LESS_EQUAL -> (left as Int) <= (right as Int)
+                    TokenType.EQUAL_EQUAL -> left == right
+                    TokenType.BANG_EQUAL -> left != right
 
-            TokenType.GREATER -> (left as Double) > (right as Double)
-            TokenType.GREATER_EQUAL -> (left as Double) >= (right as Double)
-            TokenType.LESS -> (left as Double) < (right as Double)
-            TokenType.LESS_EQUAL -> (left as Double) <= (right as Double)
-            TokenType.EQUAL_EQUAL -> left == right
-            TokenType.BANG_EQUAL -> left != right
+                    else -> null
+                }
+            }
+
+            is Type.DoubleType -> {
+                when (expr.operator.type) {
+                    TokenType.PLUS -> (left as Double) + (right as Double)
+
+                    TokenType.MINUS -> (left as Double) - (right as Double)
+                    TokenType.SLASH -> (left as Double) / (right as Double)
+                    TokenType.STAR -> (left as Double) * (right as Double)
+
+                    TokenType.GREATER -> (left as Double) > (right as Double)
+                    TokenType.GREATER_EQUAL -> (left as Double) >= (right as Double)
+                    TokenType.LESS -> (left as Double) < (right as Double)
+                    TokenType.LESS_EQUAL -> (left as Double) <= (right as Double)
+                    TokenType.EQUAL_EQUAL -> left == right
+                    TokenType.BANG_EQUAL -> left != right
+
+                    else -> null
+                }
+            }
 
             else -> null
         }

@@ -38,8 +38,15 @@ object Minerva {
     fun interpret(syntaxTree: List<Stmt>) {
         val resolver = Resolver()
         resolver.resolve(syntaxTree)
-        val interpreter = Interpreter(syntaxTree, resolver.locals)
-        interpreter.interpet()
+        val typeChecker = TypeChecker(resolver.locals)
+        typeChecker.typeCheck(syntaxTree)
+        typeChecker.typeErrors.forEach {
+            println(it)
+        }
+        if (typeChecker.typeErrors.isEmpty()) {
+            val interpreter = Interpreter(syntaxTree, resolver.locals)
+            interpreter.interpet()
+        }
     }
 }
 

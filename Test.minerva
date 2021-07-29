@@ -1,53 +1,20 @@
+class Parent(var name: String) {
+    function getGreeting() => {
+        this.name + " please";
+    };
+};
+
+class Child extends Parent("Jack") {
+    var age = 2;
+    function test() => super.getNum() + 2;
+};
+
+function createParent(name: String) => Parent(name);
+
+var jack: Child = Child();
+print jack.getGreeting() + "!";
+
 var arr = [1, 2, 3];
-
-function sumList(arr) => {
-    var total = 0;
-    var index = 0;
-    while (index < arr.length) {
-        total = total + arr[index];
-        index = index + 1;
-    };
-    total;
-};
-
-function reduce(list, reducer, initialValue) => {
-    var result = initialValue;
-    var index = 0;
-    while (index < list.length) {
-        var current = list[index];
-        result = reducer(result, current);
-        index = index + 1;
-    };
-    result;
-};
-
-function addReducer(acc, item) => acc * item;
-
-//print reduce(arr, addReducer, 1);
-print arr.reduce(addReducer, 1);
-
-function printList(list) => {
-    print "[";
-    var index = 0;
-    while (index < list.length) {
-        print list[index];
-        index = index + 1;
-    };
-    print "]";
-};
-
-function double(number) => number * 2;
-
-//printList ([2, 34, 13, 31, 3].map(double));
-
-print [1, 2, 3, 4].reduce(function (a, b) => a*b, 1);
-
-var nums = Array(4, function(index) => index);
-printList(nums);
-
-function range(min, max) => {
-    var size = max - min;
-    Array(size, function(index) => index + min);
-}
-
-printList(range(2, 7));
+//print arr[0] + 1;
+arr[0] = 2;
+jack.age = 5;

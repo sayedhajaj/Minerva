@@ -1,5 +1,6 @@
 package frontend
 
+import Type
 import java.lang.RuntimeException
 import frontend.Expr.Binary
 import java.util.ArrayList
@@ -25,6 +26,11 @@ class Parser(private val tokens: List<Token>) {
 
     private fun varDeclaration(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
+        var type: Type = Type.InferrableType()
+
+        if (match(TokenType.COLON)) {
+            type = typeExpression()
+        }
 
         consume(TokenType.EQUAL, "Expect initialiser")
 
@@ -32,7 +38,7 @@ class Parser(private val tokens: List<Token>) {
 
         consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
 
-        return Stmt.Var(name, initialiser)
+        return Stmt.Var(name, initialiser, type)
     }
 
     private fun whileStatement(): Stmt {
@@ -47,7 +53,7 @@ class Parser(private val tokens: List<Token>) {
         val name = consume(TokenType.IDENTIFIER, "Expect class name.")
 
 
-        var constructorParams = emptyList<Token>()
+        var constructorParams = emptyList<Pair<Token, Type>>()
         var constructorFields = emptyMap<Int, Token>()
         var constructorBody: Expr.Block = Expr.Block(emptyList())
 
@@ -80,15 +86,12 @@ class Parser(private val tokens: List<Token>) {
         consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
         val methods = mutableListOf<Stmt.Function>()
-        val fields = mutableMapOf<Token, Expr>()
+        val fields = mutableListOf<Stmt.Var>()
 
         while (!isAtEnd && !check(TokenType.RIGHT_BRACE)) {
             if (match(TokenType.VAR)) {
                 // add field
-                val name = consume(TokenType.IDENTIFIER, "Expect field name")
-                consume(TokenType.EQUAL, "Expect value in field")
-                val value = expression()
-                fields[name] = value
+                fields.add(varDeclaration() as Stmt.Var)
             } else if (match(TokenType.FUNCTION)) {
                 methods.add(function())
             } else if (match(TokenType.CONSTRUCTOR)) {
@@ -155,6 +158,59 @@ class Parser(private val tokens: List<Token>) {
 
     private fun expression(): Expr {
         return assignment()
+    }
+
+    private fun typeExpression(): Type {
+        val types: MutableList<Type> = mutableListOf()
+        do {
+            if (match(
+                    TokenType.IDENTIFIER, TokenType.STRING,
+                    TokenType.BOOLEAN, TokenType.ANY,
+                    TokenType.INTEGER, TokenType.DECIMAL,
+                    TokenType.NULL
+                )) {
+                val identifier = previous()
+                var type = when (identifier.type) {
+                    TokenType.IDENTIFIER -> Type.InstanceType(Expr.Variable(identifier), emptyList(), emptyMap(), null)
+                    TokenType.BOOLEAN -> Type.BooleanType()
+                    TokenType.STRING -> Type.StringType()
+                    TokenType.INTEGER -> Type.IntegerType()
+                    TokenType.ANY -> Type.AnyType()
+                    else -> Type.NullType()
+                }
+                if (match(TokenType.LEFT_SUB)) {
+                    consume(TokenType.RIGHT_SUB, "Expect closing ']'")
+                    type = Type.ArrayType(type)
+                }
+
+                types.add(type)
+            }
+            if (match(TokenType.LEFT_PAREN)) {
+                val paramTypes = mutableListOf<Type>()
+                do {
+                    paramTypes.add(typeExpression())
+                } while (match(TokenType.COMMA))
+                consume(TokenType.RIGHT_PAREN, "Expect closing ')'")
+                var returnType: Type = Type.AnyType()
+                if (match(TokenType.COLON)) {
+                    returnType = typeExpression()
+                }
+                var type: Type = Type.FunctionType(paramTypes, returnType)
+
+                if (match(TokenType.LEFT_SUB)) {
+                    consume(TokenType.RIGHT_SUB, "Expect closing ']'")
+                    type = Type.ArrayType(type)
+                }
+                types.add(type)
+            }
+
+        } while (match(TokenType.UNION))
+        return when (types.size) {
+            0 -> Type.AnyType()
+            1 -> types[0]
+            else -> Type.UnionType(types)
+        }
+
     }
 
     private fun assignment(): Expr {
@@ -251,10 +307,10 @@ class Parser(private val tokens: List<Token>) {
         return call()
     }
 
-    private fun constructorParameters(): Pair<MutableList<Token>, MutableMap<Int, Token>> {
+    private fun constructorParameters(): Pair<MutableList<Pair<Token, Type>>, MutableMap<Int, Token>> {
         match(TokenType.LEFT_PAREN)
         var isField = false
-        val parameters = mutableListOf<Token>()
+        val parameters = mutableListOf<Pair<Token, Type>>()
         val fields = mutableMapOf<Int, Token>()
 
         var index = 0
@@ -265,7 +321,10 @@ class Parser(private val tokens: List<Token>) {
                     advance()
                     isField = true
                 }
-                parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name"))
+                val identifier = consume(TokenType.IDENTIFIER, "Expect parameter name")
+                var type: Type = Type.AnyType()
+                if (match(TokenType.COLON)) type = typeExpression()
+                parameters.add(Pair(identifier, type))
                 if (isField) fields[index] = previous()
                 isField = false
                 index++
@@ -278,16 +337,29 @@ class Parser(private val tokens: List<Token>) {
     private fun lambdaExpression(): Expr.Function {
         consume(TokenType.LEFT_PAREN, "Expect ')' after function name.")
         val parameters = mutableListOf<Token>()
+        var parameterTypes = mutableListOf<Type>()
+
         if (!check(TokenType.RIGHT_PAREN)) {
             do {
+                var parameterType: Type = Type.AnyType()
                 parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name"))
+                if (match(TokenType.COLON)) parameterType = typeExpression()
+                parameterTypes.add(parameterType)
             } while (match(TokenType.COMMA))
         }
         consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters")
+
+        var returnType: Type = Type.InferrableType()
+        if (match(TokenType.COLON)) {
+            returnType = typeExpression()
+        }
+
         consume(TokenType.ARROW, "Expect '=> before function body")
 
         val body = expression()
-        return Expr.Function(parameters, body)
+        var result = Expr.Function(parameters, body)
+        result.type = Type.FunctionType(parameterTypes, returnType)
+        return result
     }
 
     private fun call(): Expr {
@@ -329,7 +401,8 @@ class Parser(private val tokens: List<Token>) {
     private fun primary(): Expr {
         if (match(TokenType.TRUE)) return Expr.Literal(true)
         if (match(TokenType.FALSE)) return Expr.Literal(false)
-        if (match(TokenType.NUMBER, TokenType.STRING)) return Expr.Literal(previous().literal)
+        if (match(TokenType.DECIMAL, TokenType.INTEGER, TokenType.STRING)) return Expr.Literal(previous().literal)
+        if (match(TokenType.NULL)) return Expr.Literal(null)
 
         if (match(TokenType.SUPER)) {
             val keyword = previous()

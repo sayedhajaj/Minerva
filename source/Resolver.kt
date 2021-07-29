@@ -33,9 +33,9 @@ class Resolver {
 
 
                 stmt.fields.forEach {
-                    declare(it.key)
-                    define(it.key)
-                    resolve(it.value)
+                    declare(it.name)
+                    define(it.name)
+                    resolve(it.initializer)
                 }
 
                 stmt.methods.forEach {
@@ -74,8 +74,8 @@ class Resolver {
             is Stmt.Constructor -> {
                 beginScope()
                 stmt.parameters.forEach {
-                    declare(it)
-                    define(it)
+                    declare(it.first)
+                    define(it.first)
                 }
 
                 stmt.fields.values.forEach {

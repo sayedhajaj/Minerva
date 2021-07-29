@@ -46,8 +46,8 @@ class MinervaArray(val elements: Array<Any?>) : MinervaInstance(null) {
                 override fun arity() = 1
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val index = arguments[0] as Double
-                    return elements[index.toInt()]
+                    val index = arguments[0] as Int
+                    return elements[index]
                 }
 
 
@@ -56,13 +56,13 @@ class MinervaArray(val elements: Array<Any?>) : MinervaInstance(null) {
                 override fun arity(): Int = 2
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val index = arguments[0] as Double
+                    val index = arguments[0] as Int
                     val value = arguments[1]
-                    elements[index.toInt()] = value
+                    elements[index] = value
                     return value
                 }
             }
-            "length" -> elements.size.toDouble()
+            "length" -> elements.size
             else -> null
         }
     }
