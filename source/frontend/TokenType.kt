@@ -14,7 +14,7 @@ enum class TokenType {
     VAR, WHILE, ARROW, FUNCTION,
     THIS, EXTENDS, SUPER,
     NULL, BOOLEAN, ANY,
-    UNION,
+    UNION, TYPEMATCH,
 
     EOF,
 }

@@ -25,10 +25,10 @@ sealed interface Type {
 
     class ArrayType(val type: Type): Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
-            if (otherType is ArrayType) {
-                return type.canAssignTo(otherType.type, typeChecker)
+            return if (otherType is ArrayType) {
+                type.canAssignTo(otherType.type, typeChecker)
             } else {
-                return false
+                false
             }
         }
     }

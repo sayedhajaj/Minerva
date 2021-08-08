@@ -44,7 +44,7 @@ object Minerva {
             println(it)
         }
         if (typeChecker.typeErrors.isEmpty()) {
-            val interpreter = Interpreter(syntaxTree, resolver.locals)
+            val interpreter = Interpreter(syntaxTree, resolver.locals, typeChecker)
             interpreter.interpet()
         }
     }

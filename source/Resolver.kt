@@ -169,6 +169,18 @@ class Resolver {
             is Expr.Array -> {
                 expr.values.forEach { resolve(it) }
             }
+            is Expr.TypeMatch -> {
+                resolve(expr.variable)
+                expr.conditions.forEach {
+                    beginScope()
+                    declare(expr.variable.name)
+                    define(expr.variable.name)
+                    resolve(it.second)
+                }
+                if (expr.elseBranch != null) {
+                    resolve(expr.elseBranch)
+                }
+            }
         }
     }
 

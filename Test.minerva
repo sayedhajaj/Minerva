@@ -9,12 +9,18 @@ class Child extends Parent("Jack") {
     function test() => super.getNum() + 2;
 };
 
-function createParent(name: String) => Parent(name);
 
-var jack: Child = Child();
-print jack.getGreeting() + "!";
+function foo(lambda: (Int)=>Int, param: Int) => lambda(param);
 
-var arr = [1, 2, 3];
-//print arr[0] + 1;
-arr[0] = 2;
-jack.age = 5;
+print foo(function(num: Int) => num*2, 5);
+
+var blah: String | Parent | Int[] = "hmm";
+
+print typematch(blah) {
+    Int => blah * 2;
+    String => blah;
+    Parent => blah.name;
+    Int[] => blah[0];
+    (Int)=>Boolean => blah(2);
+};
+

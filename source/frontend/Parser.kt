@@ -144,6 +144,37 @@ class Parser(private val tokens: List<Token>) {
         return Expr.If(condition, thenBranch, elseBranch)
     }
 
+    private fun typeMatchExpr(): Expr {
+        consume(TokenType.LEFT_PAREN, "Expect  '(' after 'typematch'.")
+        val variable = Expr.Variable(consume(TokenType.IDENTIFIER, "Expect variable"))
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after typematch identifier.")
+
+        consume(TokenType.LEFT_BRACE, "Expect '{' after typematch")
+
+        val branches = mutableListOf<Pair<Type, Expr>>()
+
+        var elseBranch: Expr? = null
+
+        while (!match(TokenType.RIGHT_BRACE)) {
+            if (match(TokenType.ELSE)) {
+                consume(TokenType.ARROW, "Expect arrow after else")
+                elseBranch = expression()
+                consume(TokenType.SEMICOLON, "Expect ';'")
+            }
+            else branches.add(typeMatchCondition())
+        }
+
+        return Expr.TypeMatch(variable, branches, elseBranch)
+    }
+
+    private fun typeMatchCondition(): Pair<Type, Expr> {
+        val type = typeExpression()
+        consume(TokenType.ARROW, "Expect arrow after type name")
+        val thenBranch = expression()
+        consume(TokenType.SEMICOLON, "Expect ';'")
+        return Pair(type, thenBranch)
+    }
+
     private fun printStatement(): Stmt {
         val value = expression()
         consume(TokenType.SEMICOLON, "Expect ';' after value.")
@@ -176,6 +207,7 @@ class Parser(private val tokens: List<Token>) {
                     TokenType.STRING -> Type.StringType()
                     TokenType.INTEGER -> Type.IntegerType()
                     TokenType.ANY -> Type.AnyType()
+                    TokenType.NULL -> Type.NullType()
                     else -> Type.NullType()
                 }
                 if (match(TokenType.LEFT_SUB)) {
@@ -192,7 +224,7 @@ class Parser(private val tokens: List<Token>) {
                 } while (match(TokenType.COMMA))
                 consume(TokenType.RIGHT_PAREN, "Expect closing ')'")
                 var returnType: Type = Type.AnyType()
-                if (match(TokenType.COLON)) {
+                if (match(TokenType.ARROW)) {
                     returnType = typeExpression()
                 }
                 var type: Type = Type.FunctionType(paramTypes, returnType)
@@ -438,6 +470,8 @@ class Parser(private val tokens: List<Token>) {
         if (match(TokenType.LEFT_BRACE)) return Expr.Block(block())
 
         if (match(TokenType.IF)) return ifExpr()
+
+        if (match(TokenType.TYPEMATCH)) return typeMatchExpr()
 
         if (match(TokenType.FUNCTION)) return lambdaExpression()
 

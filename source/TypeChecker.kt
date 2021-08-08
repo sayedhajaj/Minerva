@@ -162,25 +162,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
             is Expr.Array -> {
                 val elementTypes = expr.values.map { typeCheck(it) }
-                val instanceTypes = elementTypes.filterIsInstance<Type.InstanceType>()
-                val nonInstanceTypes = elementTypes.filter { it !is Type.InstanceType }.distinctBy {it::class}
-
-
-                var constrainedInstances = mutableListOf<Type.InstanceType>()
-                var i = 0
-                while (i < instanceTypes.size-1) {
-                    var j = i + 1
-                    while (j < instanceTypes.size) {
-                        var left = instanceTypes[i]
-                        var right = instanceTypes[j]
-                        if (left.canAssignTo(right, this)) constrainedInstances.add(left)
-                        if (right.canAssignTo(left, this)) constrainedInstances.add(right)
-                        j++
-                    }
-                    i++
-                }
-                val resultTypes = nonInstanceTypes + constrainedInstances
-                val type = if (resultTypes.size == 1) resultTypes[0] else Type.UnionType(resultTypes)
+                val type = flattenTypes(elementTypes)
                 val thisType = Type.ArrayType(type)
                 expr.type = thisType
                 return thisType
@@ -359,7 +341,75 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 expr.type = type
                 type
             }
+            is Expr.TypeMatch -> {
+                typeCheck(expr.variable)
+                if (expr.variable.type !is Type.AnyType && expr.variable.type !is Type.UnionType) {
+                    typeErrors.add("Can only type match any and union types")
+                }
+                val types = mutableListOf<Type>()
+                expr.conditions.forEach {
+
+                    val block: Expr.Block = if (it.second is Expr.Block)
+                        it.second as Expr.Block
+                    else
+                        Expr.Block(listOf(Stmt.Expression(it.second)))
+
+                    val closure = Environment(environment)
+                    closure.define(expr.variable.name.lexeme, it.first)
+
+                    val returnType = getBlockType(block.statements, closure)
+                    types.add(returnType)
+
+                }
+                if (expr.elseBranch != null) {
+                    typeCheck(expr.elseBranch)
+                    types.add(expr.elseBranch.type)
+                }
+
+                var hasElse = expr.elseBranch != null
+                if (!isExhuastive(expr.variable.type, expr.conditions.map { it.first }, hasElse)) {
+                    typeErrors.add("Typematch is not exhuastive")
+                }
+                expr.type = flattenTypes(types)
+                expr.type
+            }
+
         }
+    }
+
+    private fun isExhuastive(type: Type, branches: List<Type>, hasElse: Boolean): Boolean {
+        if (hasElse) return true
+        else {
+            if (type is Type.AnyType) return false
+            return if (type is Type.UnionType) {
+                type.types.all {type -> branches.any {branch -> type.canAssignTo(branch, this) } }
+            } else {
+                false
+            }
+        }
+    }
+
+    fun flattenTypes(elementTypes: List<Type>): Type {
+        val instanceTypes = elementTypes.filterIsInstance<Type.InstanceType>()
+        val nonInstanceTypes = elementTypes.filter { it !is Type.InstanceType }.distinctBy { it::class }
+
+
+        var constrainedInstances = mutableListOf<Type.InstanceType>()
+        var i = 0
+        while (i < instanceTypes.size - 1) {
+            var j = i + 1
+            while (j < instanceTypes.size) {
+                var left = instanceTypes[i]
+                var right = instanceTypes[j]
+                if (left.canAssignTo(right, this)) constrainedInstances.add(left)
+                if (right.canAssignTo(left, this)) constrainedInstances.add(right)
+                j++
+            }
+            i++
+        }
+        val resultTypes = nonInstanceTypes + constrainedInstances
+        val type = if (resultTypes.size == 1) resultTypes[0] else Type.UnionType(resultTypes)
+        return type
     }
 
     fun lookUpVariableType(name: Token, expr: Expr): Type {

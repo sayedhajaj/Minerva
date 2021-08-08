@@ -1,13 +1,15 @@
 package backends.treewalk
 
 import Environment
+import Type
+import TypeChecker
 import com.intellij.util.containers.toArray
 import frontend.Expr
 import frontend.Stmt
 import frontend.Token
 import frontend.TokenType
 
-class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>) {
+class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>, val typeChecker: TypeChecker) {
 
     val globals = Environment()
     var environment = globals
@@ -153,6 +155,43 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>)
             val values = expr.values.map { evaluate(it) }
             MinervaArray(values.toTypedArray())
         }
+        is Expr.TypeMatch -> {
+            val value = lookUpVariable(expr.variable.name, expr.variable)
+            val valueType = getValueType(value)
+            val matching = expr.conditions.filter {
+                it.first.canAssignTo(valueType, typeChecker)
+            }
+
+            var result: Any? = null
+
+            if (matching.isNotEmpty()) {
+                result = evaluate(matching[0].second)
+            } else {
+                if (expr.elseBranch != null) result = evaluate(expr.elseBranch)
+            }
+
+            result
+        }
+    }
+
+    private fun getValueType(value: Any?): Type = when (value) {
+        is Int -> Type.IntegerType()
+        is Double -> Type.DoubleType()
+        is Boolean -> Type.BooleanType()
+        is String -> Type.StringType()
+        null -> Type.NullType()
+        is MinervaArray -> {
+            val elementTypes = value.elements.map { getValueType(it) }
+            Type.ArrayType(typeChecker.flattenTypes(elementTypes))
+        }
+        is MinervaInstance -> {
+            var className = Expr.Variable(Token(TokenType.IDENTIFIER, value.klass?.name ?: "null", null, -10))
+            typeChecker.lookUpVariableType(className.name, className)
+        }
+        is MinervaFunction -> {
+            value.declaration.type
+        }
+        else -> Type.NullType()
     }
 
     fun evaluateCall(expr: Expr.Call) : Any? {
