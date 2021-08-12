@@ -33,8 +33,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 if (stmt.superclass != null) {
                     val superclass = lookUpVariableType(stmt.superclass.name, stmt.superclass) as Type.InstanceType
 //                    environment = Environment(environment)
+
                     environment.define("super", superclass)
                 }
+
                 environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, members, stmt.superclass))
 
                 stmt.fields.forEach {
@@ -370,6 +372,26 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 if (!isExhuastive(expr.variable.type, expr.conditions.map { it.first }, hasElse)) {
                     typeErrors.add("Typematch is not exhuastive")
                 }
+                expr.type = flattenTypes(types)
+                expr.type
+            }
+
+            is Expr.Match -> {
+                typeCheck(expr.expr)
+                if (expr.expr.type !is Type.IntegerType && expr.expr.type !is Type.DoubleType && expr.expr.type !is Type.StringType) {
+                    typeErrors.add("Can only use integer, double, or string types in match")
+                }
+                val types = mutableListOf<Type>()
+                expr.branches.forEach {
+                    typeCheck(it.first)
+                    if (it.first.type::class != expr.expr.type::class) {
+                        typeErrors.add("Conditions must be same type as match type")
+                    }
+                    typeCheck(it.second)
+                    types.add(it.second.type)
+                }
+                typeCheck(expr.elseBranch)
+                types.add(expr.elseBranch.type)
                 expr.type = flattenTypes(types)
                 expr.type
             }

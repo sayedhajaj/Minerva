@@ -172,6 +172,19 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
 
             result
         }
+        is Expr.Match -> {
+            val value = evaluate(expr.expr)
+            val matching = expr.branches.filter {
+                value == evaluate(it.first)
+            }
+
+            val result = if(matching.isNotEmpty()) {
+                evaluate(matching[0].second)
+            } else {
+                evaluate(expr.elseBranch)
+            }
+            result
+        }
     }
 
     private fun getValueType(value: Any?): Type = when (value) {

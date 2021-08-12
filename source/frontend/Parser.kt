@@ -167,12 +167,49 @@ class Parser(private val tokens: List<Token>) {
         return Expr.TypeMatch(variable, branches, elseBranch)
     }
 
+    private fun matchExpression(): Expr {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'match'.)")
+        val expr = expression()
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after match condition")
+
+        consume(TokenType.LEFT_BRACE, "Expect '{' after match")
+
+        val branches = mutableListOf<Pair<Expr, Expr>>()
+
+        var elseBranch: Expr = Expr.Literal(2)
+        var hasElse = false
+
+        while (!match(TokenType.RIGHT_BRACE)) {
+            if (match(TokenType.ELSE)) {
+                hasElse = true
+                consume(TokenType.ARROW, "Expect arrow after else")
+                elseBranch = expression()
+//                consume(TokenType.SEMICOLON, "Expect ';'")
+            }
+            else branches.add(matchCondition())
+        }
+
+        if (!hasElse) {
+            error(previous(), "Expect else in match")
+        }
+
+        return Expr.Match(expr, branches, elseBranch)
+    }
+
     private fun typeMatchCondition(): Pair<Type, Expr> {
         val type = typeExpression()
         consume(TokenType.ARROW, "Expect arrow after type name")
         val thenBranch = expression()
         consume(TokenType.SEMICOLON, "Expect ';'")
         return Pair(type, thenBranch)
+    }
+
+    private fun matchCondition(): Pair<Expr, Expr> {
+        val condition = expression()
+        consume(TokenType.ARROW, "Expect arrow after type name")
+        val thenBranch = expression()
+//        consume(TokenType.SEMICOLON, "Expect ';'")
+        return Pair(condition, thenBranch)
     }
 
     private fun printStatement(): Stmt {
@@ -472,6 +509,8 @@ class Parser(private val tokens: List<Token>) {
         if (match(TokenType.IF)) return ifExpr()
 
         if (match(TokenType.TYPEMATCH)) return typeMatchExpr()
+
+        if (match(TokenType.MATCH)) return matchExpression()
 
         if (match(TokenType.FUNCTION)) return lambdaExpression()
 

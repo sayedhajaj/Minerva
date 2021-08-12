@@ -24,3 +24,14 @@ print typematch(blah) {
     (Int)=>Boolean => blah(2);
 };
 
+
+
+function fibonacci(num: Int): Int =>
+    match (num) {
+        0 => 1
+        1 => 1
+        else => fibonacci(num-1) + fibonacci(num-2)
+    };
+
+print fibonacci(5);
+

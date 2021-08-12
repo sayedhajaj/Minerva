@@ -181,6 +181,14 @@ class Resolver {
                     resolve(expr.elseBranch)
                 }
             }
+            is Expr.Match -> {
+                resolve(expr.expr)
+                expr.branches.forEach {
+                    resolve(it.first)
+                    resolve(it.second)
+                }
+                resolve(expr.elseBranch)
+            }
         }
     }
 
