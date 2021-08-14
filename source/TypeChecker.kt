@@ -241,7 +241,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 val closure = Environment(environment)
 
                 expr.parameters.forEachIndexed {index, token ->
-                    closure.define(token.lexeme, (expr.type as Type.FunctionType).params[index])
+                    closure.define(token.lexeme, resolveInstanceType((expr.type as Type.FunctionType).params[index]))
                 }
                 val returnType = getBlockType(block.statements, closure)
                 if ((expr.type as Type.FunctionType).result is Type.InferrableType) {

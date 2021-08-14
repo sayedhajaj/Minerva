@@ -29,6 +29,7 @@ class Scanner(private val source: String) {
             keywords["extends"] = TokenType.EXTENDS
             keywords["super"] = TokenType.SUPER
             keywords["null"] = TokenType.NULL
+            keywords["Any"] = TokenType.ANY
             keywords["String"] = TokenType.STRING
             keywords["Int"] = TokenType.INTEGER
             keywords["Decimal"] = TokenType.DECIMAL

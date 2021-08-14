@@ -1,37 +1,50 @@
-class Parent(var name: String) {
-    function getGreeting() => {
-        this.name + " please";
-    };
-};
-
-class Child extends Parent("Jack") {
-    var age = 2;
-    function test() => super.getNum() + 2;
-};
-
-
 function foo(lambda: (Int)=>Int, param: Int) => lambda(param);
 
-print foo(function(num: Int) => num*2, 5);
+//print foo(function(num: Int) => num*2, 5);
 
-var blah: String | Parent | Int[] = "hmm";
 
-print typematch(blah) {
-    Int => blah * 2;
-    String => blah;
-    Parent => blah.name;
-    Int[] => blah[0];
-    (Int)=>Boolean => blah(2);
+class LinkedListNode(var item: Int, var next: LinkedListNode | null) {
 };
 
+class LinkedList {
+    var head: LinkedListNode | null = null;
+    var size = 0;
 
-
-function fibonacci(num: Int): Int =>
-    match (num) {
-        0 => 1
-        1 => 1
-        else => fibonacci(num-1) + fibonacci(num-2)
+    function add(item: Int) => {
+        this.head = LinkedListNode(item, this.head);
+        this.size = this.size + 1;
     };
 
-print fibonacci(5);
+
+    function traverse(current: LinkedListNode, func: (Int)=>Any): null => {
+        var next = current.next;
+        func(current.item);
+
+        typematch(next) {
+            LinkedListNode => this.traverse(next, func);
+            null => null;
+        };
+        null;
+    };
+
+    function iterate(func: (Int)=>Any) => {
+        var ptr = this.head;
+        typematch(ptr) {
+            LinkedListNode =>this.traverse(ptr, func);
+            else =>null;
+        };
+
+
+    };
+};
+
+var lst = LinkedList();
+lst.add(4);
+lst.add(3);
+lst.add(5);
+lst.add(10);
+lst.add(12);
+lst.add(8);
+
+lst.iterate(function (num: Int) => {print num;});
 

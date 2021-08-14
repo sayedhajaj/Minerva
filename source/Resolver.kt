@@ -175,7 +175,14 @@ class Resolver {
                     beginScope()
                     declare(expr.variable.name)
                     define(expr.variable.name)
-                    resolve(it.second)
+                    val body = it.second
+                    if (body is Expr.Block) {
+                        resolve(body.statements)
+                    } else {
+                        resolve(body)
+                    }
+
+                    endScope()
                 }
                 if (expr.elseBranch != null) {
                     resolve(expr.elseBranch)

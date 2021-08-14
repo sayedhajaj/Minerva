@@ -165,7 +165,15 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             var result: Any? = null
 
             if (matching.isNotEmpty()) {
-                result = evaluate(matching[0].second)
+                val branch = matching[0].second
+                val closure = Environment(this.environment)
+                closure.define(expr.variable.name.lexeme, value)
+                val block = if (branch is Expr.Block) {
+                    branch
+                } else {
+                    Expr.Block(listOf(Stmt.Expression(branch)))
+                }
+                result = executeBlock(block.statements, closure)
             } else {
                 if (expr.elseBranch != null) result = evaluate(expr.elseBranch)
             }
