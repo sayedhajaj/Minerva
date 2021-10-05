@@ -153,7 +153,9 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             )
             is Type.InstanceType -> {
                 Type.InstanceType(
-                    type.className, type.params, type.typeParams, type.typeArguments,
+                    type.className,
+                    type.params.map { resolveTypeArgument(args, it) },
+                    type.typeParams, type.typeArguments,
                     type.members.map {
                         Pair(it.key, resolveTypeArgument(args, it.value))
 
@@ -245,7 +247,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     val arguments = expr.arguments
                     val params = calleeType.params.map{resolveInstanceType(it)}
                     val typeParams = calleeType.typeParams
-                    val typeArguments = expr.typeArguments
+                    val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments)
 
                     typeCheckArguments(params, arguments)
 
@@ -268,21 +270,25 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     thisType
                 } else if (calleeType is Type.InstanceType) {
 
-                    val typeArguments = expr.typeArguments
                     val typeParams = calleeType.typeParams
 
-                    typeCheckArguments(calleeType.params, expr.arguments)
-
                     val instanceType = lookUpVariableType(calleeType.className.name, calleeType.className) as Type.InstanceType
+
+                    val params = calleeType.params
+
+                    val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments)
+
+
 
                     val args = typeParams.zip(typeArguments).associate {
                         Pair(it.first.identifier.name.lexeme, it.second)
                     }.toMap()
 
-
                     val modifiedClass = resolveTypeArgument(args, instanceType)
+                    typeCheckArguments((modifiedClass as Type.InstanceType).params, expr.arguments)
 
-                    checkGenericCall(expr.arguments, calleeType.params)
+
+                    checkGenericCall(expr.arguments, (modifiedClass).params)
 
                     expr.type = modifiedClass
                     expr.type
@@ -474,6 +480,37 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 expr.type
             }
 
+        }
+    }
+
+    private fun inferTypeArguments(
+        typeArguments: List<Type>,
+        typeParams: List<Type.UnresolvedType>,
+        params: List<Type>,
+        arguments: List<Expr>
+    ): List<Type> {
+        if (typeArguments.size != typeParams.size) {
+            if (typeArguments.isEmpty()) {
+                val typeArgMap = mutableMapOf<String, Type>()
+                val newTypeArgs = mutableListOf<Type>()
+                params.forEachIndexed { index, it ->
+                    if (it is Type.UnresolvedType) {
+                        if (typeParams.any { param -> it.identifier.name.lexeme == param.identifier.name.lexeme }) {
+                            typeArgMap[it.identifier.name.lexeme] = arguments[index].type
+                        }
+                    }
+                }
+                typeParams.forEach {
+                    if (typeArgMap.containsKey(it.identifier.name.lexeme))
+                        typeArgMap[it.identifier.name.lexeme]?.let { it1 -> newTypeArgs.add(it1) }
+                }
+                return newTypeArgs
+            } else {
+                typeErrors.add("Number of type params and type arguments don't match")
+                return emptyList<Type>()
+            }
+        } else {
+            return typeArguments
         }
     }
 
