@@ -1,50 +1,50 @@
-function foo(lambda: (Int)=>Int, param: Int) => lambda(param);
+class Node<T>(var value: T, var next: Node | null) {}
 
-//print foo(function(num: Int) => num*2, 5);
-
-
-class LinkedListNode(var item: Int, var next: LinkedListNode | null) {
-};
-
-class LinkedList {
-    var head: LinkedListNode | null = null;
+class List<T>() {
+    var head: Node | null = null;
     var size = 0;
 
-    function add(item: Int) => {
-        this.head = LinkedListNode(item, this.head);
-        this.size = this.size + 1;
+
+    function add(value: T) => {
+        this.head = Node<T>(value, this.head);
     };
 
+    function traverse(current: Node, func: (T)=>Any): null => {
+            var next = current.next;
+            func(current.value);
 
-    function traverse(current: LinkedListNode, func: (Int)=>Any): null => {
-        var next = current.next;
-        func(current.item);
-
-        typematch(next) {
-            LinkedListNode => this.traverse(next, func);
-            null => null;
-        };
-        null;
-    };
-
-    function iterate(func: (Int)=>Any) => {
-        var ptr = this.head;
-        typematch(ptr) {
-            LinkedListNode =>this.traverse(ptr, func);
-            else =>null;
+            typematch(next) {
+                Node => this.traverse(next, func);
+                null => null;
+            };
+            null;
         };
 
+    function iterate(func: (T)=>Any) => {
+            var ptr = this.head;
+            typematch(ptr) {
+                Node =>this.traverse(ptr, func);
+                else =>null;
+            };
+        };
 
-    };
 };
 
-var lst = LinkedList();
-lst.add(4);
-lst.add(3);
-lst.add(5);
-lst.add(10);
-lst.add(12);
-lst.add(8);
 
-lst.iterate(function (num: Int) => {print num;});
+var list = List<Int>();
+list.add(4);
+list.add(3);
+list.add(5);
+list.add(10);
+list.add(12);
+list.add(8);
+list.iterate(function (num: Int) => {print num;});
+
+var newList = List<String>();
+newList.add("Hello");
+newList.add("World!");
+list.add(3);
+newList.iterate(function (value: String) => {print value;});
+
+
 

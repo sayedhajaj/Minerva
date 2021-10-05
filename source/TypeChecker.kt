@@ -1,4 +1,3 @@
-import backends.treewalk.MinervaClass
 import frontend.Expr
 import frontend.Stmt
 import frontend.Token
@@ -30,6 +29,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 val members = mutableMapOf<String, Type>()
                 val params = mutableListOf<Type>()
 
+                val typeParameters = stmt.constructor.typeParameters.map { Type.UnresolvedType(Expr.Variable(it)) }
+
+                typeParameters.forEach {
+                    environment.define(it.identifier.name.lexeme, it)
+                }
+
                 if (stmt.superclass != null) {
                     val superclass = lookUpVariableType(stmt.superclass.name, stmt.superclass) as Type.InstanceType
 //                    environment = Environment(environment)
@@ -37,7 +42,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     environment.define("super", superclass)
                 }
 
-                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, members, stmt.superclass))
+                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
 
                 stmt.fields.forEach {
                     typeCheck(it)
@@ -45,7 +50,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 }
 
 
-                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, members, stmt.superclass))
+                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
 
                 stmt.constructor.parameters.forEachIndexed {index, pair ->
                     params.add(pair.second)
@@ -54,7 +59,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     }
                 }
 
-                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, members, stmt.superclass))
+                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
 
                 stmt.methods.forEach {
                     typeCheck(it)
@@ -64,9 +69,9 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
                 typeCheck(stmt.constructor)
 
-                environment.define(stmt.name.lexeme, Type.InstanceType(Expr.Variable(stmt.name), params, members, stmt.superclass))
+                environment.define(stmt.name.lexeme, Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
 
-                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, members, stmt.superclass))
+                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
             }
             is Stmt.Constructor -> {
                 val previous = environment
@@ -121,8 +126,8 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     private fun resolveInstanceType(type: Type): Type {
         return when (type) {
-            is Type.InstanceType -> {
-                lookUpVariableType(type.className.name, type.className)
+            is Type.UnresolvedType -> {
+                lookUpVariableType(type.identifier.name, type.identifier)
             }
             is Type.ArrayType -> {
                 Type.ArrayType(resolveInstanceType(type.type))
@@ -130,6 +135,33 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Type.UnionType -> {
                 Type.UnionType(type.types.map{resolveInstanceType(it)})
             }
+            else -> type
+        }
+    }
+
+    fun resolveTypeArgument(args: Map<String, Type>, type: Type): Type {
+        return when (type) {
+            is Type.UnresolvedType -> {
+                if (args.containsKey(type.identifier.name.lexeme)) args[type.identifier.name.lexeme] ?: type
+                else type
+            }
+            is Type.IntegerType -> type
+            is Type.FunctionType -> Type.FunctionType(
+                type.params.map { resolveTypeArgument(args, it) },
+                type.typeParams,
+                resolveTypeArgument(args, type.result)
+            )
+            is Type.InstanceType -> {
+                Type.InstanceType(
+                    type.className, type.params, type.typeParams, type.typeArguments,
+                    type.members.map {
+                        Pair(it.key, resolveTypeArgument(args, it.value))
+
+                    }.toMap(),
+                    type.superclass
+                )
+            }
+            is Type.ArrayType -> Type.ArrayType(resolveTypeArgument(args, type.type))
             else -> type
         }
     }
@@ -151,8 +183,8 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 }
                 if (expr.obj is Expr.Variable) {
                     val className = (expr.obj).name
-                    val calleeType = lookUpVariableType(className, expr.obj) as Type.InstanceType
-                    val thisType = calleeType.getMemberType(expr.name.lexeme, this)
+                    val calleeType = resolveInstanceType(lookUpVariableType(className, expr.obj)) as Type.InstanceType
+                    val thisType = resolveInstanceType(calleeType.getMemberType(expr.name.lexeme, this))
                     expr.type = thisType
                     thisType
                 } else {
@@ -207,25 +239,52 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Expr.Call -> {
                 val calleeType = typeCheck(expr.callee)
                 expr.arguments.forEach { typeCheck(it) }
+
                 if (calleeType is Type.FunctionType) {
-                    calleeType.params.forEachIndexed{index, param ->
-                        val argType = expr.arguments[index].type
-                        if (!param.canAssignTo(argType, this)) {
-                            typeErrors.add("Expected $param and got $argType")
-                        }
+
+                    val arguments = expr.arguments
+                    val params = calleeType.params.map{resolveInstanceType(it)}
+                    val typeParams = calleeType.typeParams
+                    val typeArguments = expr.typeArguments
+
+                    typeCheckArguments(params, arguments)
+
+                    typeParams.forEachIndexed { index, typeParam ->
+                        environment.define(typeParam.identifier.name.lexeme, typeArguments[index])
                     }
-                    val thisType = calleeType.result
+
+                    val resultType = calleeType.result
+
+                    checkGenericCall(arguments, params)
+
+                    val thisType = if (resultType is Type.UnresolvedType) {
+                     lookUpVariableType(resultType.identifier.name, resultType.identifier)
+
+                    } else {
+                        resultType
+                    }
                     expr.type = thisType
 
                     thisType
                 } else if (calleeType is Type.InstanceType) {
-                    calleeType.params.forEachIndexed{index, param ->
-                        val argType = expr.arguments[index].type
-                        if (!param.canAssignTo(argType, this)) {
-                            typeErrors.add("Expected $param and got $argType")
-                        }
-                    }
-                    expr.type = calleeType
+
+                    val typeArguments = expr.typeArguments
+                    val typeParams = calleeType.typeParams
+
+                    typeCheckArguments(calleeType.params, expr.arguments)
+
+                    val instanceType = lookUpVariableType(calleeType.className.name, calleeType.className) as Type.InstanceType
+
+                    val args = typeParams.zip(typeArguments).associate {
+                        Pair(it.first.identifier.name.lexeme, it.second)
+                    }.toMap()
+
+
+                    val modifiedClass = resolveTypeArgument(args, instanceType)
+
+                    checkGenericCall(expr.arguments, calleeType.params)
+
+                    expr.type = modifiedClass
                     expr.type
                 } else {
 
@@ -238,14 +297,29 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 else
                     Expr.Block(listOf(Stmt.Expression(expr.body)))
 
+                val typeParameters = expr.typeParameters.map {
+                    Type.UnresolvedType(Expr.Variable(it))
+
+                }
+
+                typeParameters.forEach {
+                    environment.define(it.identifier.name.lexeme, it)
+                }
                 val closure = Environment(environment)
 
+
                 expr.parameters.forEachIndexed {index, token ->
-                    closure.define(token.lexeme, resolveInstanceType((expr.type as Type.FunctionType).params[index]))
+                    var parameterType = (expr.type as Type.FunctionType).params[index]
+                    if (parameterType is Type.InstanceType && expr.typeParameters.any { it.lexeme == parameterType.className.name.lexeme}) {
+                        closure.define(token.lexeme, Type.InferrableType())
+                    } else {
+
+                        closure.define(token.lexeme, resolveInstanceType(parameterType))
+                    }
                 }
                 val returnType = getBlockType(block.statements, closure)
                 if ((expr.type as Type.FunctionType).result is Type.InferrableType) {
-                    expr.type = Type.FunctionType((expr.type as Type.FunctionType).params, returnType)
+                    expr.type = Type.FunctionType((expr.type as Type.FunctionType).params, typeParameters, returnType)
                 }
                 return expr.type
             }
@@ -349,6 +423,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     typeErrors.add("Can only type match any and union types")
                 }
                 val types = mutableListOf<Type>()
+                expr.conditions = expr.conditions.map {
+                    Pair(resolveInstanceType(it.first), it.second)
+                }
+
                 expr.conditions.forEach {
 
                     val block: Expr.Block = if (it.second is Expr.Block)
@@ -369,7 +447,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 }
 
                 var hasElse = expr.elseBranch != null
-                if (!isExhuastive(expr.variable.type, expr.conditions.map { it.first }, hasElse)) {
+                if (!isExhuastive(expr.variable.type, expr.conditions.map { resolveInstanceType(it.first) }, hasElse)) {
                     typeErrors.add("Typematch is not exhuastive")
                 }
                 expr.type = flattenTypes(types)
@@ -399,12 +477,36 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         }
     }
 
+    private fun checkGenericCall(arguments: List<Expr>, params: List<Type>) {
+        arguments.forEachIndexed { index, arg ->
+            val paramType = params[index]
+            if (paramType is Type.UnresolvedType) {
+                val expectedType = lookUpVariableType(paramType.identifier.name, paramType.identifier)
+                if (!arg.type.canAssignTo(expectedType, this)) {
+                    typeErrors.add("Expected $expectedType and got ${arg.type}")
+                }
+            }
+        }
+    }
+
+    private fun typeCheckArguments(
+        params: List<Type>,
+        arguments: List<Expr>
+    ) {
+        params.forEachIndexed { index, param ->
+            val argType = arguments[index].type
+            if (!param.canAssignTo(argType, this)) {
+                typeErrors.add("Expected $param and got $argType")
+            }
+        }
+    }
+
     private fun isExhuastive(type: Type, branches: List<Type>, hasElse: Boolean): Boolean {
         if (hasElse) return true
         else {
             if (type is Type.AnyType) return false
             return if (type is Type.UnionType) {
-                type.types.all {type -> branches.any {branch -> type.canAssignTo(branch, this) } }
+                type.types.all {type -> branches.any {branch -> type.canAssignTo(resolveInstanceType(branch), this) } }
             } else {
                 false
             }

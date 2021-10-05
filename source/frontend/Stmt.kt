@@ -19,6 +19,7 @@ sealed class Stmt {
     class Constructor(
         val fields: Map<Int, Token>,
         val parameters: List<Pair<Token, Type>>,
+        val typeParameters: List<Token>,
         val superArgs: List<Expr>,
         val constructorBody: Expr.Block
     ) : Stmt()

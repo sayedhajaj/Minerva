@@ -10,7 +10,7 @@ class MinervaConstructor(
     closure: Environment
     ): MinervaFunction(
     "",
-    Expr.Function(parameters, body), closure
+    Expr.Function(parameters, emptyList(), body), closure
 ) {
     var instance: MinervaInstance? = null
 

@@ -46,6 +46,8 @@ sealed interface Type {
     class InstanceType(
         val className: Expr.Variable,
         val params: List<Type>,
+        val typeParams: List<UnresolvedType>,
+        val typeArguments: List<Type>,
         val members: Map<String, Type>, val superclass: Expr.Variable?) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             if (otherType is InstanceType) {
@@ -97,7 +99,7 @@ sealed interface Type {
         }
     }
 
-    class FunctionType(val params: List<Type>, val result: Type): Type {
+    class FunctionType(val params: List<Type>, val typeParams: List<UnresolvedType>, val result: Type): Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             if (otherType is FunctionType) {
                 val paramsMatch = params.size == otherType.params.size &&
@@ -110,6 +112,12 @@ sealed interface Type {
     }
 
     class InferrableType : Type{
+        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
+            return true
+        }
+    }
+
+    class UnresolvedType(var identifier: Expr.Variable) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return true
         }

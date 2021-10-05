@@ -53,6 +53,10 @@ class Parser(private val tokens: List<Token>) {
         val name = consume(TokenType.IDENTIFIER, "Expect class name.")
 
 
+        val typeParameters = if (match(TokenType.LESS)) {
+            genericDeclaration()
+        } else emptyList()
+
         var constructorParams = emptyList<Pair<Token, Type>>()
         var constructorFields = emptyMap<Int, Token>()
         var constructorBody: Expr.Block = Expr.Block(emptyList())
@@ -103,7 +107,7 @@ class Parser(private val tokens: List<Token>) {
             }
 
         }
-        val constructor = Stmt.Constructor(constructorFields, constructorParams, superArgs, constructorBody)
+        val constructor = Stmt.Constructor(constructorFields, constructorParams, typeParameters, superArgs, constructorBody)
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after class body")
 
@@ -239,7 +243,7 @@ class Parser(private val tokens: List<Token>) {
                 )) {
                 val identifier = previous()
                 var type = when (identifier.type) {
-                    TokenType.IDENTIFIER -> Type.InstanceType(Expr.Variable(identifier), emptyList(), emptyMap(), null)
+                    TokenType.IDENTIFIER -> Type.UnresolvedType(Expr.Variable(identifier))
                     TokenType.BOOLEAN -> Type.BooleanType()
                     TokenType.STRING -> Type.StringType()
                     TokenType.INTEGER -> Type.IntegerType()
@@ -264,7 +268,7 @@ class Parser(private val tokens: List<Token>) {
                 if (match(TokenType.ARROW)) {
                     returnType = typeExpression()
                 }
-                var type: Type = Type.FunctionType(paramTypes, returnType)
+                var type: Type = Type.FunctionType(paramTypes, emptyList(), returnType)
 
                 if (match(TokenType.LEFT_SUB)) {
                     consume(TokenType.RIGHT_SUB, "Expect closing ']'")
@@ -404,6 +408,10 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun lambdaExpression(): Expr.Function {
+        val typeParameters = if (match(TokenType.LESS)) {
+            genericDeclaration()
+        } else emptyList()
+
         consume(TokenType.LEFT_PAREN, "Expect ')' after function name.")
         val parameters = mutableListOf<Token>()
         var parameterTypes = mutableListOf<Type>()
@@ -426,17 +434,32 @@ class Parser(private val tokens: List<Token>) {
         consume(TokenType.ARROW, "Expect '=> before function body")
 
         val body = expression()
-        var result = Expr.Function(parameters, body)
-        result.type = Type.FunctionType(parameterTypes, returnType)
+        var result = Expr.Function(parameters, typeParameters, body)
+        result.type = Type.FunctionType(parameterTypes, typeParameters.map { Type.UnresolvedType(Expr.Variable(it)) }, returnType)
         return result
+    }
+
+    private fun genericDeclaration(): MutableList<Token> {
+        val typeParameters = mutableListOf<Token>()
+        if (!check(TokenType.GREATER)) {
+            do {
+                typeParameters.add(consume(TokenType.IDENTIFIER, "Expect generic parameter name"))
+            } while (match(TokenType.COMMA))
+        }
+        consume(TokenType.GREATER, "Expect closing >")
+        return typeParameters
     }
 
     private fun call(): Expr {
         var expr = primary()
 
         while (true) {
+            var typeArguments = if (match(TokenType.LESS)) {
+                genericCall()
+            } else emptyList()
+
             if (match(TokenType.LEFT_PAREN)) {
-                expr = finishCall(expr)
+                expr = finishCall(expr, typeArguments)
             } else if(match(TokenType.DOT)) {
                 val name = consume(TokenType.IDENTIFIER, "Expect property name after '.'")
                 expr = Expr.Get(expr, name, null)
@@ -452,7 +475,18 @@ class Parser(private val tokens: List<Token>) {
         return expr
     }
 
-    private fun finishCall(callee: Expr): Expr {
+    private fun genericCall(): MutableList<Type> {
+        val typeArguments = mutableListOf<Type>()
+        if (!check(TokenType.GREATER)) {
+            do {
+                typeArguments.add(typeExpression())
+            } while (check(TokenType.COMMA))
+        }
+        consume(TokenType.GREATER, "Expect >")
+        return typeArguments
+    }
+
+    private fun finishCall(callee: Expr, typeArguments: List<Type>): Expr {
         val arguments = mutableListOf<Expr>()
 
         if (!check(TokenType.RIGHT_PAREN)) {
@@ -464,7 +498,7 @@ class Parser(private val tokens: List<Token>) {
 
         consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
 
-        return Expr.Call(callee, arguments)
+        return Expr.Call(callee, arguments, typeArguments)
     }
 
     private fun primary(): Expr {
