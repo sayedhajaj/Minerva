@@ -29,7 +29,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 val members = mutableMapOf<String, Type>()
                 val params = mutableListOf<Type>()
 
-                val typeParameters = stmt.constructor.typeParameters.map { Type.UnresolvedType(Expr.Variable(it)) }
+                val typeParameters = stmt.constructor.typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) }
 
                 typeParameters.forEach {
                     environment.define(it.identifier.name.lexeme, it)
@@ -127,7 +127,16 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     private fun resolveInstanceType(type: Type): Type {
         return when (type) {
             is Type.UnresolvedType -> {
-                lookUpVariableType(type.identifier.name, type.identifier)
+                val resolvedType = lookUpVariableType(type.identifier.name, type.identifier)
+                if (resolvedType is Type.InstanceType) {
+                    if(type.typeArguments.size == resolvedType.typeParams.size) {
+                        val args = mutableMapOf<String, Type>()
+                        resolvedType.typeParams.forEachIndexed { index, unresolvedType ->
+                            args[unresolvedType.identifier.name.lexeme] = type.typeArguments[index]
+                        }
+                        resolveTypeArgument(args, resolvedType)
+                    } else resolvedType
+                } else resolvedType
             }
             is Type.ArrayType -> {
                 Type.ArrayType(resolveInstanceType(type.type))
@@ -304,7 +313,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     Expr.Block(listOf(Stmt.Expression(expr.body)))
 
                 val typeParameters = expr.typeParameters.map {
-                    Type.UnresolvedType(Expr.Variable(it))
+                    Type.UnresolvedType(Expr.Variable(it), emptyList())
 
                 }
 

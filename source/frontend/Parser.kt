@@ -243,7 +243,17 @@ class Parser(private val tokens: List<Token>) {
                 )) {
                 val identifier = previous()
                 var type = when (identifier.type) {
-                    TokenType.IDENTIFIER -> Type.UnresolvedType(Expr.Variable(identifier))
+                    TokenType.IDENTIFIER -> {
+                        val typeArguments = mutableListOf<Type>()
+                        if (match(TokenType.LESS)) {
+                            do {
+                                typeArguments.add(typeExpression())
+                            }
+                            while (match(TokenType.COMMA))
+                            consume(TokenType.GREATER, "Expect closing '>'")
+                        }
+                        Type.UnresolvedType(Expr.Variable(identifier), typeArguments)
+                    }
                     TokenType.BOOLEAN -> Type.BooleanType()
                     TokenType.STRING -> Type.StringType()
                     TokenType.INTEGER -> Type.IntegerType()
@@ -257,6 +267,7 @@ class Parser(private val tokens: List<Token>) {
                 }
 
                 types.add(type)
+
             }
             if (match(TokenType.LEFT_PAREN)) {
                 val paramTypes = mutableListOf<Type>()
@@ -435,7 +446,11 @@ class Parser(private val tokens: List<Token>) {
 
         val body = expression()
         var result = Expr.Function(parameters, typeParameters, body)
-        result.type = Type.FunctionType(parameterTypes, typeParameters.map { Type.UnresolvedType(Expr.Variable(it)) }, returnType)
+        result.type = Type.FunctionType(
+            parameterTypes,
+            typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) },
+            returnType
+        )
         return result
     }
 

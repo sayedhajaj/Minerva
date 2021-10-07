@@ -117,7 +117,7 @@ sealed interface Type {
         }
     }
 
-    class UnresolvedType(var identifier: Expr.Variable) : Type {
+    class UnresolvedType(var identifier: Expr.Variable, val typeArguments: List<Type>) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return true
         }

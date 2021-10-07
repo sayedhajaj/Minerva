@@ -38,7 +38,7 @@ list.add(5);
 list.add(10);
 list.add(12);
 list.add(8);
-//list.iterate(function (num: Int) => {print num;});
+list.iterate(function (num: Int) => {print num;});
 
 var newList = List<String>();
 newList.add("Hello");
@@ -56,3 +56,6 @@ print container.value+3;
 function test<T>(value: T): T => value;
 
 print test(3) + 3;
+
+var foo: List<String> = List<String>();
+foo.add("2");
