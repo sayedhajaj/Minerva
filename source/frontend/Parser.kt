@@ -11,7 +11,7 @@ class Parser(private val tokens: List<Token>) {
     private var current = 0
     fun parse(): List<Stmt> {
         val statements: MutableList<Stmt> = ArrayList()
-        while (!isAtEnd) {
+        while (!isAtEnd()) {
             declaration().let { statements.add(it) }
         }
         return statements
@@ -73,6 +73,10 @@ class Parser(private val tokens: List<Token>) {
             consume(TokenType.IDENTIFIER, "Expect superclass name.")
             superClass = Expr.Variable(previous())
 
+            val superTypeParams = if (match(TokenType.LESS)) {
+                genericDeclaration()
+            } else emptyList()
+
             if (match(TokenType.LEFT_PAREN)) {
                 if (!check(TokenType.RIGHT_PAREN)) {
                     do {
@@ -92,7 +96,7 @@ class Parser(private val tokens: List<Token>) {
         val methods = mutableListOf<Stmt.Function>()
         val fields = mutableListOf<Stmt.Var>()
 
-        while (!isAtEnd && !check(TokenType.RIGHT_BRACE)) {
+        while (!isAtEnd() && !check(TokenType.RIGHT_BRACE)) {
             if (match(TokenType.VAR)) {
                 // add field
                 fields.add(varDeclaration() as Stmt.Var)
@@ -468,10 +472,16 @@ class Parser(private val tokens: List<Token>) {
     private fun call(): Expr {
         var expr = primary()
 
+
+
         while (true) {
-            var typeArguments = if (match(TokenType.LESS)) {
-                genericCall()
-            } else emptyList()
+            var typeArguments: List<Type> = emptyList()
+            if (check(TokenType.LESS)) {
+                if (check(TokenType.IDENTIFIER, 1) && check(TokenType.COMMA, 2) || check(TokenType.GREATER, 2)) {
+                    match(TokenType.LESS)
+                    typeArguments = genericCall()
+                }
+            }
 
             if (match(TokenType.LEFT_PAREN)) {
                 expr = finishCall(expr, typeArguments)
@@ -574,7 +584,7 @@ class Parser(private val tokens: List<Token>) {
 
     private fun block(): List<Stmt> {
         val statements: MutableList<Stmt> = ArrayList()
-        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd) {
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
             declaration().let { statements.add(it) }
         }
         consume(TokenType.RIGHT_BRACE, "Expect '}' after block")
@@ -596,10 +606,12 @@ class Parser(private val tokens: List<Token>) {
         return false
     }
 
-    private val isAtEnd: Boolean
-        private get() = peek().type === TokenType.EOF
+    private fun isAtEnd(distance: Int = 0) = peek(distance).type === TokenType.EOF
+
 
     private fun peek() = tokens[current]
+
+    private fun peek(distance: Int) = tokens[current+distance]
 
 
     private fun previous(): Token {
@@ -612,7 +624,11 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun check(tokenType: TokenType): Boolean {
-        return if (isAtEnd) false else peek().type === tokenType
+        return if (isAtEnd()) false else peek().type === tokenType
+    }
+
+    private fun check(tokenType: TokenType, distance: Int): Boolean {
+        return if (isAtEnd(distance)) false else peek(distance).type == tokenType
     }
 
     private fun error(token: Token, message: String): ParseError {

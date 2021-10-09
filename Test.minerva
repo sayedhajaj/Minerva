@@ -38,7 +38,7 @@ list.add(5);
 list.add(10);
 list.add(12);
 list.add(8);
-list.iterate(function (num: Int) => {print num;});
+//list.iterate(function (num: Int) => {print num;});
 
 var newList = List<String>();
 newList.add("Hello");
@@ -59,3 +59,22 @@ print test(3) + 3;
 
 var foo: List<String> = List<String>();
 foo.add("2");
+
+function singleTon<T>(value: T) => {
+    var result = List<T>();
+    result.add(value);
+    result;
+};
+
+singleTon<String>("Hello").iterate(function (value: String) => {print value;});
+
+
+class LinkedList<T> extends List<T> {
+
+
+}
+
+//var bleh = LinkedList<String>();
+//bleh.add("hmm");
+
+print (1 < 2);
