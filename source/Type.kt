@@ -48,7 +48,10 @@ sealed interface Type {
         val params: List<Type>,
         val typeParams: List<UnresolvedType>,
         val typeArguments: List<Type>,
-        val members: Map<String, Type>, val superclass: Expr.Variable?) : Type {
+        val members: Map<String, Type>,
+        val superclass: InstanceType?,
+        val superTypeArgs: List<Type>
+        ) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             if (otherType is InstanceType) {
                 var otherClass: InstanceType? = otherType
@@ -56,11 +59,8 @@ sealed interface Type {
                 while (!matchFound && otherClass != null) {
                     if (otherClass != null && className.name.lexeme == otherClass.className.name.lexeme) matchFound = true
                     else {
-                        if (otherClass?.superclass != null) {
-                            otherClass = typeChecker.lookUpVariableType(
-                                otherClass.superclass!!.name,
-                                otherClass.superclass!!
-                            ) as InstanceType?
+                        if (otherClass.superclass != null) {
+                            otherClass = otherClass.superclass
                         } else otherClass = null
                     }
                 }
@@ -73,8 +73,7 @@ sealed interface Type {
                 return members[member] ?: NullType()
             } else {
                 if (superclass != null) {
-                    val callee = typeChecker.lookUpVariableType(superclass.name, superclass) as InstanceType
-                    return callee.getMemberType(member, typeChecker)
+                    return superclass.getMemberType(member, typeChecker)
                 } else return NullType()
             }
         }

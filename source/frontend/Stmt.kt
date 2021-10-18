@@ -21,6 +21,7 @@ sealed class Stmt {
         val parameters: List<Pair<Token, Type>>,
         val typeParameters: List<Token>,
         val superArgs: List<Expr>,
+        val superTypeArgs: List<Type>,
         val constructorBody: Expr.Block
     ) : Stmt()
     class Function(val name: Token, val functionBody: Expr.Function): Stmt()

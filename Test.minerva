@@ -69,12 +69,29 @@ function singleTon<T>(value: T) => {
 singleTon<String>("Hello").iterate(function (value: String) => {print value;});
 
 
-class LinkedList<T> extends List<T> {
+class LinkedList<T> extends List<Int> {
 
 
 }
 
-//var bleh = LinkedList<String>();
-//bleh.add("hmm");
+var bleh = LinkedList<String>();
+bleh.add(2);
 
-print (1 < 2);
+
+class Parent(var name: String) {
+    function blah() => {
+        print "hello";
+    };
+
+}
+
+class Child(name: String) extends Parent(name) {
+    function blah() =>  {
+        super.blah();
+        print this.name;
+    };
+
+}
+
+var child = Child("john");
+//child.blah();

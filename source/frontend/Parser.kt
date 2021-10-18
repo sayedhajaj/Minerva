@@ -69,13 +69,14 @@ class Parser(private val tokens: List<Token>) {
 
         var superClass: Expr.Variable? = null
         val superArgs = mutableListOf<Expr>()
+        var superTypeArgs = mutableListOf<Type>()
         if (match(TokenType.EXTENDS)) {
             consume(TokenType.IDENTIFIER, "Expect superclass name.")
             superClass = Expr.Variable(previous())
 
-            val superTypeParams = if (match(TokenType.LESS)) {
-                genericDeclaration()
-            } else emptyList()
+            if (match(TokenType.LESS)) {
+                superTypeArgs = genericCall()
+            }
 
             if (match(TokenType.LEFT_PAREN)) {
                 if (!check(TokenType.RIGHT_PAREN)) {
@@ -111,7 +112,7 @@ class Parser(private val tokens: List<Token>) {
             }
 
         }
-        val constructor = Stmt.Constructor(constructorFields, constructorParams, typeParameters, superArgs, constructorBody)
+        val constructor = Stmt.Constructor(constructorFields, constructorParams, typeParameters, superArgs, superTypeArgs, constructorBody)
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after class body")
 

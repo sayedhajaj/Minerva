@@ -35,14 +35,25 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     environment.define(it.identifier.name.lexeme, it)
                 }
 
-                if (stmt.superclass != null) {
-                    val superclass = lookUpVariableType(stmt.superclass.name, stmt.superclass) as Type.InstanceType
-//                    environment = Environment(environment)
+                val superclass = if (stmt.superclass != null) lookUpVariableType(stmt.superclass.name, stmt.superclass) as Type.InstanceType
+                else null
 
+                val superTypeArgs = stmt.constructor.superTypeArgs
+
+                if (superclass != null) {
+//                    environment = Environment(environment)
                     environment.define("super", superclass)
                 }
 
-                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
+                environment.define(
+                    "this",
+                    Type.InstanceType(
+                        Expr.Variable(stmt.name),
+                        params, typeParameters,
+                        emptyList(), members,
+                        superclass, superTypeArgs
+                    )
+                )
 
                 stmt.fields.forEach {
                     typeCheck(it)
@@ -50,7 +61,15 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 }
 
 
-                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
+                environment.define(
+                    "this",
+                    Type.InstanceType(
+                        Expr.Variable(stmt.name),
+                        params, typeParameters,
+                        emptyList(), members,
+                        superclass, superTypeArgs
+                    )
+                )
 
                 stmt.constructor.parameters.forEachIndexed {index, pair ->
                     params.add(pair.second)
@@ -59,7 +78,15 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     }
                 }
 
-                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
+                environment.define(
+                    "this",
+                    Type.InstanceType(
+                        Expr.Variable(stmt.name),
+                        params, typeParameters,
+                        emptyList(), members,
+                        superclass, superTypeArgs
+                    )
+                )
 
                 stmt.methods.forEach {
                     typeCheck(it)
@@ -69,9 +96,24 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
                 typeCheck(stmt.constructor)
 
-                environment.define(stmt.name.lexeme, Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
+                environment.define(
+                    stmt.name.lexeme,
+                    Type.InstanceType(
+                        Expr.Variable(stmt.name),
+                        params, typeParameters,
+                        emptyList(), members,
+                        superclass, superTypeArgs
+                    )
+                )
 
-                environment.define("this", Type.InstanceType(Expr.Variable(stmt.name), params, typeParameters, emptyList(), members, stmt.superclass))
+                environment.define("this",
+                    Type.InstanceType(
+                        Expr.Variable(stmt.name),
+                        params, typeParameters,
+                        emptyList(), members,
+                        superclass, superTypeArgs
+                    )
+                )
             }
             is Stmt.Constructor -> {
                 val previous = environment
@@ -161,6 +203,16 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 resolveTypeArgument(args, type.result)
             )
             is Type.InstanceType -> {
+                val superClass = type.superclass
+                val superArgs: MutableMap<String, Type> = superClass?.typeParams?.zip(type.superTypeArgs)?.associate {
+                    Pair(it.first.identifier.name.lexeme, it.second)
+                }?.toMutableMap()
+                    ?: mutableMapOf()
+                args.forEach {
+                    if (superArgs.containsKey(it.key) && superArgs[it.key] is Type.UnresolvedType) {
+                        superArgs[it.key] = it.value
+                    }
+                }
                 Type.InstanceType(
                     type.className,
                     type.params.map { resolveTypeArgument(args, it) },
@@ -169,7 +221,8 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                         Pair(it.key, resolveTypeArgument(args, it.value))
 
                     }.toMap(),
-                    type.superclass
+                    if (superClass != null) resolveTypeArgument(superArgs, superClass) as Type.InstanceType else null,
+                    type.superTypeArgs
                 )
             }
             is Type.ArrayType -> Type.ArrayType(resolveTypeArgument(args, type.type))
