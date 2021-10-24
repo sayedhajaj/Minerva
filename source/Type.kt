@@ -64,6 +64,9 @@ sealed interface Type {
                         } else otherClass = null
                     }
                 }
+                if (matchFound) {
+                    // check if same type parameters?
+                }
                 return matchFound
             } else return false
         }

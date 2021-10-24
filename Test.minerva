@@ -38,13 +38,14 @@ list.add(5);
 list.add(10);
 list.add(12);
 list.add(8);
-//list.iterate(function (num: Int) => {print num;});
+list.iterate(function (num: Int) => {print num;});
+
 
 var newList = List<String>();
 newList.add("Hello");
 newList.add("World!");
 list.add(3);
-//newList.iterate(function (value: String) => {print value;});
+newList.iterate(function (value: String) => {print value;});
 
 
 
@@ -69,13 +70,13 @@ function singleTon<T>(value: T) => {
 singleTon<String>("Hello").iterate(function (value: String) => {print value;});
 
 
-class LinkedList<T> extends List<Int> {
+class LinkedList<T, G> extends List<T> {
 
 
 }
 
-var bleh = LinkedList<String>();
-bleh.add(2);
+var bleh = LinkedList<String, Int>();
+bleh.add("2");
 
 
 class Parent(var name: String) {
@@ -94,4 +95,4 @@ class Child(name: String) extends Parent(name) {
 }
 
 var child = Child("john");
-//child.blah();
+child.blah();

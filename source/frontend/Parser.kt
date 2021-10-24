@@ -478,7 +478,17 @@ class Parser(private val tokens: List<Token>) {
         while (true) {
             var typeArguments: List<Type> = emptyList()
             if (check(TokenType.LESS)) {
-                if (check(TokenType.IDENTIFIER, 1) && check(TokenType.COMMA, 2) || check(TokenType.GREATER, 2)) {
+//                println("less")
+                val nextCharacterIsType = check(TokenType.IDENTIFIER, 1) ||
+                        check(TokenType.STRING, 1) ||
+                        check(TokenType.INTEGER, 1) || check(TokenType.DECIMAL, 1) ||
+                        check(TokenType.NULL, 1) || check(TokenType.BOOLEAN)
+                if (
+                    nextCharacterIsType
+                    and (check(TokenType.COMMA, 2) or
+                            check(TokenType.GREATER, 2) or
+                            check(TokenType.UNION, 2) or check(TokenType.LEFT_SUB)
+                            )) {
                     match(TokenType.LESS)
                     typeArguments = genericCall()
                 }
@@ -506,7 +516,7 @@ class Parser(private val tokens: List<Token>) {
         if (!check(TokenType.GREATER)) {
             do {
                 typeArguments.add(typeExpression())
-            } while (check(TokenType.COMMA))
+            } while (match(TokenType.COMMA))
         }
         consume(TokenType.GREATER, "Expect >")
         return typeArguments
