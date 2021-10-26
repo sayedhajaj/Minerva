@@ -8,17 +8,28 @@ sealed interface Type {
             return otherType is IntegerType
         }
 
+        override fun toString(): String {
+            return "Int"
+        }
     }
 
     class DoubleType: Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return otherType is DoubleType
         }
+
+        override fun toString(): String {
+            return "Decimal"
+        }
     }
 
     class StringType: Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return otherType is StringType
+        }
+
+        override fun toString(): String {
+            return "String"
         }
 
     }
@@ -31,6 +42,10 @@ sealed interface Type {
                 false
             }
         }
+
+        override fun toString(): String {
+            return "${type}[]"
+        }
     }
 
     class UnionType(val types: List<Type>): Type {
@@ -40,6 +55,10 @@ sealed interface Type {
             } else {
                 types.any { it.canAssignTo(otherType, typeChecker) }
             }
+        }
+
+        override fun toString(): String {
+            return types.joinToString("|")
         }
     }
 
@@ -64,10 +83,23 @@ sealed interface Type {
                         } else otherClass = null
                     }
                 }
+                var allParamsMatch = true
                 if (matchFound) {
+                    this.typeArguments.forEachIndexed { index, type ->
+                        if (otherClass != null && otherClass.typeArguments.size > index) {
+                            val otherParam = otherClass.typeArguments[index]
+                            if (!type.canAssignTo(otherParam, typeChecker)) {
+                                allParamsMatch = false
+                            }
+                        } else {
+                            allParamsMatch = false
+                        }
+                    }
+//                    println(this.typeArguments.size)
+//                    println(allParamsMatch)
                     // check if same type parameters?
                 }
-                return matchFound
+                return matchFound && allParamsMatch
             } else return false
         }
 
@@ -80,6 +112,12 @@ sealed interface Type {
                 } else return NullType()
             }
         }
+
+        override fun toString(): String {
+            val typeArgs = if (typeArguments.isEmpty()) "" else
+            "<" + typeArguments.joinToString(",") + ">"
+            return "${className.name.lexeme}$typeArgs"
+        }
     }
 
     class NullType(): Type {
@@ -87,17 +125,29 @@ sealed interface Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return otherType is NullType
         }
+
+        override fun toString(): String {
+            return "null"
+        }
     }
 
     class BooleanType(): Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return otherType is BooleanType
         }
+
+        override fun toString(): String {
+            return "Boolean"
+        }
     }
 
     class AnyType(): Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return true
+        }
+
+        override fun toString(): String {
+            return "Any"
         }
     }
 
@@ -111,6 +161,10 @@ sealed interface Type {
                 return false
             }
         }
+
+        override fun toString(): String {
+            return "(${params.joinToString(",")}):${result}"
+        }
     }
 
     class InferrableType : Type{
@@ -122,6 +176,12 @@ sealed interface Type {
     class UnresolvedType(var identifier: Expr.Variable, val typeArguments: List<Type>) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return true
+        }
+
+        override fun toString(): String {
+            val typeArgs = if (typeArguments.isEmpty()) "" else
+                "<" + typeArguments.joinToString(",") + ">"
+            return "${identifier.name.lexeme}$typeArgs"
         }
     }
 }

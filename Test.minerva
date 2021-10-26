@@ -1,7 +1,7 @@
-class Node<T>(var value: T, var next: Node | null) {}
+class Node<T>(var value: T, var next: Node<T> | null) {}
 
 class List<T>() {
-    var head: Node | null = null;
+    var head: Node<T> | null = null;
     var size = 0;
 
 
@@ -9,12 +9,12 @@ class List<T>() {
         this.head = Node<T>(value, this.head);
     };
 
-    function traverse(current: Node, func: (T)=>Any): null => {
+    function traverse(current: Node<T>, func: (T)=>Any): null => {
             var next = current.next;
             func(current.value);
 
             typematch(next) {
-                Node => this.traverse(next, func);
+                Node<T> => this.traverse(next, func);
                 null => null;
             };
             null;
@@ -23,7 +23,7 @@ class List<T>() {
     function iterate(func: (T)=>Any) => {
             var ptr = this.head;
             typematch(ptr) {
-                Node =>this.traverse(ptr, func);
+                Node<T> =>this.traverse(ptr, func);
                 else =>null;
             };
         };
@@ -38,36 +38,36 @@ list.add(5);
 list.add(10);
 list.add(12);
 list.add(8);
-list.iterate(function (num: Int) => {print num;});
+//list.iterate(function (num: Int) => {print num;});
 
 
 var newList = List<String>();
 newList.add("Hello");
 newList.add("World!");
 list.add(3);
-newList.iterate(function (value: String) => {print value;});
+//newList.iterate(function (value: String) => {print value;});
 
 
 
 class Container<T>(var value: T) {}
-var container = Container(3);
-print container.value+3;
+//var container = Container(3);
+//print container.value+3;
 
 
 function test<T>(value: T): T => value;
 
-print test(3) + 3;
+//print test(3) + 3;
 
 var foo: List<String> = List<String>();
 foo.add("2");
 
 function singleTon<T>(value: T) => {
-    var result = List<T>();
-    result.add(value);
-    result;
+    //var result = List<T>();
+    //result.add(value);
+   // result;
 };
 
-singleTon<String>("Hello").iterate(function (value: String) => {print value;});
+//singleTon<String>("Hello").iterate(function (value: String) => {print value;});
 
 
 class LinkedList<T, G> extends List<T> {
@@ -94,5 +94,5 @@ class Child(name: String) extends Parent(name) {
 
 }
 
-var child = Child("john");
-child.blah();
+//var child = Child("john");
+//child.blah();

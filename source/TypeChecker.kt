@@ -146,7 +146,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 val initialiserType = resolveInstanceType(stmt.type)
                 val assignedType = typeCheck(stmt.initializer)
                 val type = if(stmt.type is Type.InferrableType)
-                    assignedType else initialiserType
+                    assignedType else resolveInstanceType(initialiserType)
                 val canAssign = initialiserType.canAssignTo(assignedType, this)
 
                 if (!canAssign) {
@@ -174,7 +174,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     if(type.typeArguments.size == resolvedType.typeParams.size) {
                         val args = mutableMapOf<String, Type>()
                         resolvedType.typeParams.forEachIndexed { index, unresolvedType ->
-                            args[unresolvedType.identifier.name.lexeme] = type.typeArguments[index]
+                            args[unresolvedType.identifier.name.lexeme] = resolveInstanceType(type.typeArguments[index])
                         }
                         resolveTypeArgument(args, resolvedType)
                     } else resolvedType
@@ -213,16 +213,19 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                         superArgs[it.key] = it.value
                     }
                 }
+                val typeArguments = type.typeParams.map {
+                    args[it.identifier.name.lexeme]
+                }.filterNotNull()
                 Type.InstanceType(
                     type.className,
                     type.params.map { resolveTypeArgument(args, it) },
-                    type.typeParams, type.typeArguments,
+                    type.typeParams, typeArguments,
                     type.members.map {
                         Pair(it.key, resolveTypeArgument(args, it.value))
 
                     }.toMap(),
                     if (superClass != null) resolveTypeArgument(superArgs, superClass) as Type.InstanceType else null,
-                    type.superTypeArgs
+                    type.superTypeArgs.map { resolveTypeArgument(args, it) }
                 )
             }
             is Type.ArrayType -> Type.ArrayType(resolveTypeArgument(args, type.type))

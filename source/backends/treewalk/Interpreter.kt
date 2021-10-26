@@ -207,7 +207,12 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         }
         is MinervaInstance -> {
             var className = Expr.Variable(Token(TokenType.IDENTIFIER, value.klass?.name ?: "null", null, -10))
-            typeChecker.lookUpVariableType(className.name, className)
+            val instance = typeChecker.lookUpVariableType(className.name, className) as Type.InstanceType
+            val argMap = mutableMapOf<String, Type>()
+            instance.typeParams.forEach {
+                argMap[it.identifier.name.lexeme] = getValueType(value.fields[it.identifier.name.lexeme])
+            }
+            typeChecker.resolveTypeArgument(argMap, instance)
         }
         is MinervaFunction -> {
             value.declaration.type
