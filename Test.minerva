@@ -50,7 +50,7 @@ list.add(3);
 
 
 class Container<T>(var value: T) {}
-//var container = Container(3);
+var container = Container(3);
 //print container.value+3;
 
 
@@ -62,9 +62,9 @@ var foo: List<String> = List<String>();
 foo.add("2");
 
 function singleTon<T>(value: T) => {
-    //var result = List<T>();
-    //result.add(value);
-   // result;
+    var result = List<T>();
+    result.add(value);
+    result;
 };
 
 //singleTon<String>("Hello").iterate(function (value: String) => {print value;});
@@ -94,5 +94,5 @@ class Child(name: String) extends Parent(name) {
 
 }
 
-//var child = Child("john");
+var child = Child("john");
 //child.blah();

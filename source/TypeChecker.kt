@@ -205,14 +205,15 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Type.InstanceType -> {
                 val superClass = type.superclass
                 val superArgs: MutableMap<String, Type> = superClass?.typeParams?.zip(type.superTypeArgs)?.associate {
-                    Pair(it.first.identifier.name.lexeme, it.second)
+                    var paramType = it.second
+                    if (paramType is Type.UnresolvedType) {
+                        if (args.containsKey(paramType.identifier.name.lexeme))
+                            paramType = args[paramType.identifier.name.lexeme]!!
+                    }
+                    Pair(it.first.identifier.name.lexeme, paramType)
                 }?.toMutableMap()
                     ?: mutableMapOf()
-                args.forEach {
-                    if (superArgs.containsKey(it.key) && superArgs[it.key] is Type.UnresolvedType) {
-                        superArgs[it.key] = it.value
-                    }
-                }
+
                 val typeArguments = type.typeParams.map {
                     args[it.identifier.name.lexeme]
                 }.filterNotNull()
