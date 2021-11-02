@@ -85,7 +85,7 @@ class Parent(var name: String) {
     };
 
 }
-
+/*
 class Child(name: String) extends Parent(name) {
     function blah() =>  {
         super.blah();
@@ -95,4 +95,5 @@ class Child(name: String) extends Parent(name) {
 }
 
 var child = Child("john");
-//child.blah();
+child.blah();
+*/
