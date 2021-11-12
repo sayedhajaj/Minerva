@@ -1,0 +1,22 @@
+class Rectangle(var width: Int, var height)  {
+    var num: Int = 4;
+    function area() => this.width * this.height;
+
+    function perimeter() => 2 * (this.width + this.height);
+}
+
+var rectangle = Rectangle(3, 4);
+
+print rectangle.area(); // expect 12
+
+print rectangle.perimeter(); // expect 14
+print rectangle.width * 2; // expect 6
+
+/*
+rectangle.width = 5;
+
+print rectangle.area(); // expect 20
+
+print rectangle.perimeter(); // expect 18
+
+*/

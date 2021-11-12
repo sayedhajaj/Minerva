@@ -1,0 +1,16 @@
+function foo() => {
+	print "Hello World!";
+};
+
+function double(number: Int) => number * 2;
+
+var square(number: Int) => number * number;
+
+function factorial(number: Int) : Int =>
+	if (number == 0) 1
+	else number * factorial(number-1);
+
+foo(); // expect "Hello World!"
+print double(4); // expect 8
+print square(3); // expect 9
+print factorial(5); // expect 120

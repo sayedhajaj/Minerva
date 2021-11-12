@@ -1,0 +1,13 @@
+var age = 20;
+
+if (age > 18) {
+	print "You are an adult"; // expect "you are an adult"
+};
+
+var ageCategory =
+	if (age < 18)
+		"minor"
+	else
+		"adult";
+
+print ageCategory; // expect  adult

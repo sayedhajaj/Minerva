@@ -1,0 +1,16 @@
+var foo = "hello";
+
+print foo; //expect hello
+
+foo = "world";
+
+print foo; // expect world
+
+var bar: String | Int = "bar";
+
+print bar; // expect "bar";
+
+bar = 4;
+
+print bar; // expect 4;
+

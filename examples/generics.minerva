@@ -1,0 +1,11 @@
+class Container<T>(var value: T){}
+
+var container = Container(3);
+
+print container.value; // expect 3
+
+print container.value + 4; // expect 7
+
+var newContainer = Container(Container(9));
+
+print newContainer.value.value * 2; // expect 18

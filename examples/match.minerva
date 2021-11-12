@@ -1,0 +1,8 @@
+function fibonacci(number: Int): Int =>
+	match(number) {
+		0 => 1
+		1 => 1
+		else => fibonacci(number-1) + fibonacci(number-2)
+	};
+
+print fibonacci(5); // expect 8

@@ -1,0 +1,22 @@
+class Doughnut {
+  function cook() => {
+    print "Fry until golden brown.";
+  }
+}
+
+class BostonCream extends Doughnut {
+  function cook() => {
+    super.cook();
+    print "Pipe full of custard and coat with chocolate.";
+  }
+}
+
+BostonCream().cook();
+
+/* expect
+
+Fry until golden brown.
+Pipe full of custard and coat with chocolate.
+*/
+
+

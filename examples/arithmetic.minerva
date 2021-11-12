@@ -1,0 +1,9 @@
+print 1+1; // expect 2
+
+print 1.5 * 2.0; // expect 3
+
+print 1 < 2; // expect true
+
+print 10 - 4; // expect 6
+
+print 15 / 3; // expect 5
