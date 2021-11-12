@@ -12,11 +12,10 @@ print rectangle.area(); // expect 12
 print rectangle.perimeter(); // expect 14
 print rectangle.width * 2; // expect 6
 
-/*
+
 rectangle.width = 5;
 
 print rectangle.area(); // expect 20
 
 print rectangle.perimeter(); // expect 18
 
-*/

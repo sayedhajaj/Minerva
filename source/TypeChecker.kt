@@ -116,6 +116,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 )
             }
             is Stmt.Constructor -> {
+                stmt.parameters.forEachIndexed { index, pair ->
+                    if (stmt.fields.containsKey(index)) {
+                        environment.define(pair.first.lexeme, pair.second)
+                    }
+                }
+
                 val previous = environment
                 environment = Environment(environment)
 
