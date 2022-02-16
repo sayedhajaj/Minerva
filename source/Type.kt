@@ -3,9 +3,21 @@ import frontend.Expr
 sealed interface Type {
     fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean
 
+    fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean
+
+    fun getMemberType(member: String, typeChecker: TypeChecker): Type
+
     class IntegerType: Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return otherType is IntegerType
+        }
+
+        override fun hasMemberType(member: String, otherType: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
         }
 
         override fun toString(): String {
@@ -18,6 +30,14 @@ sealed interface Type {
             return otherType is DoubleType
         }
 
+        override fun hasMemberType(member: String, otherType: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
+        }
+
         override fun toString(): String {
             return "Decimal"
         }
@@ -26,6 +46,14 @@ sealed interface Type {
     class StringType: Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return otherType is StringType
+        }
+
+        override fun hasMemberType(member: String, otherType: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
         }
 
         override fun toString(): String {
@@ -43,6 +71,14 @@ sealed interface Type {
             }
         }
 
+        override fun hasMemberType(member: String, otherType: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
+        }
+
         override fun toString(): String {
             return "${type}[]"
         }
@@ -55,6 +91,14 @@ sealed interface Type {
             } else {
                 types.any { it.canAssignTo(otherType, typeChecker) }
             }
+        }
+
+        override fun hasMemberType(member: String, otherType: Type, typeChecker: TypeChecker): Boolean {
+            return types.all { it.hasMemberType(member, otherType, typeChecker) }
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
         }
 
         override fun toString(): String {
@@ -103,7 +147,15 @@ sealed interface Type {
             } else return false
         }
 
-        fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return if (members.containsKey(member) && members[member]!!.canAssignTo(type, typeChecker)) {
+                true
+            } else {
+                superclass?.hasMemberType(member, type, typeChecker) ?: false
+            }
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
             if (members.containsKey(member)) {
                 return members[member] ?: NullType()
             } else {
@@ -120,10 +172,37 @@ sealed interface Type {
         }
     }
 
+    class InterfaceType(val members: Map<String, Type>): Type {
+        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
+            return members.all {
+                otherType.hasMemberType(it.key, it.value, typeChecker)
+            }
+        }
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return members.containsKey(member) && members[member]!!.canAssignTo(type, typeChecker)
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return if (members.containsKey(member)) {
+                members[member] ?: NullType()
+            } else NullType()
+        }
+
+    }
+
     class NullType(): Type {
 
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return otherType is NullType
+        }
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
         }
 
         override fun toString(): String {
@@ -136,6 +215,14 @@ sealed interface Type {
             return otherType is BooleanType
         }
 
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
+        }
+
         override fun toString(): String {
             return "Boolean"
         }
@@ -144,6 +231,14 @@ sealed interface Type {
     class AnyType(): Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return true
+        }
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
         }
 
         override fun toString(): String {
@@ -162,6 +257,14 @@ sealed interface Type {
             }
         }
 
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
+        }
+
         override fun toString(): String {
             return "(${params.joinToString(",")}):${result}"
         }
@@ -171,11 +274,27 @@ sealed interface Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return true
         }
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
+        }
     }
 
     class UnresolvedType(var identifier: Expr.Variable, val typeArguments: List<Type>) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return true
+        }
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
         }
 
         override fun toString(): String {

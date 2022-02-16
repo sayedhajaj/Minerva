@@ -36,6 +36,8 @@ class Scanner(private val source: String) {
             keywords["Boolean"] = TokenType.BOOLEAN
             keywords["typematch"] = TokenType.TYPEMATCH
             keywords["match"] = TokenType.MATCH
+            keywords["interface"] = TokenType.INTERFACE
+            keywords["implements"] = TokenType.IMPLEMENTS
         }
     }
 

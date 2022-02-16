@@ -8,15 +8,37 @@ class MinervaClass(
     val superArguments: List<Expr>,
     val constructor: MinervaConstructor,
     val methods: Map<String, MinervaFunction>,
-    val fields: Map<String, Any?>
+    val fields: Map<String, Expr>
 )  : MinervaCallable {
 
     override fun arity() = constructor.parameters.size
 
     override fun call(interpreter: Interpreter, arguments: List<Any?>): MinervaInstance {
-        val instance = MinervaInstance(this)
+        val instance = MinervaInstance(this, interpreter)
+        initConstructorFields(interpreter, arguments, instance)
+        instance.initialise(constructor.closure)
         callConstructor(interpreter, arguments, instance)
         return instance
+    }
+
+    fun initConstructorFields(interpreter: Interpreter, arguments: List<Any?>, instance: MinervaInstance) {
+        val parentClass = superClass
+        if (parentClass != null) {
+            val superArgs = superArguments.map {
+                if (it is Expr.Variable) {
+                    val argumentIndex = constructor.parameters.indexOfFirst { token ->  token.lexeme == it.name.lexeme}
+                    if (argumentIndex >= 0) arguments[argumentIndex]
+                    else interpreter.evaluate(it)
+                } else
+                    interpreter.evaluate(it)
+            }
+            parentClass.initConstructorFields(interpreter, superArgs, instance)
+        }
+        val fields = constructor.fields.keys.associate {
+            constructor.parameters[it].lexeme to arguments[it]
+        }
+
+        instance.initConstructorFields(fields)
     }
 
     fun callConstructor(interpreter: Interpreter, arguments: List<Any?>, instance: MinervaInstance) {

@@ -1,8 +1,10 @@
 package backends.treewalk
 
+import Environment
+import frontend.Stmt
 import frontend.Token
 
-open class MinervaInstance(val klass: MinervaClass?) {
+open class MinervaInstance(val klass: MinervaClass?, val interpreter: Interpreter) {
 
     val fields = mutableMapOf<String, Any?>()
 
@@ -10,17 +12,26 @@ open class MinervaInstance(val klass: MinervaClass?) {
         return "${klass?.name} instance"
     }
 
-    init {
-        if (klass != null)
-            setUpFields(klass)
+    fun initialise(closure: Environment) {
+        if (klass != null) setUpFields(klass, interpreter, closure)
     }
 
-    fun setUpFields(currentClass: MinervaClass) {
-        if (currentClass.superClass != null) {
-            setUpFields(currentClass.superClass)
-        }
-        currentClass.fields.entries.forEach {
+    fun initConstructorFields(constructorFields: Map<String, Any?>) {
+        constructorFields.entries.forEach {
             fields[it.key] = it.value
+        }
+    }
+
+    fun setUpFields(currentClass: MinervaClass, interpreter: Interpreter, closure: Environment) {
+        if (currentClass.superClass != null) {
+            setUpFields(currentClass.superClass, interpreter, closure)
+        }
+
+        val environment = Environment(closure)
+        environment.define("this", this)
+
+        currentClass.fields.entries.forEach {
+            fields[it.key] = interpreter.executeBlock(listOf(Stmt.Expression(it.value)), environment)
         }
     }
 

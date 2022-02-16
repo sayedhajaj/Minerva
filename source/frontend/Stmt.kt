@@ -8,7 +8,11 @@ sealed class Stmt {
         val superclass: Expr.Variable?,
         val constructor: Constructor,
         val methods: List<Function>,
-        val fields: List<Stmt.Var>) : Stmt()
+        val fields: List<Stmt.Var>,
+        val interfaces: List<Token>
+        ) : Stmt()
+
+    class Interface(val name: Token, val methods: List<FunctionDeclaration>, val fields: List<VarDeclaration>): Stmt()
 
     class If(val condition: Expr, val thenBranch: Stmt, val elseBranch: Stmt?): Stmt()
 
@@ -25,8 +29,15 @@ sealed class Stmt {
         val constructorBody: Expr.Block
     ) : Stmt()
     class Function(val name: Token, val functionBody: Expr.Function): Stmt()
+    class FunctionDeclaration(
+        val name: Token,
+        val parameters: List<Token>,
+        val typeParameters: List<Token>,
+        val type: Type
+    )
 
     class Var(val name: Token, val initializer: Expr, var type: Type): Stmt()
+    class VarDeclaration(val name: Token, val type: Type): Stmt()
 
     class While(val condition: Expr, val body: Stmt): Stmt()
 }

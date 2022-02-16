@@ -19,12 +19,13 @@ class Parser(private val tokens: List<Token>) {
 
     private fun declaration(): Stmt {
         if (match(TokenType.CLASS)) return classDeclaration()
+        if (match(TokenType.INTERFACE)) return interfaceDeclaration()
         if (match(TokenType.FUNCTION)) return function()
-        if (match(TokenType.VAR)) return varDeclaration()
+        if (match(TokenType.VAR)) return varInitialisation()
         return statement()
     }
 
-    private fun varDeclaration(): Stmt {
+    private fun varInitialisation(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
         var type: Type = Type.InferrableType()
 
@@ -41,6 +42,20 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.Var(name, initialiser, type)
     }
 
+    private fun varDeclaration(): Stmt.VarDeclaration {
+        val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
+        var type: Type = Type.AnyType()
+
+        if (match(TokenType.COLON)) {
+            type = typeExpression()
+        }
+
+
+        consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
+
+        return Stmt.VarDeclaration(name, type)
+    }
+
     private fun whileStatement(): Stmt {
         consume(TokenType.LEFT_PAREN, "Expect '(' after while.")
         val condition = expression()
@@ -51,7 +66,7 @@ class Parser(private val tokens: List<Token>) {
 
     private fun classDeclaration(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect class name.")
-
+        val interfaces = mutableListOf<Token>()
 
         val typeParameters = if (match(TokenType.LESS)) {
             genericDeclaration()
@@ -91,6 +106,15 @@ class Parser(private val tokens: List<Token>) {
 
         }
 
+        if (match(TokenType.IMPLEMENTS)) {
+            do {
+                val name = consume(TokenType.IDENTIFIER, "Expect interface name.")
+                if (match(TokenType.LESS)) {
+                    genericCall()
+                }
+                interfaces.add(name)
+            } while (match(TokenType.COMMA))
+        }
 
         consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
@@ -100,7 +124,7 @@ class Parser(private val tokens: List<Token>) {
         while (!isAtEnd() && !check(TokenType.RIGHT_BRACE)) {
             if (match(TokenType.VAR)) {
                 // add field
-                fields.add(varDeclaration() as Stmt.Var)
+                fields.add(varInitialisation() as Stmt.Var)
             } else if (match(TokenType.FUNCTION)) {
                 methods.add(function())
             } else if (match(TokenType.CONSTRUCTOR)) {
@@ -116,7 +140,36 @@ class Parser(private val tokens: List<Token>) {
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after class body")
 
-        return Stmt.Class(name, superClass, constructor, methods, fields)
+        return Stmt.Class(name, superClass, constructor, methods, fields, interfaces)
+    }
+
+    private fun interfaceDeclaration(): Stmt {
+        val name = consume(TokenType.IDENTIFIER, "Expect interface name.")
+
+        val typeParameters = if (match(TokenType.LESS)) {
+            genericDeclaration()
+        } else emptyList()
+
+
+        consume(TokenType.LEFT_BRACE, "Expect '{' before interface body.")
+
+        val methods = mutableListOf<Stmt.FunctionDeclaration>()
+        val fields = mutableListOf<Stmt.VarDeclaration>()
+
+        while (!isAtEnd() && !check(TokenType.RIGHT_BRACE)) {
+            if (match(TokenType.VAR)) {
+                // add field
+                fields.add(varDeclaration())
+            } else if (match(TokenType.FUNCTION)) {
+                methods.add(functionDeclaration())
+            } else {
+                advance()
+            }
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after interface body")
+
+        return Stmt.Interface(name, methods, fields)
     }
 
     private fun statement(): Stmt {
@@ -590,6 +643,36 @@ class Parser(private val tokens: List<Token>) {
     private fun function(): Stmt.Function {
         val name = consume(TokenType.IDENTIFIER, "Expect function name.")
         return Stmt.Function(name, lambdaExpression())
+    }
+
+    private fun functionDeclaration(): Stmt.FunctionDeclaration {
+        val name = consume(TokenType.IDENTIFIER, "Expect function name.")
+        val typeParameters = if (match(TokenType.LESS)) {
+            genericDeclaration()
+        } else emptyList()
+
+        consume(TokenType.LEFT_PAREN, "Expect ')' after function name.")
+        val parameters = mutableListOf<Token>()
+        val parameterTypes = mutableListOf<Type>()
+
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                var parameterType: Type = Type.AnyType()
+                parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name"))
+                if (match(TokenType.COLON)) parameterType = typeExpression()
+                parameterTypes.add(parameterType)
+            } while (match(TokenType.COMMA))
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters")
+
+        var returnType: Type = Type.InferrableType()
+        if (match(TokenType.COLON)) {
+            returnType = typeExpression()
+        }
+        return Stmt.FunctionDeclaration(name, parameters, typeParameters, Type.FunctionType(
+            parameterTypes,
+            typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) },
+            returnType))
     }
 
 

@@ -18,14 +18,13 @@ class MinervaConstructor(
         return parameters.size
     }
 
+
     override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-        val environment = Environment(closure)
+        val environment = closure
 
         for (i in 0 until (parameters.size)) {
             environment.define(parameters[i].lexeme, arguments[i])
-            if (fields.containsKey(i)) {
-                instance?.fields?.set(parameters[i].lexeme, arguments[i])
-            }
+
         }
 
         interpreter.executeBlock(body.statements, environment)

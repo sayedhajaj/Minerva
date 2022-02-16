@@ -25,7 +25,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                         index -> initialiser.call(this@Interpreter, listOf(index))
 
                 }
-                return MinervaArray(arr)
+                return MinervaArray(arr, this@Interpreter)
             }
         })
     }
@@ -50,13 +50,15 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     environment = Environment(environment)
                     environment.define("super", superClass)
                 }
+                
+//                stmt.constructor.fields.forEach {  ->  }
 
                 val methods = stmt.methods.associate {
                     it.name.lexeme to MinervaFunction(it.name.lexeme, it.functionBody, environment)
                 }
 
                 val fields = stmt.fields.associate {
-                    it.name.lexeme to evaluate(it.initializer)
+                    it.name.lexeme to it.initializer
                 }
 
                 val constructor = MinervaConstructor(
@@ -153,7 +155,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         }
         is Expr.Array -> {
             val values = expr.values.map { evaluate(it) }
-            MinervaArray(values.toTypedArray())
+            MinervaArray(values.toTypedArray(), this)
         }
         is Expr.TypeMatch -> {
             val value = lookUpVariable(expr.variable.name, expr.variable)

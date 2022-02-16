@@ -4,7 +4,7 @@ function foo() => {
 
 function double(number: Int) => number * 2;
 
-var square(number: Int) => number * number;
+var square = function(number: Int) => number * number;
 
 function factorial(number: Int) : Int =>
 	if (number == 0) 1

@@ -2,7 +2,7 @@ package backends.treewalk
 
 import frontend.Token
 
-class MinervaArray(val elements: Array<Any?>) : MinervaInstance(null) {
+class MinervaArray(val elements: Array<Any?>, interpreter: Interpreter) : MinervaInstance(null, interpreter) {
 
 
     fun get(index: Int) : Any?  {
@@ -24,7 +24,7 @@ class MinervaArray(val elements: Array<Any?>) : MinervaInstance(null) {
                     val newElements = elements.map {
                         mapper.call(interpreter, listOf(it))
                     }
-                    return MinervaArray(newElements.toTypedArray())
+                    return MinervaArray(newElements.toTypedArray(), interpreter)
                 }
             }
             "reduce" -> object: MinervaCallable {

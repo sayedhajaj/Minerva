@@ -31,6 +31,7 @@ class Resolver {
                 beginScope()
                 scopes.peek().put("this", true)
 
+                resolve(stmt.constructor)
 
                 stmt.fields.forEach {
                     declare(it.name)
@@ -42,7 +43,6 @@ class Resolver {
                     resolve(it)
                 }
 
-                resolve(stmt.constructor)
 
                 endScope()
 
@@ -72,21 +72,22 @@ class Resolver {
                 resolve(stmt.body)
             }
             is Stmt.Constructor -> {
-                beginScope()
+                stmt.fields.values.forEach {
+                    declare(it)
+                    define(it)
+                }
+//                beginScope()
                 stmt.parameters.forEach {
                     declare(it.first)
                     define(it.first)
                 }
 
-                stmt.fields.values.forEach {
-                    declare(it)
-                }
 
 
                 stmt.superArgs.forEach { resolve(it) }
 
                 resolve(stmt.constructorBody.statements)
-                endScope()
+//                endScope()
             }
         }
     }
