@@ -28,6 +28,23 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 return MinervaArray(arr, this@Interpreter)
             }
         })
+
+        globals.define("square", object: MinervaCallable {
+            override fun arity(): Int = 1
+
+            override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                val num = arguments[0] as Int
+                return num * num
+            }
+        })
+
+        globals.define("Map", object: MinervaCallable {
+            override fun arity(): Int = 0
+
+            override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                return MinervaMap(interpreter)
+            }
+        })
     }
 
     fun interpet() {

@@ -1,0 +1,62 @@
+var arr = [1, 2, 3, 4];
+var blah = 3;
+function double(num:Int) => num*2;
+var res = arr.map(double);
+print res.map(double);
+
+function mult(accumulator: Int, current: Int) => accumulator * current;
+
+print(arr.reduce(mult, 1));
+
+print arr.length + 2;
+
+print ["name", "age"].length + 1;
+function ident(item: String) => item;
+print ["name", "age"].map(ident);
+
+function printStringArray(lst: String[]) => {
+    print lst;
+};
+
+
+/*function initialiser(index: Int) => index;
+print initialiser;
+
+
+
+var arr: Int[] = Array(1, initialiser);
+print arr;*/
+
+external function square(num: Int): Int;
+
+
+function apply(func: (Int)=>Int, num: Int) => func(num);
+print apply(square, apply(square, 2));
+
+external class Map<T> {
+
+    function get(key: String):T|null;
+    function put(key: String, value: T);
+}
+
+var map: Map<Int> = Map<Int>();
+map.put("Bob", 30);
+
+print map.get("Bob");
+
+var bobAge = map.get("Bob");
+
+print typematch(bobAge) {
+    Int => bobAge;
+    null => "Bob does not exist";
+};
+
+external class Array<T> {
+    var length: Int;
+
+    function get(index: Int): T;
+    function set(index: Int, value: T);
+
+    function map<V>(mapper: (T)=>V): Array<V>;
+};
+

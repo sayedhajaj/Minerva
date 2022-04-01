@@ -12,6 +12,13 @@ sealed class Stmt {
         val interfaces: List<Token>
         ) : Stmt()
 
+    class ClassDeclaration(
+        val name: Token,
+        val constructor: ConstructorDeclaration,
+        val methods: List<FunctionDeclaration>,
+        val fields: List<VarDeclaration>
+        ): Stmt()
+
     class Interface(val name: Token, val methods: List<FunctionDeclaration>, val fields: List<VarDeclaration>): Stmt()
 
     class If(val condition: Expr, val thenBranch: Stmt, val elseBranch: Stmt?): Stmt()
@@ -28,13 +35,20 @@ sealed class Stmt {
         val superTypeArgs: List<Type>,
         val constructorBody: Expr.Block
     ) : Stmt()
+
+    class ConstructorDeclaration(
+        val fields: Map<Int, Token>,
+        val parameters: List<Pair<Token, Type>>,
+        val typeParameters: List<Token>,
+    ) : Stmt()
+
     class Function(val name: Token, val functionBody: Expr.Function): Stmt()
     class FunctionDeclaration(
         val name: Token,
         val parameters: List<Token>,
         val typeParameters: List<Token>,
         val type: Type
-    )
+    ): Stmt()
 
     class Var(val name: Token, val initializer: Expr, var type: Type): Stmt()
     class VarDeclaration(val name: Token, val type: Type): Stmt()

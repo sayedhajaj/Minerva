@@ -38,6 +38,7 @@ class Scanner(private val source: String) {
             keywords["match"] = TokenType.MATCH
             keywords["interface"] = TokenType.INTERFACE
             keywords["implements"] = TokenType.IMPLEMENTS
+            keywords["external"] = TokenType.EXTERNAL
         }
     }
 

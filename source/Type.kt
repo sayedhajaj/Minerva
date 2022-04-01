@@ -76,7 +76,10 @@ sealed interface Type {
         }
 
         override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
-            return NullType()
+            return when(member) {
+                "length" -> IntegerType()
+                else -> NullType()
+            }
         }
 
         override fun toString(): String {

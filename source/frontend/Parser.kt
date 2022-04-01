@@ -18,11 +18,18 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun declaration(): Stmt {
+        if (match(TokenType.EXTERNAL)) return externalDeclaration()
         if (match(TokenType.CLASS)) return classDeclaration()
         if (match(TokenType.INTERFACE)) return interfaceDeclaration()
         if (match(TokenType.FUNCTION)) return function()
         if (match(TokenType.VAR)) return varInitialisation()
         return statement()
+    }
+
+    private fun externalDeclaration(): Stmt {
+        if (match(TokenType.FUNCTION)) return functionDeclaration()
+        else if (match(TokenType.CLASS)) return classTypeDeclaration()
+        else return statement()
     }
 
     private fun varInitialisation(): Stmt {
@@ -143,6 +150,45 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.Class(name, superClass, constructor, methods, fields, interfaces)
     }
 
+    private fun classTypeDeclaration(): Stmt {
+        val name = consume(TokenType.IDENTIFIER, "Expect class name.")
+        val typeParameters = if (match(TokenType.LESS)) {
+            genericDeclaration()
+        } else emptyList()
+
+        var constructorParams = emptyList<Pair<Token, Type>>()
+        var constructorFields = emptyMap<Int, Token>()
+
+        if (check(TokenType.LEFT_PAREN)) {
+            val constructorHeader = constructorParameters()
+            constructorParams = constructorHeader.first
+            constructorFields = constructorHeader.second
+        }
+
+
+        consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+        val methods = mutableListOf<Stmt.FunctionDeclaration>()
+        val fields = mutableListOf<Stmt.VarDeclaration>()
+
+        while (!isAtEnd() && !check(TokenType.RIGHT_BRACE)) {
+            if (match(TokenType.VAR)) {
+                // add field
+                fields.add(varDeclaration())
+            } else if (match(TokenType.FUNCTION)) {
+                methods.add(functionDeclaration())
+            } else {
+                advance()
+            }
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after class body")
+
+        val constructor = Stmt.ConstructorDeclaration(constructorFields, constructorParams, typeParameters)
+
+        return Stmt.ClassDeclaration(name, constructor, methods, fields)
+    }
+
     private fun interfaceDeclaration(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect interface name.")
 
@@ -171,6 +217,8 @@ class Parser(private val tokens: List<Token>) {
 
         return Stmt.Interface(name, methods, fields)
     }
+
+
 
     private fun statement(): Stmt {
         if (match(TokenType.IF)) return ifStatement()

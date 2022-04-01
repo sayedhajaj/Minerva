@@ -4,6 +4,9 @@ import frontend.Token
 
 class MinervaArray(val elements: Array<Any?>, interpreter: Interpreter) : MinervaInstance(null, interpreter) {
 
+    override fun toString(): String {
+        return elements.contentToString()
+    }
 
     fun get(index: Int) : Any?  {
         return elements[index]

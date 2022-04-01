@@ -136,6 +136,42 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
                 }
             }
+            is Stmt.ClassDeclaration -> {
+                val typeParameters = stmt.constructor.typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) }
+
+                typeParameters.forEach {
+                    environment.define(it.identifier.name.lexeme, it)
+                }
+
+                val memberMap = mutableMapOf<String, Type>()
+                stmt.fields.forEach {
+                    memberMap[it.name.lexeme] = it.type
+                }
+
+                stmt.methods.forEach {
+                    memberMap[it.name.lexeme] = it.type
+                }
+
+
+                typeCheck(stmt.constructor)
+
+                stmt.constructor.parameters.forEachIndexed {index, pair ->
+//                    params.add(pair.second)
+                    if(stmt.constructor.fields.containsKey(index)) {
+                        memberMap[pair.first.lexeme] = pair.second
+                    }
+                }
+
+                environment.define(stmt.name.lexeme, Type.InstanceType(
+                    Expr.Variable(stmt.name),
+                    emptyList(),
+                    typeParameters,
+                    emptyList(),
+                    memberMap,
+                    null,
+                    emptyList()
+                ))
+            }
             is Stmt.Constructor -> {
                 stmt.parameters.forEachIndexed { index, pair ->
                     if (stmt.fields.containsKey(index)) {
@@ -152,11 +188,26 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 getBlockType(stmt.constructorBody.statements, environment)
 //                environment = previous
             }
+
+            is Stmt.ConstructorDeclaration -> {
+                stmt.parameters.forEachIndexed { index, pair ->
+                    if (stmt.fields.containsKey(index)) {
+                        environment.define(pair.first.lexeme, pair.second)
+                    }
+                }
+
+                stmt.parameters.forEachIndexed {index, pair ->
+                    environment.define(pair.first.lexeme, pair.second)
+                }
+            }
             is Stmt.Expression -> typeCheck(stmt.expression)
             is Stmt.Function -> {
                 environment.define(stmt.name.lexeme, stmt.functionBody.type)
                 val type = typeCheck(stmt.functionBody)
                 environment.define(stmt.name.lexeme, type)
+            }
+            is Stmt.FunctionDeclaration -> {
+                environment.define(stmt.name.lexeme, stmt.type)
             }
             is Stmt.If -> {
                 typeCheck(stmt.condition)
@@ -277,28 +328,17 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         return when (expr) {
             is Expr.Get -> {
                 typeCheck(expr.obj)
-                if (expr.obj.type is Type.ArrayType) {
+                if (expr.obj.type is Type.ArrayType && expr.index != null) {
                     val thisType =  (expr.obj.type as Type.ArrayType).type
-                    if(expr.index != null) {
                         typeCheck(expr.index)
                         if (expr.index.type !is Type.IntegerType) {
                             typeErrors.add("Array index should be an integer")
                         }
-                    }
-                    else {
-                        thisType.getMemberType(expr.name.lexeme, this)
-                    }
+
                     expr.type = thisType
                     return thisType
-                }
-                if (expr.obj is Expr.Variable) {
-                    val className = (expr.obj).name
-                    val calleeType = resolveInstanceType(lookUpVariableType(className, expr.obj))
-                    val thisType = resolveInstanceType(calleeType.getMemberType(expr.name.lexeme, this))
-                    expr.type = thisType
-                    thisType
                 } else {
-                    val calleeType = typeCheck(expr.obj) as Type.InstanceType
+                    val calleeType = typeCheck(expr.obj)
                     val thisType = calleeType.getMemberType(expr.name.lexeme, this)
                     expr.type = thisType
                     thisType
