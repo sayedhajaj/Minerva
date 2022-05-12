@@ -1,0 +1,30 @@
+
+external function square(num: Int): Int;
+
+
+function apply(func: (Int)=>Int, num: Int) => func(num);
+print apply(square, apply(square, 2)); // expect 16
+
+// print square("3");
+// expect error
+
+external class Map<T> {
+
+    function get(key: String):T|null;
+    function put(key: String, value: T);
+}
+
+var map: Map<Int> = Map<Int>();
+map.put("Bob", 30);
+
+//map.put("John", "Smith");
+// expect error
+
+print map.get("Bob"); // expect 30
+
+var bobAge = map.get("Bob");
+
+print typematch(bobAge) {
+    Int => bobAge;
+    null => "Bob does not exist";
+}; // expect 30

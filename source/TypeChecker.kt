@@ -144,11 +144,13 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 }
 
                 val memberMap = mutableMapOf<String, Type>()
+                val params = mutableListOf<Type>()
                 stmt.fields.forEach {
                     memberMap[it.name.lexeme] = it.type
                 }
 
                 stmt.methods.forEach {
+                    typeCheck(it)
                     memberMap[it.name.lexeme] = it.type
                 }
 
@@ -156,7 +158,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 typeCheck(stmt.constructor)
 
                 stmt.constructor.parameters.forEachIndexed {index, pair ->
-//                    params.add(pair.second)
+                    params.add(pair.second)
                     if(stmt.constructor.fields.containsKey(index)) {
                         memberMap[pair.first.lexeme] = pair.second
                     }
@@ -164,7 +166,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
                 environment.define(stmt.name.lexeme, Type.InstanceType(
                     Expr.Variable(stmt.name),
-                    emptyList(),
+                    params,
                     typeParameters,
                     emptyList(),
                     memberMap,
@@ -219,6 +221,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
             is Stmt.Print -> {
                 typeCheck(stmt.expression)
+            }
+            is Stmt.PrintType -> {
+                typeCheck(stmt.expression)
+                println(stmt.expression.type.toString())
             }
             is Stmt.Var -> {
                 val initialiserType = resolveInstanceType(stmt.type)
@@ -328,8 +334,8 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         return when (expr) {
             is Expr.Get -> {
                 typeCheck(expr.obj)
-                if (expr.obj.type is Type.ArrayType && expr.index != null) {
-                    val thisType =  (expr.obj.type as Type.ArrayType).type
+                if (isArrayType(expr.obj.type) && expr.index != null) {
+                    val thisType =  (expr.obj.type as Type.InstanceType).typeArguments[0]
                         typeCheck(expr.index)
                         if (expr.index.type !is Type.IntegerType) {
                             typeErrors.add("Array index should be an integer")
@@ -347,7 +353,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Expr.Array -> {
                 val elementTypes = expr.values.map { typeCheck(it) }
                 val type = flattenTypes(elementTypes)
-                val thisType = Type.ArrayType(type)
+                val thisType = createArrayType(type)
                 expr.type = thisType
                 return thisType
             }
@@ -526,16 +532,17 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Expr.Set -> {
                 typeCheck(expr.obj)
                 val left = expr.obj.type
-                if (left is Type.ArrayType) {
+                if (isArrayType(left)) {
                     typeCheck(expr.value)
+                    val arrType = (left as Type.InstanceType).typeArguments[0]
                     if (expr.index != null) {
                         typeCheck(expr.index)
                         if (expr.index.type !is Type.IntegerType) {
                             typeErrors.add("Array index should be integer")
                         }
                     }
-                    if (!left.type.canAssignTo(expr.value.type, this)) {
-                        typeErrors.add("Cannot assign ${expr.value.type} to ${left.type}")
+                    if (!arrType.canAssignTo(expr.value.type, this)) {
+                        typeErrors.add("Cannot assign ${expr.value.type} to ${arrType}")
                     }
                         val thisType = expr.value.type
                         thisType
@@ -696,6 +703,26 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 false
             }
         }
+    }
+
+    private fun isArrayType(type: Type): Boolean {
+        return type is Type.InstanceType && type.className.name.lexeme == "Array"
+    }
+
+    private fun createArrayType(type: Type): Type {
+//        val arrType = environment.get(Token(TokenType.IDENTIFIER, "Array", null, -1)) as Type.InstanceType
+//        return resolveTypeArgument(
+//            mapOf("T" to type),
+//            Type.InstanceType(
+//            className = arrType.className,
+//            params = listOf(type, Type.FunctionType(listOf(Type.IntegerType()), emptyList(), type)),
+//            typeParams = arrType.typeParams,
+//            typeArguments = listOf(type),
+//            members = arrType.members,
+//            superclass = arrType.superclass,
+//            superTypeArgs = arrType.superTypeArgs
+//        )) as Type.InstanceType
+        return resolveInstanceType(Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type)))
     }
 
     fun flattenTypes(elementTypes: List<Type>): Type {

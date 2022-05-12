@@ -223,6 +223,7 @@ class Parser(private val tokens: List<Token>) {
     private fun statement(): Stmt {
         if (match(TokenType.IF)) return ifStatement()
         if (match(TokenType.PRINT)) return printStatement()
+        if (match(TokenType.PRINT_TYPE)) return printType()
         if (match(TokenType.WHILE)) return whileStatement()
         return expressionStatement()
     }
@@ -328,6 +329,12 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.Print(value)
     }
 
+    private fun printType(): Stmt {
+        val value = expression()
+        consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return Stmt.PrintType(value)
+    }
+
     private fun expressionStatement(): Stmt {
         val expr = expression()
         consume(TokenType.SEMICOLON, "Expect ';' after expression")
@@ -369,7 +376,7 @@ class Parser(private val tokens: List<Token>) {
                 }
                 if (match(TokenType.LEFT_SUB)) {
                     consume(TokenType.RIGHT_SUB, "Expect closing ']'")
-                    type = Type.ArrayType(type)
+                    type = Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type))
                 }
 
                 types.add(type)
@@ -389,7 +396,7 @@ class Parser(private val tokens: List<Token>) {
 
                 if (match(TokenType.LEFT_SUB)) {
                     consume(TokenType.RIGHT_SUB, "Expect closing ']'")
-                    type = Type.ArrayType(type)
+                    type = Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type))
                 }
                 types.add(type)
             }
