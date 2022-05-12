@@ -123,6 +123,12 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 }
             }
             is Stmt.Constructor -> {}
+            is Stmt.ClassDeclaration -> {}
+            is Stmt.ConstructorDeclaration -> {}
+            is Stmt.FunctionDeclaration -> {}
+            is Stmt.Interface -> {}
+            is Stmt.PrintType -> println(stmt.expression.type.toString())
+            is Stmt.VarDeclaration -> {}
         }
     }
 
