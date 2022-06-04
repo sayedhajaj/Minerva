@@ -71,6 +71,14 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.While(condition, body)
     }
 
+    private fun untilStatement(): Stmt {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after while.")
+        val condition = expression()
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
+        val body = statement()
+        return Stmt.While(Expr.Unary(Token(TokenType.BANG, "", null, -1), condition), body)
+    }
+
     private fun classDeclaration(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect class name.")
         val interfaces = mutableListOf<Token>()
@@ -225,6 +233,7 @@ class Parser(private val tokens: List<Token>) {
         if (match(TokenType.PRINT)) return printStatement()
         if (match(TokenType.PRINT_TYPE)) return printType()
         if (match(TokenType.WHILE)) return whileStatement()
+        if (match(TokenType.UNTIL)) return untilStatement()
         return expressionStatement()
     }
 

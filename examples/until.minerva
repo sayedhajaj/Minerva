@@ -1,0 +1,20 @@
+var iterations = 0;
+
+until (iterations == 10) {
+	print iterations;
+	iterations = iterations + 1;
+};
+
+/*
+expect:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+*/
