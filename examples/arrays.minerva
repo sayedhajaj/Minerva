@@ -11,7 +11,10 @@ external class Array<T> (size: Int, initialiser: (Int)=>T) {
 };
 
 
+function ident(item: String): String => item;
 
+
+/*
 
 
 
@@ -35,18 +38,21 @@ print(arr.reduce(mult, 1));
 print arr.length + 2;
 
 print ["name", "age"].length + 1;
-function ident(item: String): String => item;
 print ["name", "age"].map<String>(ident);
 
 var mappedStrings = ["name", "age"].map<String>(ident);
 print mappedStrings;
-
+*/
 function printStringArray(lst: String[]) => {
     print lst;
 };
 
 function createStringArray(): String[] => Array<String>(1, function (index: Int) => {"name";});
-var stringArray: Array<String> = Array<String>(1, function (index: Int) => {"name";});
+
+//var stringArray: Array<String> = Array<String>(1, function (index: Int) => {"name";});
+//var stringArray: String[] = createStringArray();
+var stringArray = ["a"];
+printType stringArray;
 printType stringArray.map<String>(ident);
 //printStringArray(stringArray.map<String>(ident));
 

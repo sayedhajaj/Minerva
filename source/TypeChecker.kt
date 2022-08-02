@@ -708,18 +708,6 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     }
 
     private fun createArrayType(type: Type): Type {
-//        val arrType = environment.get(Token(TokenType.IDENTIFIER, "Array", null, -1)) as Type.InstanceType
-//        return resolveTypeArgument(
-//            mapOf("T" to type),
-//            Type.InstanceType(
-//            className = arrType.className,
-//            params = listOf(type, Type.FunctionType(listOf(Type.IntegerType()), emptyList(), type)),
-//            typeParams = arrType.typeParams,
-//            typeArguments = listOf(type),
-//            members = arrType.members,
-//            superclass = arrType.superclass,
-//            superTypeArgs = arrType.superTypeArgs
-//        )) as Type.InstanceType
         return resolveInstanceType(Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type)))
     }
 
