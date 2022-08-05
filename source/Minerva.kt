@@ -35,7 +35,11 @@ object Minerva {
 
     }
 
-    fun interpret(syntaxTree: List<Stmt>) {
+    fun analyse(syntaxTree: List<Stmt>) {
+
+    }
+
+    fun interpret(syntaxTree: List<Stmt>): List<String> {
         val resolver = Resolver()
         resolver.resolve(syntaxTree)
         val typeChecker = TypeChecker(resolver.locals)
@@ -46,6 +50,9 @@ object Minerva {
         if (typeChecker.typeErrors.isEmpty()) {
             val interpreter = Interpreter(syntaxTree, resolver.locals, typeChecker)
             interpreter.interpet()
+            return interpreter.printStatements
+        } else {
+            return emptyList()
         }
     }
 }

@@ -13,6 +13,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
 
     val globals = Environment()
     var environment = globals
+    val printStatements = mutableListOf<String>()
 
     init {
         globals.define("Array", object: MinervaCallable {
@@ -100,7 +101,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 }
             }
             is Stmt.Print -> {
-                println(evaluate(stmt.expression))
+                log(evaluate(stmt.expression).toString())
             }
             is Stmt.Var -> {
                 val value = evaluate(stmt.initializer)
@@ -370,5 +371,10 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             if (left == false) return left
         }
         return evaluate(expr.right)
+    }
+
+    fun log(value: String) {
+        printStatements.add(value)
+        println(printStatements)
     }
 }
