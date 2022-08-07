@@ -375,6 +375,6 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
 
     fun log(value: String) {
         printStatements.add(value)
-        println(printStatements)
+        println(value)
     }
 }

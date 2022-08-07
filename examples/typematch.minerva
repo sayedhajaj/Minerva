@@ -1,0 +1,14 @@
+var magic: String | Int = "blah";
+
+function show(foo: String|Int) =>
+    typematch(foo) {
+        String => "I'm a string!";
+        Int => "I'm a number!";
+    };
+
+
+print show(magic);
+
+magic = 4;
+
+print show(magic);
