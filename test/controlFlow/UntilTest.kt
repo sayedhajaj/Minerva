@@ -1,10 +1,14 @@
+package controlFlow
+
+import HelloWorldTest
+import Minerva
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
 
 class UntilTest {
     @Test
     internal fun testUntil() {
-        val source = HelloWorldTest::class.java.getResource("until.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("control_flow/until.minerva").readText()
 
         val syntaxTree = Minerva.getSyntaxTree(source)
 

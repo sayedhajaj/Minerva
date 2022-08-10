@@ -1,3 +1,7 @@
+package controlFlow
+
+import HelloWorldTest
+import Minerva
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
 
@@ -5,7 +9,7 @@ class WhileTest {
 
     @Test
     internal fun testWhile() {
-        val source = HelloWorldTest::class.java.getResource("while.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("control_flow/while.minerva").readText()
 
         val syntaxTree = Minerva.getSyntaxTree(source)
 

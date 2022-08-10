@@ -1,10 +1,14 @@
+package controlFlow
+
+import HelloWorldTest
+import Minerva
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
 
 class MatchTest {
     @Test
     internal fun testMatch() {
-        val source = HelloWorldTest::class.java.getResource("match.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("control_flow/match.minerva").readText()
 
         val syntaxTree = Minerva.getSyntaxTree(source)
 
