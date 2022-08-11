@@ -1,10 +1,14 @@
+package functions
+
+import HelloWorldTest
+import Minerva
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
 
 class ClosureTest {
     @Test
     internal fun testClosures() {
-        val source = HelloWorldTest::class.java.getResource("closures.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("functions/closures.minerva").readText()
 
         val syntaxTree = Minerva.getSyntaxTree(source)
 
