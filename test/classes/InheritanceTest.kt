@@ -1,3 +1,7 @@
+package classes
+
+import HelloWorldTest
+import Minerva
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
 
@@ -5,7 +9,7 @@ class InheritanceTest {
 
     @Test
     internal fun testInheritance() {
-        val source = HelloWorldTest::class.java.getResource("inheritance.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("classes/inheritance.minerva").readText()
 
         val syntaxTree = Minerva.getSyntaxTree(source)
 
