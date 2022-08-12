@@ -27,4 +27,14 @@ class FunctionsTest {
         val output = Minerva.interpret(syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("true", "true"), output, "")
     }
+
+    @Test
+    internal fun testDoubleCapture() {
+        val source = HelloWorldTest::class.java.getResource("functions/double_capture.minerva").readText()
+
+        val syntaxTree = Minerva.getSyntaxTree(source)
+
+        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        assertContentEquals(arrayOf("1"), output, "")
+    }
 }

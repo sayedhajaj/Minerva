@@ -1,0 +1,11 @@
+var a = 0;
+
+function bar() => {};
+
+function foo() => {
+    a = a + 1;
+    bar();
+};
+
+foo();
+print a; // expect 1
