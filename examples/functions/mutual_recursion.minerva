@@ -1,0 +1,14 @@
+function isEven(n: Int): Boolean =>
+    if (n == 0)
+        true
+    else
+        isOdd(n-1);
+
+function isOdd(n: Int): Boolean =>
+    if (n == 0)
+        false
+    else
+        isEven(n-1);
+
+print isEven(4);
+print isOdd(3);

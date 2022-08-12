@@ -2,6 +2,7 @@ package functions
 
 import HelloWorldTest
 import Minerva
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
 
@@ -14,5 +15,16 @@ class FunctionsTest {
 
         val output = Minerva.interpret(syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("Hello World!", "8", "9", "120"), output, "")
+    }
+
+    @Disabled
+    @Test
+    internal fun testMutualRecursion() {
+        val source = HelloWorldTest::class.java.getResource("functions/mutual_recursion.minerva").readText()
+
+        val syntaxTree = Minerva.getSyntaxTree(source)
+
+        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        assertContentEquals(arrayOf("true", "true"), output, "")
     }
 }
