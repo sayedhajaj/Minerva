@@ -25,4 +25,14 @@ class ClosureTest {
         val output = Minerva.interpret(syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("global", "global"), output, "")
     }
+
+    @Test
+    internal fun testAdder() {
+        val source = HelloWorldTest::class.java.getResource("functions/closures/adder.minerva").readText()
+
+        val syntaxTree = Minerva.getSyntaxTree(source)
+
+        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        assertContentEquals(arrayOf("8"), output, "")
+    }
 }

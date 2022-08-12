@@ -1,0 +1,5 @@
+function makeAdder(number: Int) => function (other: Int) => number + other;
+
+var add5 = makeAdder(5);
+
+print add5(3);
