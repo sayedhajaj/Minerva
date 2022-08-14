@@ -335,6 +335,11 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 }
             }
 
+            is Type.BooleanType -> when (expr.operator.type) {
+                TokenType.EQUAL_EQUAL -> left == right
+                TokenType.BANG_EQUAL -> left != right
+                else -> null
+            }
             else -> null
         }
     }
