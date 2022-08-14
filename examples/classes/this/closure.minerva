@@ -1,0 +1,15 @@
+class Foo {
+
+    function toString() => "Foo";
+
+    function getClosure() => {
+        function closure () => {
+            this.toString();
+        };
+        closure;
+    };
+
+}
+
+var closure = Foo().getClosure();
+print closure();
