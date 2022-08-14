@@ -25,4 +25,14 @@ class ThisTest {
         assertContentEquals(arrayOf("Foo"), output, "")
     }
 
+    @Test
+    internal fun testThisInMethod() {
+        val source = HelloWorldTest::class.java.getResource("classes/this/this_in_method.minerva").readText()
+
+        val syntaxTree = Minerva.getSyntaxTree(source)
+
+        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        assertContentEquals(arrayOf("baz"), output, "")
+    }
+
 }

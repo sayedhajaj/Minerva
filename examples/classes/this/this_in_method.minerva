@@ -1,0 +1,7 @@
+class Foo {
+    function bar(): Foo => this;
+
+    function baz() => "baz";
+}
+
+print Foo().bar().baz(); // expect baz
