@@ -1,0 +1,13 @@
+
+class Person(var name: String, var pet: Pet) {
+
+}
+
+class Pet(var name: String) {
+
+}
+
+var john = Person("John", Pet("Garfield"));
+
+print john.name; // expect John
+print john.pet.name; // expect Garfield

@@ -15,4 +15,14 @@ class ClassesTest {
         val output = Minerva.interpret(syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("12", "14", "6", "20", "18"), output, "")
     }
+
+    @Test
+    internal fun testUseThenDefine() {
+        val source = HelloWorldTest::class.java.getResource("classes/use_then_define.minerva").readText()
+
+        val syntaxTree = Minerva.getSyntaxTree(source)
+
+        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        assertContentEquals(arrayOf("John", "Garfield"), output, "")
+    }
 }

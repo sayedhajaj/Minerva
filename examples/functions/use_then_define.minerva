@@ -1,0 +1,7 @@
+
+
+function quadruple(n: Int): Int => double(double(n));
+
+function double(n: Int): Int => n * 2;
+
+print quadruple(2);

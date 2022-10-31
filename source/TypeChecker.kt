@@ -11,7 +11,71 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     val typeErrors: MutableList<String> = mutableListOf()
 
     fun typeCheck(statements: List<Stmt>) {
+        statements.forEach { checkDeclarations(it) }
         statements.forEach { typeCheck(it) }
+    }
+
+    fun checkDeclarations(stmt: Stmt) {
+        when (stmt) {
+            is Stmt.Class -> {
+
+            }
+            is Stmt.ClassDeclaration -> {}
+            is Stmt.Constructor -> {}
+            is Stmt.Expression -> checkDeclarations(stmt.expression)
+            is Stmt.Function -> {
+                environment.define(stmt.name.lexeme, stmt.functionBody.type)
+                checkDeclarations(stmt.functionBody)
+            }
+            is Stmt.ConstructorDeclaration -> {}
+            is Stmt.FunctionDeclaration -> {
+                environment.define(stmt.name.lexeme, stmt.type)
+            }
+            is Stmt.If -> {}
+            is Stmt.Interface -> {}
+            is Stmt.Print -> {}
+            is Stmt.PrintType -> {}
+            is Stmt.Var -> {}
+            is Stmt.VarDeclaration -> {}
+            is Stmt.While -> {}
+        }
+    }
+
+    fun checkDeclarations(expr: Expr) {
+        when (expr) {
+            is Expr.Array -> {
+            }
+            is Expr.Assign -> {}
+            is Expr.Binary -> {}
+            is Expr.Block -> {
+                val previous = this.environment
+
+                this.environment = Environment(environment)
+
+                expr.statements.forEach { checkDeclarations(it) }
+                this.environment = previous
+            }
+            is Expr.Call -> {}
+            is Expr.Function -> {}
+            is Expr.Get -> {}
+            is Expr.Grouping -> {}
+            is Expr.If -> {
+                checkDeclarations(expr.condition)
+                checkDeclarations(expr.thenBranch)
+                checkDeclarations(expr.elseBranch)
+            }
+            is Expr.Literal -> {}
+            is Expr.Logical -> {}
+            is Expr.Match -> { }
+            is Expr.Set -> {}
+            is Expr.Super -> {}
+            is Expr.This -> {}
+            is Expr.TypeMatch -> {}
+            is Expr.Unary -> {
+                checkDeclarations(expr.right)
+            }
+            is Expr.Variable -> {}
+        }
     }
 
     fun typeCheck(stmt: Stmt) {
