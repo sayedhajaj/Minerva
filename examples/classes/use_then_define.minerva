@@ -1,10 +1,12 @@
 
 class Person(var name: String, var pet: Pet) {
-
+    function printInfo() => {
+        print this.name;
+        print this.pet.name;
+    };
 }
 
 class Pet(var name: String) {
-
 }
 
 var john = Person("John", Pet("Garfield"));
