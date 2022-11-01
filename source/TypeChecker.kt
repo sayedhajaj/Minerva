@@ -431,21 +431,11 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
             is Expr.Literal -> {
                 val type = when (expr.value) {
-                    is String -> {
-                        Type.StringType()
-                    }
-                    is Double -> {
-                        Type.DoubleType()
-                    }
-                    is Int -> {
-                        Type.IntegerType()
-                    }
-                    is Boolean -> {
-                        Type.BooleanType()
-                    }
-                    else -> {
-                        Type.NullType()
-                    }
+                    is String -> Type.StringType()
+                    is Double -> Type.DoubleType()
+                    is Int -> Type.IntegerType()
+                    is Boolean -> Type.BooleanType()
+                    else -> Type.NullType()
                 }
                 expr.type = type
                 expr.type
