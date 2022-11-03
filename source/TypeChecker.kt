@@ -32,7 +32,16 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 environment.define(stmt.name.lexeme, stmt.type)
             }
             is Stmt.If -> {}
-            is Stmt.Interface -> {}
+            is Stmt.Interface -> {
+                val members = mutableMapOf<String, Type>()
+                stmt.methods.forEach {
+                    members[it.name.lexeme] = it.type
+                }
+                stmt.fields.forEach {
+                    members[it.name.lexeme] = it.type
+                }
+                environment.define(stmt.name.lexeme, Type.InterfaceType(members))
+            }
             is Stmt.Print -> {}
             is Stmt.PrintType -> {}
             is Stmt.Var -> {}
@@ -90,9 +99,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 val type = typeCheck(stmt.functionBody)
                 environment.define(stmt.name.lexeme, type)
             }
-            is Stmt.FunctionDeclaration -> {
-                environment.define(stmt.name.lexeme, stmt.type)
-            }
+            is Stmt.FunctionDeclaration -> {}
             is Stmt.If -> {
                 typeCheck(stmt.condition)
                 typeCheck(stmt.thenBranch)
@@ -124,17 +131,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 }
                 typeCheck(stmt.body)
             }
-            is Stmt.Interface -> {
-                val members = mutableMapOf<String, Type>()
-                stmt.methods.forEach {
-                    members[it.name.lexeme] = it.type
-                }
-                stmt.fields.forEach {
-                    members[it.name.lexeme] = it.type
-
-                }
-                environment.define(stmt.name.lexeme, Type.InterfaceType(members))
-            }
+            is Stmt.Interface -> {}
             is Stmt.VarDeclaration -> {}
         }
     }
