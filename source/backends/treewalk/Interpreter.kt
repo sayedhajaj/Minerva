@@ -16,21 +16,21 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
     val printStatements = mutableListOf<String>()
 
     init {
-        globals.define("Array", object: MinervaCallable {
+        globals.define("Array", object : MinervaCallable {
             override fun arity(): Int = 2
 
             override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
                 val size = arguments[0] as Int
                 val initialiser = arguments[1] as MinervaCallable
-                val arr = Array(size) {
-                        index -> initialiser.call(this@Interpreter, listOf(index))
+                val arr = Array(size) { index ->
+                    initialiser.call(this@Interpreter, listOf(index))
 
                 }
                 return MinervaArray(arr, this@Interpreter)
             }
         })
 
-        globals.define("square", object: MinervaCallable {
+        globals.define("square", object : MinervaCallable {
             override fun arity(): Int = 1
 
             override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
@@ -39,7 +39,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             }
         })
 
-        globals.define("Map", object: MinervaCallable {
+        globals.define("Map", object : MinervaCallable {
             override fun arity(): Int = 0
 
             override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
@@ -54,7 +54,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         }
 
     }
-    
+
     fun execute(stmt: Stmt) {
         when (stmt) {
             is Stmt.Class -> {
@@ -68,7 +68,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     environment = Environment(environment)
                     environment.define("super", superClass)
                 }
-                
+
 //                stmt.constructor.fields.forEach {  ->  }
 
                 val methods = stmt.methods.associate {
@@ -108,11 +108,12 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 environment.define(stmt.name.lexeme, value)
             }
             is Stmt.Function -> {
-                environment.define(stmt.name.lexeme, MinervaFunction(
-                    stmt.name.lexeme,
-                    stmt.functionBody,
-                    environment
-                )
+                environment.define(
+                    stmt.name.lexeme, MinervaFunction(
+                        stmt.name.lexeme,
+                        stmt.functionBody,
+                        environment
+                    )
                 )
             }
             is Stmt.Expression -> {
@@ -123,17 +124,23 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     execute(stmt.body)
                 }
             }
-            is Stmt.Constructor -> {}
-            is Stmt.ClassDeclaration -> {}
-            is Stmt.ConstructorDeclaration -> {}
-            is Stmt.FunctionDeclaration -> {}
-            is Stmt.Interface -> {}
+            is Stmt.Constructor -> {
+            }
+            is Stmt.ClassDeclaration -> {
+            }
+            is Stmt.ConstructorDeclaration -> {
+            }
+            is Stmt.FunctionDeclaration -> {
+            }
+            is Stmt.Interface -> {
+            }
             is Stmt.PrintType -> println(stmt.expression.type.toString())
-            is Stmt.VarDeclaration -> {}
+            is Stmt.VarDeclaration -> {
+            }
         }
     }
 
-    fun evaluate(expr: Expr): Any?  =  when (expr) {
+    fun evaluate(expr: Expr): Any? = when (expr) {
         is Expr.Block -> executeBlock(expr.statements, Environment(environment))
         is Expr.Assign -> evaluateAssign(expr)
         is Expr.Binary -> evaluateBinary(expr)
@@ -156,13 +163,13 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             if (obj is MinervaArray && expr.index != null) {
                 val index = evaluate(expr.index) as Int
                 obj.get(index)
-            } else if (obj is MinervaInstance)  obj.get(expr.name)
+            } else if (obj is MinervaInstance) obj.get(expr.name)
             else null
         }
         is Expr.Set -> {
             val obj = evaluate(expr.obj)
             if (obj is MinervaArray && expr.index != null) {
-              obj.set((evaluate(expr.index) as Int), evaluate(expr.value))
+                obj.set((evaluate(expr.index) as Int), evaluate(expr.value))
             } else if (obj is MinervaInstance) {
                 val value = evaluate(expr.value)
                 obj.set(expr.name, value)
@@ -173,7 +180,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         is Expr.Super -> {
             val distance = locals[expr]
             val superclass = distance?.let { environment.getAt(it, "super") } as MinervaClass
-            val obj = environment.getAt(distance -1, "this") as MinervaInstance
+            val obj = environment.getAt(distance - 1, "this") as MinervaInstance
             val method = superclass.findMethod(expr.method.lexeme)
             method?.bind(obj)
         }
@@ -212,7 +219,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 value == evaluate(it.first)
             }
 
-            val result = if(matching.isNotEmpty()) {
+            val result = if (matching.isNotEmpty()) {
                 evaluate(matching[0].second)
             } else {
                 evaluate(expr.elseBranch)
@@ -246,7 +253,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         else -> Type.NullType()
     }
 
-    fun evaluateCall(expr: Expr.Call) : Any? {
+    fun evaluateCall(expr: Expr.Call): Any? {
         val callee = evaluate(expr.callee)
 
         val arguments = expr.arguments.map { evaluate(it) }
@@ -276,7 +283,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         return lastExpr
     }
 
-    fun evaluateUnary(expr: Expr.Unary): Any?  {
+    fun evaluateUnary(expr: Expr.Unary): Any? {
         val right = evaluate(expr.right)
         return when (expr.operator.type) {
             TokenType.MINUS -> -(right as Double)
