@@ -67,7 +67,7 @@ sealed interface Type {
         override fun toString(): String = types.joinToString("|")
     }
 
-    class InstanceType(
+    data class InstanceType(
         val className: Expr.Variable,
         val params: List<Type>,
         val typeParams: List<UnresolvedType>,

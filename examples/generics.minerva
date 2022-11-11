@@ -9,3 +9,13 @@ print container.value + 4; // expect 7
 var newContainer = Container(Container(9));
 
 print newContainer.value.value * 2; // expect 18
+
+class Gen<T>(var value: T) {
+}
+
+
+function get<V>(result: V): Gen<V> => Gen<V>(result);
+
+//var oldGen = Gen(3);
+var newGen = get<String>("blah");
+//printType newGen;

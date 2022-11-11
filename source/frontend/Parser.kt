@@ -138,7 +138,6 @@ class Parser(private val tokens: List<Token>) {
 
         while (!isAtEnd() && !check(TokenType.RIGHT_BRACE)) {
             if (match(TokenType.VAR)) {
-                // add field
                 fields.add(varInitialisation() as Stmt.Var)
             } else if (match(TokenType.FUNCTION)) {
                 methods.add(function())
@@ -590,12 +589,9 @@ class Parser(private val tokens: List<Token>) {
     private fun call(): Expr {
         var expr = primary()
 
-
-
         while (true) {
             var typeArguments: List<Type> = emptyList()
             if (check(TokenType.LESS)) {
-//                println("less")
                 val nextCharacterIsType = check(TokenType.IDENTIFIER, 1) ||
                         check(TokenType.STRING, 1) ||
                         check(TokenType.INTEGER, 1) || check(TokenType.DECIMAL, 1) ||

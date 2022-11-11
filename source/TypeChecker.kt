@@ -18,6 +18,42 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     fun checkDeclarations(stmt: Stmt) {
         when (stmt) {
             is Stmt.Class -> {
+                val typeParameters = stmt.constructor.typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) }
+                
+                val memberMap = mutableMapOf<String, Type>()
+                val params = mutableListOf<Type>()
+                stmt.fields.forEach {
+                    memberMap[it.name.lexeme] = it.type
+                }
+
+                stmt.methods.forEach {
+                    checkDeclarations(it)
+                    memberMap[it.name.lexeme] = it.functionBody.type
+                }
+
+                checkDeclarations(stmt.constructor)
+
+                stmt.constructor.parameters.forEachIndexed { index, pair ->
+                    params.add(pair.second)
+                    if (stmt.constructor.fields.containsKey(index)) {
+                        memberMap[pair.first.lexeme] = pair.second
+                    }
+                }
+
+                val instance = Type.InstanceType(
+                    Expr.Variable(stmt.name),
+                    params,
+                    typeParameters,
+                    emptyList(),
+                    memberMap,
+                    null,
+                    emptyList()
+                )
+
+                environment.define(
+                    stmt.name.lexeme,
+                    instance
+                )
             }
             is Stmt.ClassDeclaration -> typeCheckClassDeclaration(stmt)
             is Stmt.Constructor -> {
@@ -28,9 +64,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 checkDeclarations(stmt.functionBody)
             }
             is Stmt.ConstructorDeclaration -> typeCheckConstructorDeclaration(stmt)
-            is Stmt.FunctionDeclaration -> {
-                environment.define(stmt.name.lexeme, stmt.type)
-            }
+            is Stmt.FunctionDeclaration -> environment.define(stmt.name.lexeme, stmt.type)
             is Stmt.If -> {
                 checkDeclarations(stmt.thenBranch)
                 stmt.elseBranch?.let { checkDeclarations(it) }
@@ -45,14 +79,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 }
                 environment.define(stmt.name.lexeme, Type.InterfaceType(members))
             }
-            is Stmt.Print -> {
-            }
-            is Stmt.PrintType -> {
-            }
-            is Stmt.Var -> {
-            }
-            is Stmt.VarDeclaration -> {
-            }
+            is Stmt.Print -> { }
+            is Stmt.PrintType -> { }
+            is Stmt.Var -> { }
+            is Stmt.VarDeclaration -> { }
             is Stmt.While -> {
                 checkDeclarations(stmt.body)
             }
@@ -61,12 +91,9 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     fun checkDeclarations(expr: Expr) {
         when (expr) {
-            is Expr.Array -> {
-            }
-            is Expr.Assign -> {
-            }
-            is Expr.Binary -> {
-            }
+            is Expr.Array -> expr.values.forEach { typeCheck(it) }
+            is Expr.Assign -> { }
+            is Expr.Binary -> { }
             is Expr.Block -> {
                 val previous = this.environment
 
@@ -75,56 +102,37 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 expr.statements.forEach { checkDeclarations(it) }
                 this.environment = previous
             }
-            is Expr.Call -> {
-            }
-            is Expr.Function -> {
-            }
-            is Expr.Get -> {
-            }
-            is Expr.Grouping -> {
-            }
+            is Expr.Call -> { }
+            is Expr.Function -> { }
+            is Expr.Get -> { }
+            is Expr.Grouping -> { }
             is Expr.If -> {
                 checkDeclarations(expr.condition)
                 checkDeclarations(expr.thenBranch)
                 checkDeclarations(expr.elseBranch)
             }
-            is Expr.Literal -> {
-            }
-            is Expr.Logical -> {
-            }
-            is Expr.Match -> {
-            }
-            is Expr.Set -> {
-            }
-            is Expr.Super -> {
-            }
-            is Expr.This -> {
-            }
-            is Expr.TypeMatch -> {
-            }
-            is Expr.Unary -> {
-                checkDeclarations(expr.right)
-            }
-            is Expr.Variable -> {
-            }
+            is Expr.Literal -> { }
+            is Expr.Logical -> { }
+            is Expr.Match -> { }
+            is Expr.Set -> { }
+            is Expr.Super -> { }
+            is Expr.This -> { }
+            is Expr.TypeMatch -> { }
+            is Expr.Unary -> checkDeclarations(expr.right)
+            is Expr.Variable -> { }
         }
     }
 
     fun typeCheck(stmt: Stmt) {
         when (stmt) {
             is Stmt.Class -> typeCheckClass(stmt)
-            is Stmt.ClassDeclaration -> {
-            }
             is Stmt.Constructor -> typeCheckConstructor(stmt)
-            is Stmt.ConstructorDeclaration -> {
-            }
+            is Stmt.ConstructorDeclaration, is Stmt.ClassDeclaration, is Stmt.FunctionDeclaration -> { }
             is Stmt.Expression -> typeCheck(stmt.expression)
             is Stmt.Function -> {
                 environment.define(stmt.name.lexeme, stmt.functionBody.type)
                 val type = typeCheck(stmt.functionBody)
                 environment.define(stmt.name.lexeme, type)
-            }
-            is Stmt.FunctionDeclaration -> {
             }
             is Stmt.If -> {
                 typeCheck(stmt.condition)
@@ -157,10 +165,8 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 }
                 typeCheck(stmt.body)
             }
-            is Stmt.Interface -> {
-            }
-            is Stmt.VarDeclaration -> {
-            }
+            is Stmt.Interface -> { }
+            is Stmt.VarDeclaration -> { }
         }
     }
 
@@ -171,7 +177,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
         }
 
-        stmt.parameters.forEachIndexed { index, pair ->
+        stmt.parameters.forEach { pair ->
             environment.define(pair.first.lexeme, pair.second)
         }
     }
@@ -183,18 +189,14 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
         }
 
-        stmt.parameters.forEachIndexed { index, pair ->
-            environment.define(pair.first.lexeme, pair.second)
-        }
+        stmt.parameters.forEach {  pair -> environment.define(pair.first.lexeme, pair.second) }
         getBlockType(stmt.constructorBody.statements, environment)
     }
 
     private fun typeCheckClassDeclaration(stmt: Stmt.ClassDeclaration) {
         val typeParameters = stmt.constructor.typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) }
 
-        typeParameters.forEach {
-            environment.define(it.identifier.name.lexeme, it)
-        }
+        typeParameters.forEach { environment.define(it.identifier.name.lexeme, it) }
 
         val memberMap = mutableMapOf<String, Type>()
         val params = mutableListOf<Type>()
@@ -230,6 +232,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     }
 
     private fun typeCheckClass(stmt: Stmt.Class) {
+        val previous = this.environment
+        this.environment = Environment(this.environment)
+
+        val referencedInstance = environment.get(stmt.name) as Type.InstanceType
+        this.environment.define("this", referencedInstance)
+
         val members = mutableMapOf<String, Type>()
         val params = mutableListOf<Type>()
 
@@ -250,78 +258,28 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             environment.define("super", superclass)
         }
 
-        environment.define(
-            "this",
-            Type.InstanceType(
-                Expr.Variable(stmt.name),
-                params, typeParameters,
-                emptyList(), members,
-                superclass, superTypeArgs
-            )
-        )
-
 
         typeCheck(stmt.constructor)
 
         stmt.fields.forEach {
             typeCheck(it)
             members[it.name.lexeme] = it.type
+            environment.define(it.name.lexeme, it.type)
         }
-
-
-        environment.define(
-            "this",
-            Type.InstanceType(
-                Expr.Variable(stmt.name),
-                params, typeParameters,
-                emptyList(), members,
-                superclass, superTypeArgs
-            )
-        )
 
         stmt.constructor.parameters.forEachIndexed { index, pair ->
             params.add(pair.second)
             if (stmt.constructor.fields.containsKey(index)) {
                 members[pair.first.lexeme] = pair.second
+                environment.define(pair.first.lexeme, pair.second)
             }
         }
-
-        environment.define(
-            "this",
-            Type.InstanceType(
-                Expr.Variable(stmt.name),
-                params, typeParameters,
-                emptyList(), members,
-                superclass, superTypeArgs
-            )
-        )
 
         stmt.methods.forEach {
             typeCheck(it)
             members[it.name.lexeme] = it.functionBody.type
+            environment.define(it.name.lexeme, it.functionBody.type)
         }
-
-
-
-        environment.define(
-            stmt.name.lexeme,
-            Type.InstanceType(
-                Expr.Variable(stmt.name),
-                params, typeParameters,
-                emptyList(), members,
-                superclass, superTypeArgs
-            )
-        )
-
-        environment.define(
-            "this",
-            Type.InstanceType(
-                Expr.Variable(stmt.name),
-                params, typeParameters,
-                emptyList(), members,
-                superclass, superTypeArgs
-            )
-        )
 
         val instance = Type.InstanceType(
             Expr.Variable(stmt.name),
@@ -329,6 +287,19 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             emptyList(), members,
             superclass, superTypeArgs
         )
+
+        environment.define(
+            "this",
+            instance
+        )
+
+        this.environment = previous
+
+        environment.define(
+            stmt.name.lexeme,
+            instance
+        )
+
 
         stmt.interfaces.forEach {
             val referencedInterface = environment.get(it) as Type.InterfaceType
@@ -357,12 +328,8 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     } else resolvedType
                 } else resolvedType
             }
-            is Type.ArrayType -> {
-                Type.ArrayType(resolveInstanceType(type.type))
-            }
-            is Type.UnionType -> {
-                Type.UnionType(type.types.map { resolveInstanceType(it) })
-            }
+            is Type.ArrayType -> Type.ArrayType(resolveInstanceType(type.type))
+            is Type.UnionType -> Type.UnionType(type.types.map { resolveInstanceType(it) })
             else -> type
         }
     }
@@ -541,7 +508,6 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         val params = calleeType.params
         val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments)
 
-
         val args = typeParams.zip(typeArguments).associate {
             Pair(it.first.identifier.name.lexeme, it.second)
         }.toMap()
@@ -618,10 +584,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             val thisType = expr.value.type
             thisType
         } else {
-            val left = lookUpVariableType(expr.name, expr)
+            val field = left.getMemberType(expr.name.lexeme, this)
             typeCheck(expr.value)
-            if (!left.canAssignTo(expr.value.type, this)) {
-                typeErrors.add("Cannot assign ${expr.value.type} to ${left}")
+            if (!field.canAssignTo(expr.value.type, this)) {
+                typeErrors.add("Cannot assign ${expr.value.type} to $field")
             }
             val thisType = expr.value.type
             thisType
@@ -770,9 +736,9 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         return if (hasElse) true
         else {
             if (type is Type.AnyType) return false
-            if (type is Type.UnionType) type.types.all { type ->
+            if (type is Type.UnionType) type.types.all {
                 branches.any { branch ->
-                    type.canAssignTo(
+                    it.canAssignTo(
                         resolveInstanceType(branch),
                         this
                     )

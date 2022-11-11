@@ -134,7 +134,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             }
             is Stmt.Interface -> {
             }
-            is Stmt.PrintType -> println(stmt.expression.type.toString())
+            is Stmt.PrintType -> log(stmt.expression.type.toString())
             is Stmt.VarDeclaration -> {
             }
         }
@@ -219,11 +219,10 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 value == evaluate(it.first)
             }
 
-            val result = if (matching.isNotEmpty()) {
+            val result = if (matching.isNotEmpty())
                 evaluate(matching[0].second)
-            } else {
+            else
                 evaluate(expr.elseBranch)
-            }
             result
         }
     }
