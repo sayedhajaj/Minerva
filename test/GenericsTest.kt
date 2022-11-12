@@ -10,6 +10,6 @@ class GenericsTest {
         val syntaxTree = Minerva.getSyntaxTree(source)
 
         val output = Minerva.interpret(syntaxTree).toTypedArray()
-        assertContentEquals(arrayOf("3", "7", "18"), output, "")
+        assertContentEquals(arrayOf("6", "11", "3", "7", "18", "Container<String>"), output, "")
     }
 }

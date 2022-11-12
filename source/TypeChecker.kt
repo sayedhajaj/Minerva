@@ -254,10 +254,8 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         val superTypeArgs = stmt.constructor.superTypeArgs
 
         if (superclass != null) {
-            //                    environment = Environment(environment)
             environment.define("super", superclass)
         }
-
 
         typeCheck(stmt.constructor)
 
@@ -299,7 +297,6 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             stmt.name.lexeme,
             instance
         )
-
 
         stmt.interfaces.forEach {
             val referencedInterface = environment.get(it) as Type.InterfaceType
@@ -537,11 +534,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
         checkGenericCall(arguments, params)
 
-        val thisType = if (resultType is Type.UnresolvedType) {
-            lookUpVariableType(resultType.identifier.name, resultType.identifier)
-        } else {
-            resultType
-        }
+        val thisType = resolveInstanceType(resultType)
         expr.type = thisType
 
         return thisType
@@ -701,7 +694,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 return newTypeArgs
             } else {
                 typeErrors.add("Number of type params and type arguments don't match")
-                return emptyList<Type>()
+                return emptyList()
             }
         } else {
             return typeArguments

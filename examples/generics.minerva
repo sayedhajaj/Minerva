@@ -1,3 +1,12 @@
+function getValue<T>(value: T) => value;
+
+var value = getValue(3) + 3;
+print value;
+
+function higherOrderGetValue<T>(value: T) => function () => value;
+
+print higherOrderGetValue(10)()+1;
+
 class Container<T>(var value: T){}
 
 var container = Container(3);
@@ -10,12 +19,9 @@ var newContainer = Container(Container(9));
 
 print newContainer.value.value * 2; // expect 18
 
-class Gen<T>(var value: T) {
-}
+
+function getContainer<V>(result: V): Container<V> => Container<V>(result);
 
 
-function get<V>(result: V): Gen<V> => Gen<V>(result);
-
-//var oldGen = Gen(3);
-var newGen = get<String>("blah");
-//printType newGen;
+var generatedContainer = getContainer<String>("blah");
+printType generatedContainer;
