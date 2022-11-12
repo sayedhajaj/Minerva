@@ -1,14 +1,14 @@
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
 
-class VariablesTest {
+class ArraysTest {
     @Test
-    internal fun testVariables() {
-        val source = HelloWorldTest::class.java.getResource("examples/variables.minerva").readText()
+    internal fun testArrays() {
+        val source = HelloWorldTest::class.java.getResource("examples/arrays.minerva").readText()
 
         val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
         val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
-        assertContentEquals(arrayOf("hello", "world", "bar", "4"), output, "")
+        assertContentEquals(arrayOf("4", "[2, 4, 6, 8]", "24", "10", "6", "3"), output, "")
     }
 }

@@ -1,6 +1,5 @@
 package frontend
 
-import Type
 import java.lang.RuntimeException
 import frontend.Expr.Binary
 import java.util.ArrayList

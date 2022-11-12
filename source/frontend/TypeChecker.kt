@@ -1,7 +1,4 @@
-import frontend.Expr
-import frontend.Stmt
-import frontend.Token
-import frontend.TokenType
+package frontend
 
 class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
@@ -18,7 +15,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     fun checkDeclarations(stmt: Stmt) {
         when (stmt) {
             is Stmt.Class -> {
-                val typeParameters = stmt.constructor.typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) }
+                val typeParameters = stmt.constructor.typeParameters.map {
+                    Type.UnresolvedType(
+                        Expr.Variable(it),
+                        emptyList()
+                    )
+                }
                 
                 val memberMap = mutableMapOf<String, Type>()
                 val params = mutableListOf<Type>()

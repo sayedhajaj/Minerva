@@ -1,4 +1,4 @@
-import frontend.Expr
+package frontend
 
 sealed interface Type {
     fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean

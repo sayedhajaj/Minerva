@@ -1,7 +1,5 @@
 package frontend
 
-import Type
-
 sealed class Stmt {
     class Class(
         val name: Token,

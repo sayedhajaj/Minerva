@@ -1,9 +1,8 @@
+import Minerva.frontEndPass
 import Minerva.loadFile
 import backends.jvm.BytecodeGenerator
 import backends.treewalk.Interpreter
-import frontend.Parser
-import frontend.Scanner
-import frontend.Stmt
+import frontend.*
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -39,34 +38,43 @@ object Minerva {
 
     }
 
-    fun interpret(syntaxTree: List<Stmt>): List<String> {
+    fun frontEndPass(source: String): Pair<TypeChecker, List<Stmt>> {
         val resolver = Resolver()
+        val syntaxTree = getSyntaxTree(getStandardLibrary() + source)
         resolver.resolve(syntaxTree)
         val typeChecker = TypeChecker(resolver.locals)
         typeChecker.typeCheck(syntaxTree)
         typeChecker.typeErrors.forEach {
             println(it)
         }
-        if (typeChecker.typeErrors.isEmpty()) {
-            val interpreter = Interpreter(syntaxTree, resolver.locals, typeChecker)
+        return Pair(typeChecker, syntaxTree)
+
+    }
+
+    fun interpret(typeChecker: TypeChecker, syntaxTree: List<Stmt>): List<String> {
+        return if (typeChecker.typeErrors.isEmpty()) {
+            val interpreter = Interpreter(syntaxTree, typeChecker.locals, typeChecker)
             interpreter.interpet()
-            return interpreter.printStatements
+            interpreter.printStatements
         } else {
-            return emptyList()
+            emptyList()
         }
     }
 }
 
+fun getStandardLibrary() = Minerva::class.java.getResource("standard_library/array.minerva").readText()
 
 fun main(args: Array<String>) {
+
     if (args.isEmpty()) {
         val reader = BufferedReader(InputStreamReader(System.`in`))
         while (true) {
-            Minerva.interpret(Minerva.getSyntaxTree(reader.readLine()))
+            val (typeChecker, syntaxTree) = frontEndPass(reader.readLine())
+            Minerva.interpret(typeChecker, syntaxTree)
         }
     } else if(args[0] == "interpret") {
         val source = loadFile(args[1])
-        val syntaxTree = Minerva.getSyntaxTree(source)
-        Minerva.interpret(syntaxTree)
+        val (typeChecker, syntaxTree) = frontEndPass(source)
+        Minerva.interpret(typeChecker, syntaxTree)
     }
 }

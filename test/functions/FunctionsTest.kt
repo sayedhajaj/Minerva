@@ -9,41 +9,41 @@ import kotlin.test.assertContentEquals
 class FunctionsTest {
     @Test
     internal fun testFunctions() {
-        val source = HelloWorldTest::class.java.getResource("functions/functions.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/functions/functions.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("Hello World!", "8", "9", "120"), output, "")
     }
 
     @Test
     internal fun testMutualRecursion() {
-        val source = HelloWorldTest::class.java.getResource("functions/mutual_recursion.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/functions/mutual_recursion.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("true", "true"), output, "")
     }
 
     @Test
     internal fun testDoubleCapture() {
-        val source = HelloWorldTest::class.java.getResource("functions/double_capture.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/functions/double_capture.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("1"), output, "")
     }
 
     @Test
     internal fun testUseThenDefine() {
-        val source = HelloWorldTest::class.java.getResource("functions/use_then_define.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/functions/use_then_define.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("8"), output, "")
     }
 }

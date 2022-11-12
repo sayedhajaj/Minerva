@@ -9,21 +9,21 @@ class IfTest {
 
     @Test
     internal fun testIf() {
-        val source = HelloWorldTest::class.java.getResource("control_flow/if/if.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/control_flow/if/if.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("You are an adult", "adult"), output, "")
     }
 
     @Test
     internal fun testDanglingElse() {
-        val source = HelloWorldTest::class.java.getResource("control_flow/if/dangling_else.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/control_flow/if/dangling_else.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("good"), output, "")
     }
 

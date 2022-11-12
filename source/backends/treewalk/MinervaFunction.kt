@@ -1,6 +1,6 @@
 package backends.treewalk
 
-import Environment
+import frontend.Environment
 import frontend.Expr
 import frontend.Stmt
 

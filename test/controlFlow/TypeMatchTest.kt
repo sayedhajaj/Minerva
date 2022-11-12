@@ -9,11 +9,11 @@ class TypeMatchTest {
 
     @Test
         internal fun testTypeMatch() {
-        val source = HelloWorldTest::class.java.getResource("control_flow/typematch.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/control_flow/typematch.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("I'm a string!", "I'm a number!"), output, "")
     }
 }

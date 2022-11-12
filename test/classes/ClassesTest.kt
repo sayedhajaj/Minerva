@@ -8,21 +8,21 @@ import kotlin.test.assertContentEquals
 class ClassesTest {
     @Test
     internal fun testClasses() {
-        val source = HelloWorldTest::class.java.getResource("classes/classes.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/classes/classes.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("12", "14", "6", "20", "18"), output, "")
     }
 
     @Test
     internal fun testUseThenDefine() {
-        val source = HelloWorldTest::class.java.getResource("classes/use_then_define.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/classes/use_then_define.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("John", "Garfield"), output, "")
     }
 }

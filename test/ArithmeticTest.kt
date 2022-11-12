@@ -5,11 +5,11 @@ class ArithmeticTest {
 
     @Test
     internal fun testArithmetic() {
-        val source = HelloWorldTest::class.java.getResource("arithmetic.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/arithmetic.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("2", "3.0", "true", "6", "5"), output, "")
     }
 }

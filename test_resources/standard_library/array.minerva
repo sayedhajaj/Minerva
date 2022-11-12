@@ -1,0 +1,11 @@
+
+external class Array<T> (size: Int, initialiser: (Int)=>T) {
+    var length: Int;
+
+    function get(index: Int): T;
+    function set(index: Int, value: T);
+
+    function map<V>(mapper: (T)=>V): Array<V>;
+
+    function reduce(reducer: (T, T)=>T, initial: T): T;
+};

@@ -1,9 +1,8 @@
 package backends.treewalk
 
-import Environment
-import Type
-import TypeChecker
-import com.intellij.util.containers.toArray
+import frontend.Environment
+import frontend.Type
+import frontend.TypeChecker
 import frontend.Expr
 import frontend.Stmt
 import frontend.Token

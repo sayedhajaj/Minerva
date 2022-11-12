@@ -1,48 +1,20 @@
-
-external class Array<T> (size: Int, initialiser: (Int)=>T) {
-    var length: Int;
-
-    function get(index: Int): T;
-    function set(index: Int, value: T);
-
-    function map<V>(mapper: (T)=>V): Array<V>;
-
-    function reduce(reducer: (T, T)=>T, initial: T): T;
-};
-
-
-function ident(item: String): String => item;
-
-
-/*
-
-
-
 var arr = [1, 2, 3, 4];
-var blah = 3;
-
-
-function double(num:Int) => num*2;
-
-var res = arr.map<Int>(double);
-printType arr;
-print res.map<Int>(double);
+print arr[0] + 3; // expect 4
+print arr.map<Int>(function (num: Int) => num *2); // expect [2, 4, 6, 8]
 
 function mult(accumulator: Int, current: Int) => accumulator * current;
 
-
 function sum(acc: Int, curr: Int) => acc+curr;
 
-print(arr.reduce(mult, 1));
+print(arr.reduce(mult, 1)); // expect 24
 
-print arr.length + 2;
+print arr.reduce(sum, 0); // expect 9
 
-print ["name", "age"].length + 1;
-print ["name", "age"].map<String>(ident);
+print arr.length + 2; // expect 6
 
-var mappedStrings = ["name", "age"].map<String>(ident);
-print mappedStrings;
-*/
+print ["name", "age"].length + 1; // expect 3
+/*
+
 function printStringArray(lst: String[]) => {
     print lst;
 };
@@ -54,12 +26,10 @@ function createStringArray(): String[] => Array<String>(1, function (index: Int)
 var stringArray = ["a"];
 printType stringArray;
 printType stringArray.map<String>(ident);
-//printStringArray(stringArray.map<String>(ident));
+printStringArray(stringArray.map<String>(ident));
 
 function initialiser(index: Int) => index+1;
 
-
-/*
 var arr: Array<Int> = Array<Int>(5, initialiser);
 print arr;
 

@@ -1,7 +1,5 @@
 package frontend
 
-import Type
-
 sealed class Expr(var type: Type) {
     class Array(val values: List<Expr>): Expr(Type.ArrayType(Type.AnyType()))
     class Assign(val name: Token, val value: Expr) : Expr(Type.NullType())

@@ -8,31 +8,31 @@ import kotlin.test.assertContentEquals
 class ClosureTest {
     @Test
     internal fun testCounter() {
-        val source = HelloWorldTest::class.java.getResource("functions/closures/counter.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/functions/closures/counter.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("1", "2"), output, "")
     }
 
     @Test
     internal fun testClosesOverFreeVariables() {
-        val source = HelloWorldTest::class.java.getResource("functions/closures/closes_over_free_variables.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/functions/closures/closes_over_free_variables.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("global", "global"), output, "")
     }
 
     @Test
     internal fun testAdder() {
-        val source = HelloWorldTest::class.java.getResource("functions/closures/adder.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/functions/closures/adder.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("8"), output, "")
     }
 }

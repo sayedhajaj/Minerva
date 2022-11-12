@@ -4,11 +4,11 @@ import kotlin.test.assertContentEquals
 class ScopeTest {
     @Test
     internal fun testScope() {
-        val source = HelloWorldTest::class.java.getResource("scope.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/scope.minerva").readText()
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
-        val output = Minerva.interpret(syntaxTree).toTypedArray()
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(
             arrayOf(
                 "inner a",

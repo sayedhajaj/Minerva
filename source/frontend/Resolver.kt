@@ -1,6 +1,5 @@
-import frontend.Expr
-import frontend.Stmt
-import frontend.Token
+package frontend
+
 import java.util.*
 
 class Resolver {
