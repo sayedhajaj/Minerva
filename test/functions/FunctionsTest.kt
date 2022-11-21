@@ -46,4 +46,14 @@ class FunctionsTest {
         val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("8"), output, "")
     }
+
+    @Test
+    internal fun testFunctionParameters() {
+        val source = HelloWorldTest::class.java.getResource("examples/functions/function_parameters.minerva").readText()
+
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
+
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
+        assertContentEquals(arrayOf("9"), output, "")
+    }
 }

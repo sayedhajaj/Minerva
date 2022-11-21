@@ -1,0 +1,4 @@
+
+function apply(num: Int, fn: (Int)=>Int) => fn(num);
+
+print apply(3, function (num: Int) => num * 3); // expect 9
