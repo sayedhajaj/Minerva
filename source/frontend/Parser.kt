@@ -218,26 +218,21 @@ class Parser(private val tokens: List<Token>) {
     }
 
 
-    private fun statement(): Stmt {
-        if (match(TokenType.IF)) return ifStatement()
-        if (match(TokenType.PRINT)) return printStatement()
-        if (match(TokenType.PRINT_TYPE)) return printType()
-        if (match(TokenType.WHILE)) return whileStatement()
-        if (match(TokenType.UNTIL)) return untilStatement()
-        return expressionStatement()
+    private fun statement(): Stmt = when {
+        match(TokenType.IF) -> ifStatement()
+        match(TokenType.PRINT) -> printStatement()
+        match(TokenType.PRINT_TYPE) -> printType()
+        match(TokenType.WHILE) -> whileStatement()
+        match(TokenType.UNTIL) -> untilStatement()
+        else -> expressionStatement()
     }
 
     private fun ifStatement(): Stmt {
         consume(TokenType.LEFT_PAREN, "Expect  '(' after 'if'.")
         val condition = expression()
         consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.")
-
         val thenBranch = statement()
-        var elseBranch: Stmt? = null
-        if (match(TokenType.ELSE)) {
-            elseBranch = statement()
-        }
-
+        val elseBranch: Stmt? = if (match(TokenType.ELSE)) statement() else null
         return Stmt.If(condition, thenBranch, elseBranch)
     }
 
@@ -245,12 +240,9 @@ class Parser(private val tokens: List<Token>) {
         consume(TokenType.LEFT_PAREN, "Expect  '(' after 'if'.")
         val condition = expression()
         consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.")
-
         val thenBranch = expression()
-
         consume(TokenType.ELSE, "Expect 'else' in if expression.")
-        var elseBranch = expression()
-
+        val elseBranch = expression()
         return Expr.If(condition, thenBranch, elseBranch)
     }
 
@@ -338,9 +330,7 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.Expression(expr)
     }
 
-    private fun expression(): Expr {
-        return assignment()
-    }
+    private fun expression(): Expr = assignment()
 
     private fun typeExpression(): Type {
         val types: MutableList<Type> = mutableListOf()
@@ -410,7 +400,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun assignment(): Expr {
-        var expr = or()
+        val expr = or()
 
         if (match(TokenType.EQUAL)) {
             val equals = previous()
