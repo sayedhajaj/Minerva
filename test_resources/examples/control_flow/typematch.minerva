@@ -12,3 +12,10 @@ print show(magic);
 magic = 4;
 
 print show(magic);
+
+magic = "huzzah!";
+
+print typematch(magic) {
+    String as s => s;
+    Int => magic;
+};

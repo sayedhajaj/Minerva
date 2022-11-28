@@ -200,6 +200,10 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 val branch = matching[0].second
                 val closure = Environment(this.environment)
                 closure.define(expr.variable.name.lexeme, value)
+                val alias = matching[0].third
+                if (alias != null) {
+                    closure.define(alias.lexeme, value)
+                }
                 val block = if (branch is Expr.Block) {
                     branch
                 } else {

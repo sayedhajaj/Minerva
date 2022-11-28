@@ -14,6 +14,6 @@ class TypeMatchTest {
         val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
 
         val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
-        assertContentEquals(arrayOf("I'm a string!", "I'm a number!"), output, "")
+        assertContentEquals(arrayOf("I'm a string!", "I'm a number!", "huzzah!"), output, "")
     }
 }

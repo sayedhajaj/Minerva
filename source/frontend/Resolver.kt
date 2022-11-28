@@ -175,6 +175,10 @@ class Resolver {
                     beginScope()
                     declare(expr.variable.name)
                     define(expr.variable.name)
+                    if (it.third != null) {
+                        declare(it.third!!)
+                        define(it.third!!)
+                    }
                     val body = it.second
                     if (body is Expr.Block) {
                         resolve(body.statements)

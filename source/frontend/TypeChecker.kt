@@ -610,20 +610,26 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     }
 
     private fun getTypeMatchType(expr: Expr.TypeMatch): Type {
-        typeCheck(expr.variable)
+        val variableType = typeCheck(expr.variable)
         if (expr.variable.type !is Type.AnyType && expr.variable.type !is Type.UnionType) {
             typeErrors.add("Can only type match any and union types")
         }
         val types = mutableListOf<Type>()
         expr.conditions = expr.conditions.map {
-            Pair(resolveInstanceType(it.first), it.second)
+            Triple(resolveInstanceType(it.first), it.second, it.third)
         }
 
         expr.conditions.forEach {
             val block: Expr.Block = makeBlock(it.second)
 
             val closure = Environment(environment)
-            closure.define(expr.variable.name.lexeme, it.first)
+            val alias = it.third
+            if (alias != null) {
+                closure.define(alias.lexeme, it.first)
+                closure.define(expr.variable.name.lexeme, variableType)
+            } else {
+                closure.define(expr.variable.name.lexeme, it.first)
+            }
 
             val returnType = getBlockType(block.statements, closure)
             types.add(returnType)

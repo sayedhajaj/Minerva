@@ -253,7 +253,7 @@ class Parser(private val tokens: List<Token>) {
 
         consume(TokenType.LEFT_BRACE, "Expect '{' after typematch")
 
-        val branches = mutableListOf<Pair<Type, Expr>>()
+        val branches = mutableListOf<Triple<Type, Expr, Token?>>()
 
         var elseBranch: Expr? = null
 
@@ -296,12 +296,16 @@ class Parser(private val tokens: List<Token>) {
         return Expr.Match(expr, branches, elseBranch)
     }
 
-    private fun typeMatchCondition(): Pair<Type, Expr> {
+    private fun typeMatchCondition(): Triple<Type, Expr, Token?> {
         val type = typeExpression()
+        val alias = if (match(TokenType.AS)) {
+            consume(TokenType.IDENTIFIER, "Expect identifier")
+        } else null
+
         consume(TokenType.ARROW, "Expect arrow after type name")
         val thenBranch = expression()
         consume(TokenType.SEMICOLON, "Expect ';'")
-        return Pair(type, thenBranch)
+        return Triple(type, thenBranch, alias)
     }
 
     private fun matchCondition(): Pair<Expr, Expr> {
