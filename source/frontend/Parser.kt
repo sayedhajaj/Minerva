@@ -16,49 +16,35 @@ class Parser(private val tokens: List<Token>) {
         return statements
     }
 
-    private fun declaration(): Stmt {
-        if (match(TokenType.EXTERNAL)) return externalDeclaration()
-        if (match(TokenType.CLASS)) return classDeclaration()
-        if (match(TokenType.INTERFACE)) return interfaceDeclaration()
-        if (match(TokenType.FUNCTION)) return function()
-        if (match(TokenType.VAR)) return varInitialisation()
-        return statement()
+    private fun declaration(): Stmt = when {
+        match(TokenType.EXTERNAL) -> externalDeclaration()
+        match(TokenType.CLASS) -> classDeclaration()
+        match(TokenType.INTERFACE) -> interfaceDeclaration()
+        match(TokenType.FUNCTION) -> function()
+        match(TokenType.VAR) -> varInitialisation()
+        else -> statement()
     }
 
-    private fun externalDeclaration(): Stmt {
-        if (match(TokenType.FUNCTION)) return functionDeclaration()
-        else if (match(TokenType.CLASS)) return classTypeDeclaration()
-        else return statement()
+
+    private fun externalDeclaration(): Stmt = when {
+        match(TokenType.FUNCTION) -> functionDeclaration()
+        match(TokenType.CLASS) -> classTypeDeclaration()
+        else -> statement()
     }
 
     private fun varInitialisation(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
-        var type: Type = Type.InferrableType()
-
-        if (match(TokenType.COLON)) {
-            type = typeExpression()
-        }
-
+        val type: Type = if (match(TokenType.COLON)) typeExpression() else Type.InferrableType()
         consume(TokenType.EQUAL, "Expect initialiser")
-
         val initialiser = expression()
-
         consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
-
         return Stmt.Var(name, initialiser, type)
     }
 
     private fun varDeclaration(): Stmt.VarDeclaration {
         val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
-        var type: Type = Type.AnyType()
-
-        if (match(TokenType.COLON)) {
-            type = typeExpression()
-        }
-
-
+        val type: Type = if (match(TokenType.COLON)) typeExpression() else Type.AnyType()
         consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
-
         return Stmt.VarDeclaration(name, type)
     }
 
@@ -149,7 +135,14 @@ class Parser(private val tokens: List<Token>) {
             }
 
         }
-        val constructor = Stmt.Constructor(constructorFields, constructorParams, typeParameters, superArgs, superTypeArgs, constructorBody)
+        val constructor = Stmt.Constructor(
+            constructorFields,
+            constructorParams,
+            typeParameters,
+            superArgs,
+            superTypeArgs,
+            constructorBody
+        )
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after class body")
 
@@ -225,7 +218,6 @@ class Parser(private val tokens: List<Token>) {
     }
 
 
-
     private fun statement(): Stmt {
         if (match(TokenType.IF)) return ifStatement()
         if (match(TokenType.PRINT)) return printStatement()
@@ -278,8 +270,7 @@ class Parser(private val tokens: List<Token>) {
                 consume(TokenType.ARROW, "Expect arrow after else")
                 elseBranch = expression()
                 consume(TokenType.SEMICOLON, "Expect ';'")
-            }
-            else branches.add(typeMatchCondition())
+            } else branches.add(typeMatchCondition())
         }
 
         return Expr.TypeMatch(variable, branches, elseBranch)
@@ -303,8 +294,7 @@ class Parser(private val tokens: List<Token>) {
                 consume(TokenType.ARROW, "Expect arrow after else")
                 elseBranch = expression()
 //                consume(TokenType.SEMICOLON, "Expect ';'")
-            }
-            else branches.add(matchCondition())
+            } else branches.add(matchCondition())
         }
 
         if (!hasElse) {
@@ -360,7 +350,8 @@ class Parser(private val tokens: List<Token>) {
                     TokenType.BOOLEAN, TokenType.ANY,
                     TokenType.INTEGER, TokenType.DECIMAL,
                     TokenType.NULL
-                )) {
+                )
+            ) {
                 val identifier = previous()
                 var type = when (identifier.type) {
                     TokenType.IDENTIFIER -> {
@@ -368,8 +359,7 @@ class Parser(private val tokens: List<Token>) {
                         if (match(TokenType.LESS)) {
                             do {
                                 typeArguments.add(typeExpression())
-                            }
-                            while (match(TokenType.COMMA))
+                            } while (match(TokenType.COMMA))
                             consume(TokenType.GREATER, "Expect closing '>'")
                         }
                         Type.UnresolvedType(Expr.Variable(identifier), typeArguments)
@@ -383,7 +373,8 @@ class Parser(private val tokens: List<Token>) {
                 }
                 if (match(TokenType.LEFT_SUB)) {
                     consume(TokenType.RIGHT_SUB, "Expect closing ']'")
-                    type = Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type))
+                    type =
+                        Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type))
                 }
 
                 types.add(type)
@@ -403,7 +394,8 @@ class Parser(private val tokens: List<Token>) {
 
                 if (match(TokenType.LEFT_SUB)) {
                     consume(TokenType.RIGHT_SUB, "Expect closing ']'")
-                    type = Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type))
+                    type =
+                        Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type))
                 }
                 types.add(type)
             }
@@ -600,7 +592,8 @@ class Parser(private val tokens: List<Token>) {
                     and (check(TokenType.COMMA, 2) or
                             check(TokenType.GREATER, 2) or
                             check(TokenType.UNION, 2) or check(TokenType.LEFT_SUB)
-                            )) {
+                            )
+                ) {
                     match(TokenType.LESS)
                     typeArguments = genericCall()
                 }
@@ -608,7 +601,7 @@ class Parser(private val tokens: List<Token>) {
 
             if (match(TokenType.LEFT_PAREN)) {
                 expr = finishCall(expr, typeArguments)
-            } else if(match(TokenType.DOT)) {
+            } else if (match(TokenType.DOT)) {
                 val name = consume(TokenType.IDENTIFIER, "Expect property name after '.'")
                 expr = Expr.Get(expr, name, null)
             } else if (match(TokenType.LEFT_SUB)) {
@@ -728,10 +721,13 @@ class Parser(private val tokens: List<Token>) {
         if (match(TokenType.COLON)) {
             returnType = typeExpression()
         }
-        return Stmt.FunctionDeclaration(name, parameters, typeParameters, Type.FunctionType(
-            parameterTypes,
-            typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) },
-            returnType))
+        return Stmt.FunctionDeclaration(
+            name, parameters, typeParameters, Type.FunctionType(
+                parameterTypes,
+                typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) },
+                returnType
+            )
+        )
     }
 
 
@@ -764,12 +760,10 @@ class Parser(private val tokens: List<Token>) {
 
     private fun peek() = tokens[current]
 
-    private fun peek(distance: Int) = tokens[current+distance]
+    private fun peek(distance: Int) = tokens[current + distance]
 
 
-    private fun previous(): Token {
-        return tokens[current - 1]
-    }
+    private fun previous(): Token = tokens[current - 1]
 
     private fun consume(type: TokenType, message: String): Token {
         if (check(type)) return advance()
@@ -780,9 +774,8 @@ class Parser(private val tokens: List<Token>) {
         return if (isAtEnd()) false else peek().type === tokenType
     }
 
-    private fun check(tokenType: TokenType, distance: Int): Boolean {
-        return if (isAtEnd(distance)) false else peek(distance).type == tokenType
-    }
+    private fun check(tokenType: TokenType, distance: Int): Boolean =
+        if (isAtEnd(distance)) false else peek(distance).type == tokenType
 
     private fun error(token: Token, message: String): ParseError {
         // log here
