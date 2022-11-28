@@ -115,27 +115,19 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     )
                 )
             }
-            is Stmt.Expression -> {
-                evaluate(stmt.expression)
-            }
+            is Stmt.Expression -> evaluate(stmt.expression)
             is Stmt.While -> {
                 while (evaluate(stmt.condition) == true) {
                     execute(stmt.body)
                 }
             }
-            is Stmt.Constructor -> {
-            }
-            is Stmt.ClassDeclaration -> {
-            }
-            is Stmt.ConstructorDeclaration -> {
-            }
-            is Stmt.FunctionDeclaration -> {
-            }
-            is Stmt.Interface -> {
-            }
+            is Stmt.Constructor -> { }
+            is Stmt.ClassDeclaration -> { }
+            is Stmt.ConstructorDeclaration -> { }
+            is Stmt.FunctionDeclaration -> { }
+            is Stmt.Interface -> { }
             is Stmt.PrintType -> log(stmt.expression.type.toString())
-            is Stmt.VarDeclaration -> {
-            }
+            is Stmt.VarDeclaration -> { }
         }
     }
 
@@ -249,9 +241,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             }
             typeChecker.resolveTypeArgument(argMap, instance)
         }
-        is MinervaFunction -> {
-            value.declaration.type
-        }
+        is MinervaFunction -> value.declaration.type
         else -> Type.NullType()
     }
 
