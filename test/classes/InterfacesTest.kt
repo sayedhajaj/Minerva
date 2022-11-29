@@ -34,4 +34,14 @@ class InterfacesTest {
         val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
         assertContentEquals(arrayOf("Huzzah!"), output, "")
     }
+
+    @Test
+    internal fun testGenericInterface() {
+        val source = HelloWorldTest::class.java.getResource("examples/interfaces/generic_interface.minerva").readText()
+
+        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
+
+        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
+        assertContentEquals(arrayOf(), output, "")
+    }
 }
