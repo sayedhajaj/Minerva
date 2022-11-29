@@ -303,10 +303,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         stmt.interfaces.forEach {
             val referencedInterface = environment.get(it) as Type.InterfaceType
             if (!referencedInterface.canAssignTo(instance, this)) {
-                typeErrors.add("Cannot assign ${stmt.name} to ${it.lexeme}")
+                typeErrors.add("Cannot assign ${stmt.name.lexeme} to ${it.lexeme}")
                 val missing = referencedInterface.members.filter { !instance.hasMemberType(it.key, it.value, this) }
                 missing.entries.forEach {
-                    typeErrors.add("${stmt.name} is missing ${it.key}, ${it.value}")
+                    typeErrors.add("${stmt.name.lexeme} is missing ${it.key}, ${it.value}")
                 }
             }
 

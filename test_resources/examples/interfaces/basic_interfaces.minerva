@@ -1,0 +1,14 @@
+interface Loggable {
+    function log(value: String): Any;
+}
+
+
+class ConsoleLog implements Loggable {
+    function log(value: String): Any => {
+        print value;
+    };
+}
+
+var console = ConsoleLog();
+
+console.log("Hello World!");
