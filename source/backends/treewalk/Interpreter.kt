@@ -230,7 +230,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         null -> Type.NullType()
         is MinervaArray -> {
             val elementTypes = value.elements.map { getValueType(it) }
-            Type.ArrayType(typeChecker.flattenTypes(elementTypes))
+            typeChecker.createArrayType(typeChecker.flattenTypes(elementTypes))
         }
         is MinervaInstance -> {
             var className = Expr.Variable(Token(TokenType.IDENTIFIER, value.klass?.name ?: "null", null, -10))

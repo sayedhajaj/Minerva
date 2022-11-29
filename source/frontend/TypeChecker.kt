@@ -327,7 +327,6 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     } else resolvedType
                 } else resolvedType
             }
-            is Type.ArrayType -> Type.ArrayType(resolveInstanceType(type.type))
             is Type.UnionType -> Type.UnionType(type.types.map { resolveInstanceType(it) })
             else -> type
         }
@@ -372,7 +371,6 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     type.superTypeArgs.map { resolveTypeArgument(args, it) }
                 )
             }
-            is Type.ArrayType -> Type.ArrayType(resolveTypeArgument(args, type.type))
             else -> type
         }
     }
@@ -751,7 +749,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     private fun isArrayType(type: Type): Boolean =
         type is Type.InstanceType && type.className.name.lexeme == "Array"
 
-    private fun createArrayType(type: Type): Type = resolveInstanceType(
+    fun createArrayType(type: Type): Type = resolveInstanceType(
         Type.UnresolvedType(
             Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)),
             listOf(type)

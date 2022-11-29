@@ -1,7 +1,7 @@
 package frontend
 
 sealed class Expr(var type: Type) {
-    class Array(val values: List<Expr>): Expr(Type.ArrayType(Type.AnyType()))
+    class Array(val values: List<Expr>): Expr(Type.InferrableType())
     class Assign(val name: Token, val value: Expr) : Expr(Type.NullType())
     class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr(Type.AnyType())
     class Block(val statements: List<Stmt>) : Expr(Type.AnyType())

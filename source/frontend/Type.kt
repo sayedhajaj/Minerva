@@ -38,20 +38,6 @@ sealed interface Type {
 
     }
 
-    class ArrayType(val type: Type) : Type {
-        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean =
-            if (otherType is ArrayType) type.canAssignTo(otherType.type, typeChecker) else false
-
-        override fun hasMemberType(member: String, otherType: Type, typeChecker: TypeChecker): Boolean = false
-
-        override fun getMemberType(member: String, typeChecker: TypeChecker): Type = when (member) {
-            "length" -> IntegerType()
-            else -> NullType()
-        }
-
-        override fun toString(): String = "${type}[]"
-    }
-
     class UnionType(val types: List<Type>) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean =
             if (otherType is UnionType)
