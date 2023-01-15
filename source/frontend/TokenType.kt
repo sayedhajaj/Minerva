@@ -17,6 +17,7 @@ enum class TokenType {
     UNION, TYPEMATCH, MATCH,
     INTERFACE, IMPLEMENTS, EXTERNAL,
     PRINT_TYPE,
+    ENUM,
     AS,
     EOF,
 }

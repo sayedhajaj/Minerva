@@ -42,6 +42,7 @@ class Scanner(private val source: String) {
             keywords["external"] = TokenType.EXTERNAL
             keywords["printType"] = TokenType.PRINT_TYPE
             keywords["as"] = TokenType.AS
+            keywords["enum"] = TokenType.ENUM
         }
     }
 

@@ -188,4 +188,21 @@ sealed interface Type {
             return "${identifier.name.lexeme}$typeArgs"
         }
     }
+
+    class EnumType(val name: Token, val members: List<Token>): Type {
+        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker) =
+            if (otherType is EnumType)
+                (otherType.name.lexeme == name.lexeme)
+             else false
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return members.any { it.lexeme == member }
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return if (hasMemberType(member, AnyType(), typeChecker)) this
+            else NullType()
+        }
+
+    }
 }

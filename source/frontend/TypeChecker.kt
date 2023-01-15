@@ -88,6 +88,9 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Stmt.While -> {
                 checkDeclarations(stmt.body)
             }
+            is Stmt.Enum -> {
+                environment.define(stmt.name.lexeme, Type.EnumType(stmt.name, stmt.members))
+            }
         }
     }
 
@@ -589,8 +592,8 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     private fun getMatchType(expr: Expr.Match): Type {
         typeCheck(expr.expr)
-        if (expr.expr.type !is Type.IntegerType && expr.expr.type !is Type.DoubleType && expr.expr.type !is Type.StringType) {
-            typeErrors.add("Can only use integer, double, or string types in match")
+        if (expr.expr.type !is Type.IntegerType && expr.expr.type !is Type.DoubleType && expr.expr.type !is Type.StringType  && expr.expr.type !is Type.EnumType) {
+            typeErrors.add("Can only use integer, double, enum, or string types in match")
         }
         val types = mutableListOf<Type>()
         expr.branches.forEach {

@@ -1,0 +1,12 @@
+enum Direction {
+    NORTH, SOUTH, WEST, EAST
+}
+
+var direction: Direction = Direction.NORTH;
+
+print match (direction)  {
+    Direction.NORTH => "North"
+    Direction.SOUTH => "South"
+};
+
+print direction;

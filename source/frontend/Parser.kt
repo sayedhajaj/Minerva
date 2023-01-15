@@ -22,9 +22,25 @@ class Parser(private val tokens: List<Token>) {
         match(TokenType.INTERFACE) -> interfaceDeclaration()
         match(TokenType.FUNCTION) -> function()
         match(TokenType.VAR) -> varInitialisation()
+        match(TokenType.ENUM) -> enumDeclaration()
         else -> statement()
     }
 
+    private fun enumDeclaration(): Stmt {
+        val name = consume(TokenType.IDENTIFIER, "Expect enum name")
+        val members = mutableListOf<Token>()
+
+        consume(TokenType.LEFT_BRACE, "Expect '{' before enum body")
+
+        if (!check(TokenType.RIGHT_BRACE)) {
+            do {
+                members.add(consume(TokenType.IDENTIFIER, "Expect identifier"))
+            } while (match(TokenType.COMMA))
+        }
+        consume(TokenType.RIGHT_BRACE, "Expect ')' after parameters")
+
+        return Stmt.Enum(name, members)
+    }
 
     private fun externalDeclaration(): Stmt = when {
         match(TokenType.FUNCTION) -> functionDeclaration()

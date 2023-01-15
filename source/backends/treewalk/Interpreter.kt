@@ -128,6 +128,9 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             is Stmt.Interface -> { }
             is Stmt.PrintType -> log(stmt.expression.type.toString())
             is Stmt.VarDeclaration -> { }
+            is Stmt.Enum -> {
+                environment.define(stmt.name.lexeme, MinervaEnum(stmt.members))
+            }
         }
     }
 
@@ -154,7 +157,8 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             if (obj is MinervaArray && expr.index != null) {
                 val index = evaluate(expr.index) as Int
                 obj.get(index)
-            } else if (obj is MinervaInstance) obj.get(expr.name)
+            } else if (obj is MinervaEnum) obj.get(expr.name)
+            else if (obj is MinervaInstance) obj.get(expr.name)
             else null
         }
         is Expr.Set -> {
