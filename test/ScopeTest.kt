@@ -5,10 +5,9 @@ class ScopeTest {
     @Test
     internal fun testScope() {
         val source = HelloWorldTest::class.java.getResource("examples/scope.minerva").readText()
+        val compiler = MinervaCompiler(source)
 
-        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
-
-        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
+        val output = compiler.interpret().toTypedArray()
         assertContentEquals(
             arrayOf(
                 "inner a",

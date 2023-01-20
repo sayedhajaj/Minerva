@@ -7,22 +7,18 @@ class HelloWorldTest {
     @org.junit.jupiter.api.Test
     internal fun resolvesCorrectly() {
         val source = HelloWorldTest::class.java.getResource("examples/hello_world.minerva").readText()
+        val compiler = MinervaCompiler(source)
+        val errors = compiler.frontEndPass().first.typeErrors
 
-        val syntaxTree = Minerva.getSyntaxTree(source)
-        val resolver = Resolver()
-        resolver.resolve(syntaxTree)
-        val typeChecker = TypeChecker(resolver.locals)
-        typeChecker.typeCheck(syntaxTree)
-        assert(typeChecker.typeErrors.isEmpty())
+        assert(errors.isEmpty())
     }
 
     @Test
     internal fun printsHelloWorld() {
         val source = HelloWorldTest::class.java.getResource("examples/hello_world.minerva").readText()
+        val compiler = MinervaCompiler(source)
 
-        val (typeChecker, syntaxTree) = Minerva.frontEndPass(source)
-
-        val output = Minerva.interpret(typeChecker, syntaxTree).toTypedArray()
+        val output = compiler.interpret().toTypedArray()
 
         assertContains(output, "Hello World!")
     }
