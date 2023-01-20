@@ -342,8 +342,9 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 else type
             }
             is Type.IntegerType -> type
+            is Type.TupleType -> Type.TupleType(type.types.map { resolveTypeArgument(args, it) })
             is Type.FunctionType -> Type.FunctionType(
-                type.params.map { resolveTypeArgument(args, it) },
+                resolveTypeArgument(args, type.params) as Type.TupleType,
                 type.typeParams,
                 resolveTypeArgument(args, type.result)
             )
@@ -467,6 +468,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
             is Expr.TypeMatch -> getTypeMatchType(expr)
             is Expr.Match -> getMatchType(expr)
+            is Expr.Tuple -> {
+                val elementTypes = expr.values.map { typeCheck(it) }
+                val thisType = Type.TupleType(elementTypes)
+                expr.type = thisType
+                return thisType
+            }
         }
     }
 
@@ -523,7 +530,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     private fun typeCheckFunctionCall(expr: Expr.Call, calleeType: Type.FunctionType): Type {
         val arguments = expr.arguments
-        val params = calleeType.params.map { resolveInstanceType(it) }
+        val params = calleeType.params.types.map { resolveInstanceType(it) }
         val typeParams = calleeType.typeParams
         val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments)
 
@@ -660,7 +667,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         val closure = Environment(environment)
 
         expr.parameters.forEachIndexed { index, token ->
-            val parameterType = (expr.type as Type.FunctionType).params[index]
+            val parameterType = (expr.type as Type.FunctionType).params.types[index]
             if (parameterType is Type.InstanceType && expr.typeParameters.any { it.lexeme == parameterType.className.name.lexeme }) {
                 closure.define(token.lexeme, Type.InferrableType())
             } else {

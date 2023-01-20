@@ -224,6 +224,10 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 evaluate(expr.elseBranch)
             result
         }
+        is Expr.Tuple -> {
+            val values = expr.values.map { evaluate(it) }
+            MinervaTuple(values.toTypedArray(), this)
+        }
     }
 
     private fun getValueType(value: Any?): Type = when (value) {

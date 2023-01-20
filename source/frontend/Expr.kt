@@ -23,4 +23,6 @@ sealed class Expr(var type: Type) {
     class TypeMatch(val variable: Variable, var conditions: List<Triple<Type, Expr, Token?>>, val elseBranch: Expr?): Expr(Type.AnyType())
     class Unary(val operator: Token, val right: Expr) : Expr(Type.AnyType())
     class Variable(val name: Token): Expr(Type.AnyType())
+
+    class Tuple(val values: List<Expr>): Expr(Type.AnyType())
 }

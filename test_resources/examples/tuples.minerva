@@ -1,0 +1,5 @@
+function doStuff(blah: (String, Int)) => blah;
+
+print doStuff(("of", 100));
+
+var (word, count) = ("of", 1);

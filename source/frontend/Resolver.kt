@@ -200,6 +200,9 @@ class Resolver {
                 }
                 resolve(expr.elseBranch)
             }
+            is Expr.Tuple -> {
+                expr.values.forEach { resolve(it) }
+            }
         }
     }
 

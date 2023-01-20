@@ -152,12 +152,10 @@ sealed interface Type {
         override fun toString(): String = "Any"
     }
 
-    class FunctionType(val params: List<Type>, val typeParams: List<UnresolvedType>, val result: Type) : Type {
+    class FunctionType(val params: TupleType, val typeParams: List<UnresolvedType>, val result: Type) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return if (otherType is FunctionType) {
-                val paramsMatch = params.size == otherType.params.size &&
-                        params.mapIndexed { index, type -> type.canAssignTo(otherType.params[index], typeChecker) }
-                            .all { it }
+                val paramsMatch = params.canAssignTo(otherType.params, typeChecker)
                 result.canAssignTo(otherType.result, typeChecker) && paramsMatch
             } else false
         }
@@ -166,7 +164,7 @@ sealed interface Type {
 
         override fun getMemberType(member: String, typeChecker: TypeChecker): Type = NullType()
 
-        override fun toString(): String = "(${params.joinToString(",")}):${result}"
+        override fun toString(): String = "${params}:${result}"
     }
 
     class InferrableType : Type {
@@ -203,6 +201,29 @@ sealed interface Type {
             return if (hasMemberType(member, AnyType(), typeChecker)) this
             else NullType()
         }
+
+    }
+
+    class TupleType(val types: List<Type>): Type {
+        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
+            return if (otherType is TupleType) {
+                types.size == otherType.types.size &&
+                        types.zip(otherType.types).all { it.first.canAssignTo(it.second, typeChecker) }
+            } else {
+                false
+            }
+        }
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
+        }
+
+
+        override fun toString(): String = "(${types.joinToString(",")})"
 
     }
 }

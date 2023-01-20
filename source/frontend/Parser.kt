@@ -352,6 +352,15 @@ class Parser(private val tokens: List<Token>) {
 
     private fun expression(): Expr = assignment()
 
+    private fun tupleType(): Type.TupleType {
+        val paramTypes = mutableListOf<Type>()
+        do {
+            paramTypes.add(typeExpression())
+        } while (match(TokenType.COMMA))
+        consume(TokenType.RIGHT_PAREN, "Expect closing ')'")
+        return Type.TupleType(paramTypes)
+    }
+
     private fun typeExpression(): Type {
         val types: MutableList<Type> = mutableListOf()
         do {
@@ -391,16 +400,10 @@ class Parser(private val tokens: List<Token>) {
 
             }
             if (match(TokenType.LEFT_PAREN)) {
-                val paramTypes = mutableListOf<Type>()
-                do {
-                    paramTypes.add(typeExpression())
-                } while (match(TokenType.COMMA))
-                consume(TokenType.RIGHT_PAREN, "Expect closing ')'")
-                var returnType: Type = Type.AnyType()
+                var type: Type = tupleType()
                 if (match(TokenType.ARROW)) {
-                    returnType = typeExpression()
+                    type = Type.FunctionType(type as Type.TupleType, emptyList(), typeExpression())
                 }
-                var type: Type = Type.FunctionType(paramTypes, emptyList(), returnType)
 
                 if (match(TokenType.LEFT_SUB)) {
                     consume(TokenType.RIGHT_SUB, "Expect closing ']'")
@@ -569,7 +572,7 @@ class Parser(private val tokens: List<Token>) {
         val body = expression()
         var result = Expr.Function(parameters, typeParameters, body)
         result.type = Type.FunctionType(
-            parameterTypes,
+            Type.TupleType(parameterTypes),
             typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) },
             returnType
         )
@@ -672,9 +675,18 @@ class Parser(private val tokens: List<Token>) {
         }
 
         if (match(TokenType.LEFT_PAREN)) {
-            val expr = expression()
+            val values = mutableListOf<Expr>()
+            if (!check(TokenType.RIGHT_SUB)) {
+                do {
+                    values.add(expression())
+                } while (match(TokenType.COMMA))
+            }
             consume(TokenType.RIGHT_PAREN, "Expect ')' after expression. ")
-            return Expr.Grouping(expr)
+            return if (values.size == 1) {
+                Expr.Grouping(values[0])
+            } else {
+                Expr.Tuple(values)
+            }
         }
 
         if (match(TokenType.LEFT_SUB)) {
@@ -733,7 +745,7 @@ class Parser(private val tokens: List<Token>) {
         }
         return Stmt.FunctionDeclaration(
             name, parameters, typeParameters, Type.FunctionType(
-                parameterTypes,
+                Type.TupleType(parameterTypes),
                 typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) },
                 returnType
             )
