@@ -172,6 +172,28 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
             is Stmt.Interface -> { }
             is Stmt.VarDeclaration -> { }
+
+            is Stmt.Destructure -> {
+                val assignedType = typeCheck(stmt.initializer)
+                if (assignedType is Type.TupleType) {
+
+                    stmt.names.forEachIndexed { index, varDeclaration ->
+                        val sliceType = assignedType.types[index]
+                        val declaredType = if (varDeclaration.type is Type.InferrableType)
+                            sliceType else resolveInstanceType(varDeclaration.type)
+                        val canAssign = declaredType.canAssignTo(sliceType, this)
+
+                        if (!canAssign) {
+                            typeErrors.add("Cannot assign ${sliceType} to $declaredType")
+                        }
+
+                        environment.define(varDeclaration.name.lexeme, declaredType)
+
+                    }
+                } else {
+                    typeErrors.add("Can only destructure tuples")
+                }
+            }
         }
     }
 

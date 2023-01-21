@@ -48,13 +48,32 @@ class Parser(private val tokens: List<Token>) {
         else -> statement()
     }
 
+
     private fun varInitialisation(): Stmt {
-        val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
-        val type: Type = if (match(TokenType.COLON)) typeExpression() else Type.InferrableType()
-        consume(TokenType.EQUAL, "Expect initialiser")
-        val initialiser = expression()
-        consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
-        return Stmt.Var(name, initialiser, type)
+        if (match(TokenType.LEFT_PAREN)) {
+            val variables = mutableListOf<Stmt.VarDeclaration>()
+            if (!check(TokenType.RIGHT_PAREN)) {
+                do {
+                    var type: Type = Type.InferrableType()
+                    val name = consume(TokenType.IDENTIFIER, "Expect identifier")
+                    if (match(TokenType.COLON)) type = typeExpression()
+                    variables.add(Stmt.VarDeclaration(name, type))
+                } while (match(TokenType.COMMA))
+            }
+            consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters")
+            consume(TokenType.EQUAL, "Expect initialiser")
+            val initialiser = expression()
+            consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
+            return Stmt.Destructure(variables, initialiser, initialiser.type)
+        } else {
+
+            val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
+            val type: Type = if (match(TokenType.COLON)) typeExpression() else Type.InferrableType()
+            consume(TokenType.EQUAL, "Expect initialiser")
+            val initialiser = expression()
+            consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
+            return Stmt.Var(name, initialiser, type)
+        }
     }
 
     private fun varDeclaration(): Stmt.VarDeclaration {
@@ -548,7 +567,7 @@ class Parser(private val tokens: List<Token>) {
             genericDeclaration()
         } else emptyList()
 
-        consume(TokenType.LEFT_PAREN, "Expect ')' after function name.")
+        consume(TokenType.LEFT_PAREN, "Expect '(' after function name.")
         val parameters = mutableListOf<Token>()
         var parameterTypes = mutableListOf<Type>()
 

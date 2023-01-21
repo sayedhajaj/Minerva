@@ -57,4 +57,6 @@ sealed class Stmt {
 
 
     class Enum(val name: Token, val members: List<Token>): Stmt()
+
+    class Destructure(val names: List<VarDeclaration>, val initializer: Expr, var type: Type): Stmt()
 }

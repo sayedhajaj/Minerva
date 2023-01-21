@@ -131,6 +131,14 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             is Stmt.Enum -> {
                 environment.define(stmt.name.lexeme, MinervaEnum(stmt.members))
             }
+            is Stmt.Destructure -> {
+                val value = evaluate(stmt.initializer)
+                if (value is MinervaTuple) {
+                    stmt.names.forEachIndexed { index, varDeclaration ->
+                        environment.define(varDeclaration.name.lexeme, value.elements[index])
+                    }
+                }
+        }
         }
     }
 

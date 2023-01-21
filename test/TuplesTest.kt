@@ -8,6 +8,6 @@ class TuplesTest {
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()
-        assertContentEquals(arrayOf("[of, 100]"), output, "")
+        assertContentEquals(arrayOf("[of, 100]", "of"), output, "")
     }
 }

@@ -24,5 +24,5 @@ sealed class Expr(var type: Type) {
     class Unary(val operator: Token, val right: Expr) : Expr(Type.AnyType())
     class Variable(val name: Token): Expr(Type.AnyType())
 
-    class Tuple(val values: List<Expr>): Expr(Type.AnyType())
+    class Tuple(val values: List<Expr>): Expr(Type.TupleType(values.map { it.type }))
 }

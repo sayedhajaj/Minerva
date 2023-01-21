@@ -88,6 +88,15 @@ class Resolver {
                 resolve(stmt.constructorBody.statements)
 //                endScope()
             }
+            is Stmt.Destructure -> {
+                stmt.names.forEach {
+                    declare(it.name)
+                }
+                resolve(stmt.initializer)
+                stmt.names.forEach {
+                    define(it.name)
+                }
+            }
         }
     }
 
