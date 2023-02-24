@@ -19,5 +19,6 @@ enum class TokenType {
     PRINT_TYPE,
     ENUM,
     AS,
+    TYPE,
     EOF,
 }

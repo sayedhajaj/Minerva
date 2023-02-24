@@ -1,0 +1,7 @@
+type Dollar = Int;
+
+var cost: Dollar = 100;
+var revenue: Dollar = 150;
+
+var profit: Dollar = revenue - cost;
+print(profit);

@@ -91,6 +91,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Stmt.Enum -> {
                 environment.define(stmt.name.lexeme, Type.EnumType(stmt.name, stmt.members))
             }
+            is Stmt.Destructure -> {}
+            is Stmt.TypeDeclaration -> {
+                environment.define(stmt.name.lexeme, stmt.type)
+            }
         }
     }
 

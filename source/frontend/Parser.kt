@@ -23,7 +23,15 @@ class Parser(private val tokens: List<Token>) {
         match(TokenType.FUNCTION) -> function()
         match(TokenType.VAR) -> varInitialisation()
         match(TokenType.ENUM) -> enumDeclaration()
+        match(TokenType.TYPE) -> typeDeclaration()
         else -> statement()
+    }
+
+    private fun typeDeclaration(): Stmt {
+        val name = consume(TokenType.IDENTIFIER, "Expect Identifier")
+        consume(TokenType.EQUAL, "Expect '='")
+        val type = typeExpression()
+        return Stmt.TypeDeclaration(name, type)
     }
 
     private fun enumDeclaration(): Stmt {
