@@ -293,6 +293,15 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
 
     fun evaluateUnary(expr: Expr.Unary): Any? {
         val right = evaluate(expr.right)
+
+        if (right is MinervaInstance) {
+            val unaryMethods = mapOf(TokenType.PLUS to "plus", TokenType.MINUS to "minus", TokenType.BANG to "not")
+            val operatorName = unaryMethods[expr.operator.type]!!
+            val token =  Token(TokenType.IDENTIFIER, operatorName, operatorName, -1)
+            val method = right.get(token) as MinervaCallable
+            return method.call(this, listOf(right))
+        }
+
         return when (expr.operator.type) {
             TokenType.MINUS -> -(right as Double)
             TokenType.BANG -> !(right as Boolean)

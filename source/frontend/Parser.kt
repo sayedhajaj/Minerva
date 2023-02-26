@@ -542,7 +542,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun unary(): Expr {
-        if (match(TokenType.BANG, TokenType.MINUS)) {
+        if (match(TokenType.BANG, TokenType.MINUS, TokenType.PLUS)) {
             val operator = previous()
             val right = unary()
             return Expr.Unary(operator, right)

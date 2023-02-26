@@ -505,9 +505,20 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 thisType
             }
             is Expr.Unary -> {
-                val thisType = typeCheck(expr.right)
-                expr.type = thisType
-                thisType
+                val operandType = typeCheck(expr.right)
+                if (operandType is Type.InstanceType) {
+                    val returnType = operandType.getUnaryOperatorType(expr.operator.type, this)
+                    if (returnType != null) {
+                        expr.type = returnType
+                        returnType
+                    } else {
+                        expr.type = operandType
+                        operandType
+                    }
+                } else {
+                    expr.type = operandType
+                    operandType
+                }
             }
             is Expr.Variable -> {
                 val type = lookUpVariableType(expr.name, expr)
@@ -530,7 +541,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         val right = typeCheck(expr.right)
 
         if (left is Type.InstanceType) {
-            val returnType = left.getOperatorType(expr.operator.type, right, this)
+            val returnType = left.getBinaryOperatorType(expr.operator.type, right, this)
             if (returnType != null) return returnType
         }
 

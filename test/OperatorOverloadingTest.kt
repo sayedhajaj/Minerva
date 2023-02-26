@@ -7,7 +7,7 @@ class OperatorOverloadingTest {
         val source = HelloWorldTest::class.java.getResource("examples/operator_overloading/vector.minerva").readText()
         val compiler = MinervaCompiler(source)
         val output = compiler.interpret().toTypedArray()
-        assertContentEquals(arrayOf("35.0"), output, "")
+        assertContentEquals(arrayOf("35.0", "-30.0"), output, "")
     }
 
     @Test

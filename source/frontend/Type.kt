@@ -125,7 +125,23 @@ sealed interface Type {
             else
                 superclass?.getMemberType(member, typeChecker) ?: NullType()
 
-        fun getOperatorType(operator: TokenType, right: Type, typeChecker: TypeChecker): Type? =
+        fun getUnaryOperatorType(operator: TokenType, typeChecker: TypeChecker): Type? {
+            val unaryMethods = mapOf(TokenType.PLUS to "plus", TokenType.MINUS to "minus", TokenType.BANG to "not")
+            val methodName = unaryMethods[operator]!!
+            val method = getMemberType(methodName, typeChecker) as FunctionType?
+            if (method != null) {
+                if (method.params.types.isNotEmpty()) {
+                    typeChecker.typeErrors.add("Unary method should have no parameters")
+                } else {
+                    return method.result
+                }
+            } else {
+                typeChecker.typeErrors.add("Operator $operator is not overloaded for $this")
+            }
+            return null
+        }
+
+        fun getBinaryOperatorType(operator: TokenType, right: Type, typeChecker: TypeChecker): Type? =
             if (isArithmeticOperator(operator))
                 getArithmeticOperatorType(operator, typeChecker, right)
             else if (isComparisonOperator(operator)) typeCheckComparison(typeChecker, operator, right)
