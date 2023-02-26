@@ -517,7 +517,7 @@ class Parser(private val tokens: List<Token>) {
 
     private fun term(): Expr {
         var expr = factor()
-        while (match(TokenType.MINUS, TokenType.PLUS)) {
+        while (match(TokenType.MINUS, TokenType.PLUS, TokenType.MODULO)) {
             val operator = previous()
             val right = factor()
             expr = Binary(expr, operator, right)

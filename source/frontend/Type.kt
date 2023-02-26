@@ -5,6 +5,7 @@ val operatorMethods = mapOf(
     TokenType.MINUS to "subtract",
     TokenType.SLASH to "divide",
     TokenType.STAR to "multiply",
+    TokenType.MODULO to "rem"
 )
 
 val arithmeticOperators = listOf(
@@ -12,6 +13,7 @@ val arithmeticOperators = listOf(
     TokenType.MINUS,
     TokenType.SLASH,
     TokenType.STAR,
+    TokenType.MODULO
 )
 
 val comparisonOperators = listOf(

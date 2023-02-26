@@ -64,6 +64,7 @@ class Scanner(private val source: String) {
             '+' -> addToken(TokenType.PLUS)
             '-' -> addToken(TokenType.MINUS)
             '*' -> addToken(TokenType.STAR)
+            '%' -> addToken(TokenType.MODULO)
             '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
             '=' -> when {
                     match('=') -> addToken(TokenType.EQUAL_EQUAL)

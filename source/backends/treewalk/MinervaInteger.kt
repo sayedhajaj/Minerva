@@ -58,6 +58,15 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                 }
             }
 
+            "rem" -> object : MinervaCallable {
+                override fun arity() = 1
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val right = arguments[0] as MinervaInteger
+                    return MinervaInteger(value % right.value, interpreter)
+                }
+            }
+
             "compareTo" -> object : MinervaCallable {
                 override fun arity() = 1
 

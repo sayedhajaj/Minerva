@@ -345,6 +345,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     TokenType.MINUS to "subtract",
                     TokenType.SLASH to "divide",
                     TokenType.STAR to "multiply",
+                    TokenType.MODULO to "rem"
                 )
 
                 val comparisonOperators = listOf(
