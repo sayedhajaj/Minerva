@@ -49,7 +49,7 @@ sealed class Stmt {
         val name: Token,
         val parameters: List<Token>,
         val typeParameters: List<Token>,
-        val type: Type
+        var type: Type
     ): Stmt()
 
     class Var(val name: Token, val initializer: Expr, var type: Type): Stmt()

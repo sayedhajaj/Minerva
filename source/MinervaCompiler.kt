@@ -6,6 +6,7 @@ class MinervaCompiler(val source: String) {
     fun getStandardLibrary() =
         MinervaCompiler::class.java.getResource("standard_library/integer.minerva").readText() +
                 MinervaCompiler::class.java.getResource("standard_library/decimal.minerva").readText() +
+                MinervaCompiler::class.java.getResource("standard_library/string.minerva").readText() +
                 MinervaCompiler::class.java.getResource("standard_library/array.minerva").readText()
 
 

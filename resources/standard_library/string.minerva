@@ -1,0 +1,7 @@
+
+external class String  {
+
+    operator function add(other: String): String;
+    operator function equals(other: String): Boolean;
+
+};

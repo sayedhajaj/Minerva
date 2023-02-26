@@ -31,18 +31,6 @@ sealed interface Type {
 
     fun getMemberType(member: String, typeChecker: TypeChecker): Type
 
-
-    class StringType : Type {
-        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean = otherType is StringType
-
-        override fun hasMemberType(member: String, otherType: Type, typeChecker: TypeChecker): Boolean = false
-
-        override fun getMemberType(member: String, typeChecker: TypeChecker): Type = NullType()
-
-        override fun toString(): String = "String"
-
-    }
-
     class UnionType(val types: List<Type>) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean =
             if (otherType is UnionType)

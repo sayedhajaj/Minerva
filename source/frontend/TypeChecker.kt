@@ -66,7 +66,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 checkDeclarations(stmt.functionBody)
             }
             is Stmt.ConstructorDeclaration -> typeCheckConstructorDeclaration(stmt)
-            is Stmt.FunctionDeclaration -> environment.define(stmt.name.lexeme, stmt.type)
+            is Stmt.FunctionDeclaration -> {
+                val declaration = stmt.type as Type.FunctionType
+                environment.define(stmt.name.lexeme, stmt.type)
+            }
             is Stmt.If -> {
                 checkDeclarations(stmt.thenBranch)
                 stmt.elseBranch?.let { checkDeclarations(it) }
@@ -155,8 +158,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         when (stmt) {
             is Stmt.Class -> typeCheckClass(stmt)
             is Stmt.Constructor -> typeCheckConstructor(stmt)
-            is Stmt.ConstructorDeclaration, is Stmt.ClassDeclaration, is Stmt.FunctionDeclaration -> {
-            }
+            is Stmt.ConstructorDeclaration, is Stmt.ClassDeclaration, is Stmt.FunctionDeclaration -> { }
             is Stmt.Expression -> typeCheck(stmt.expression)
             is Stmt.Function -> {
                 environment.define(stmt.name.lexeme, stmt.functionBody.type)
@@ -352,7 +354,9 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         )
 
         stmt.interfaces.forEach {
-            val referencedInterface = environment.get(it) as Type.InterfaceType
+            val referencedInterface = resolveInstanceType(environment.get(it) as Type.InterfaceType) as Type.InterfaceType
+
+            referencedInterface.members.entries.forEach {  }
             if (!referencedInterface.canAssignTo(instance, this)) {
                 typeErrors.add("Cannot assign ${stmt.name.lexeme} to ${it.lexeme}")
                 val missing = referencedInterface.members.filter { !instance.hasMemberType(it.key, it.value, this) }
@@ -367,6 +371,9 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     private fun resolveInstanceType(type: Type): Type {
         return when (type) {
             is Type.UnresolvedType -> {
+                if (!exists(type.identifier.name, type.identifier)) {
+                    return type
+                }
                 val resolvedType = lookUpVariableType(type.identifier.name, type.identifier)
                 if (resolvedType is Type.InstanceType) {
                     if (type.typeArguments.size == resolvedType.typeParams.size) {
@@ -379,6 +386,28 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 } else resolvedType
             }
             is Type.UnionType -> Type.UnionType(type.types.map { resolveInstanceType(it) })
+            is Type.InstanceType -> {
+                val newMembers = type.members.entries.associate {
+                    val newType = resolveInstanceType(it.value)
+                    it.key to newType
+                }
+                return type.copy(members = newMembers)
+            }
+            is Type.InterfaceType -> {
+                val newMembers = type.members.entries.associate {
+                    val newType = resolveInstanceType(it.value)
+                    it.key to newType
+                }
+                return Type.InterfaceType(members=newMembers)
+            }
+            is Type.FunctionType -> {
+                val result = resolveInstanceType(type.result)
+                val params = resolveInstanceType(type.params) as Type.TupleType
+                return Type.FunctionType(params, type.typeParams, result)
+            }
+            is Type.TupleType -> {
+                return Type.TupleType(type.types.map { resolveInstanceType(it) })
+            }
             else -> type
         }
     }
@@ -471,7 +500,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
             is Expr.Literal -> {
                 val type = when (expr.value) {
-                    is String -> Type.StringType()
+                    is String -> createStringType()
                     is Double -> createDecimalType()
                     is Int -> createIntegerType()
                     is Boolean -> Type.BooleanType()
@@ -600,7 +629,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     private fun typeCheckFunctionCall(expr: Expr.Call, calleeType: Type.FunctionType): Type {
         val arguments = expr.arguments
-        val params = calleeType.params.types.map { resolveInstanceType(it) }
+        val params = (resolveInstanceType(calleeType.params) as Type.TupleType).types
         val typeParams = calleeType.typeParams
         val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments)
 
@@ -671,7 +700,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     private fun getMatchType(expr: Expr.Match): Type {
         typeCheck(expr.expr)
-        if (!isIntegerType(expr.expr.type) && !isDecimalType(expr.expr.type) && expr.expr.type !is Type.StringType && expr.expr.type !is Type.EnumType) {
+        if (!isIntegerType(expr.expr.type) && !isDecimalType(expr.expr.type) && !isStringType(expr.expr.type)  && expr.expr.type !is Type.EnumType) {
             typeErrors.add("Can only use integer, double, enum, or string types in match")
         }
         val types = mutableListOf<Type>()
@@ -797,7 +826,13 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         arguments.forEachIndexed { index, arg ->
             val paramType = params[index]
             if (paramType is Type.UnresolvedType) {
-                val expectedType = lookUpVariableType(paramType.identifier.name, paramType.identifier)
+
+                var expectedType = resolveInstanceType(paramType)
+                if (expectedType is Type.UnresolvedType) {
+                    if (exists(expectedType.identifier.name, expectedType.identifier)) {
+                        expectedType = resolveInstanceType(expectedType)
+                    }
+                }
                 if (!arg.type.canAssignTo(expectedType, this)) {
                     typeErrors.add("Expected $expectedType and got ${arg.type}")
                 }
@@ -854,6 +889,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             Expr.Literal(2)
         )
 
+    fun createStringType() =
+        lookUpVariableType(
+            Token(TokenType.IDENTIFIER, "String", null, -1),
+            Expr.Literal(2)
+        )
+
     fun isIntegerType(type: Type): Boolean = when (type) {
         is Type.InstanceType -> type.className.name.lexeme == "Int"
         is Type.UnresolvedType -> isIntegerType(resolveInstanceType(type))
@@ -866,6 +907,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         else -> false
     }
 
+    fun isStringType(type: Type): Boolean = when (type) {
+        is Type.InstanceType -> type.className.name.lexeme == "String"
+        is Type.UnresolvedType -> isStringType(resolveInstanceType(type))
+        else -> false
+    }
+
 
     fun flattenTypes(elementTypes: List<Type>): Type {
         val instanceTypes = elementTypes.filterIsInstance<Type.InstanceType>().toSet().toList()
@@ -874,6 +921,14 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
         val resultTypes = nonInstanceTypes + instanceTypes
         return if (resultTypes.size == 1) resultTypes[0] else Type.UnionType(resultTypes)
+    }
+
+    fun exists(name: Token, expr: Expr): Boolean {
+        val distance = locals[expr]
+        return if (distance != null)
+            environment.getAt(distance, name.lexeme) != null
+        else
+            globals.get(name) != null
     }
 
     fun lookUpVariableType(name: Token, expr: Expr): Type {

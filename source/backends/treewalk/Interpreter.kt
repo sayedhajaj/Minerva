@@ -158,6 +158,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             when (expr.value) {
                 is Int -> MinervaInteger(expr.value, this)
                 is Double -> MinervaDecimal(expr.value, this)
+                is String -> MinervaString(expr.value, this)
                 else -> expr.value
             }
         }
@@ -253,7 +254,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         is MinervaInteger -> typeChecker.createIntegerType()
         is Double -> typeChecker.createDecimalType()
         is Boolean -> Type.BooleanType()
-        is String -> Type.StringType()
+        is String -> typeChecker.createStringType()
         null -> Type.NullType()
         is MinervaArray -> {
             val elementTypes = value.elements.map { getValueType(it) }
@@ -325,15 +326,6 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         val right = evaluate(expr.right)
 
         return when (expr.left.type) {
-            is Type.StringType -> {
-                when (expr.operator.type) {
-                    TokenType.PLUS -> (left as String) + (right as String)
-                    TokenType.EQUAL_EQUAL -> left == right
-                    TokenType.BANG_EQUAL -> left != right
-                    else -> null
-                }
-            }
-
             is Type.BooleanType -> when (expr.operator.type) {
                 TokenType.EQUAL_EQUAL -> left == right
                 TokenType.BANG_EQUAL -> left != right

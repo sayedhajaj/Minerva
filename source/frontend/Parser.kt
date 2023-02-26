@@ -417,7 +417,6 @@ class Parser(private val tokens: List<Token>) {
                         Type.UnresolvedType(Expr.Variable(identifier), typeArguments)
                     }
                     TokenType.BOOLEAN -> Type.BooleanType()
-                    TokenType.STRING -> Type.StringType()
                     TokenType.ANY -> Type.AnyType()
                     TokenType.NULL -> Type.NullType()
                     else -> Type.NullType()
