@@ -4,9 +4,9 @@ import frontend.Environment
 import frontend.Expr
 import frontend.Token
 
-class MinervaString(val value: String, interpreter: Interpreter) : MinervaInstance(
+class MinervaBoolean(val value: Boolean, interpreter: Interpreter) : MinervaInstance(
     MinervaClass(
-        "String", null, emptyList(),
+        "Boolean", null, emptyList(),
         MinervaConstructor(
             emptyMap(), emptyList(),
             Expr.Block(emptyList()),
@@ -22,21 +22,21 @@ class MinervaString(val value: String, interpreter: Interpreter) : MinervaInstan
     override fun get(name: Token): Any? {
         return when (name.lexeme) {
 
-            "add" -> object : MinervaCallable {
-                override fun arity() = 1
-
-                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaString
-                    return MinervaString(value + right.value, interpreter)
-                }
-            }
-
             "equals" -> object : MinervaCallable {
                 override fun arity() = 1
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaString
+                    val right = arguments[0] as MinervaBoolean
                     return MinervaBoolean(value == right.value, interpreter)
+                }
+            }
+
+
+            "not" -> object : MinervaCallable {
+                override fun arity() = 0
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    return MinervaBoolean(!value, interpreter)
                 }
             }
 

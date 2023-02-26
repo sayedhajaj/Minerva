@@ -31,7 +31,6 @@ class Scanner(private val source: String) {
             keywords["super"] = TokenType.SUPER
             keywords["null"] = TokenType.NULL
             keywords["Any"] = TokenType.ANY
-            keywords["Boolean"] = TokenType.BOOLEAN
             keywords["typematch"] = TokenType.TYPEMATCH
             keywords["match"] = TokenType.MATCH
             keywords["interface"] = TokenType.INTERFACE

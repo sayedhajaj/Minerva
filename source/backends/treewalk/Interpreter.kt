@@ -71,7 +71,11 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
 //                stmt.constructor.fields.forEach {  ->  }
 
                 val methods = stmt.methods.associate {
-                    it.function.name.lexeme to MinervaFunction(it.function.name.lexeme, it.function.functionBody, environment)
+                    it.function.name.lexeme to MinervaFunction(
+                        it.function.name.lexeme,
+                        it.function.functionBody,
+                        environment
+                    )
                 }
 
                 val fields = stmt.fields.associate {
@@ -93,7 +97,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 environment.assign(stmt.name, klass)
             }
             is Stmt.If -> {
-                if (evaluate(stmt.condition) == true) {
+                if ((evaluate(stmt.condition) as MinervaBoolean).value) {
                     execute(stmt.thenBranch)
                 } else {
                     stmt.elseBranch?.let { execute(it) }
@@ -117,17 +121,23 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             }
             is Stmt.Expression -> evaluate(stmt.expression)
             is Stmt.While -> {
-                while (evaluate(stmt.condition) == true) {
+                while ((evaluate(stmt.condition) as MinervaBoolean).value) {
                     execute(stmt.body)
                 }
             }
-            is Stmt.Constructor -> { }
-            is Stmt.ClassDeclaration -> { }
-            is Stmt.ConstructorDeclaration -> { }
-            is Stmt.FunctionDeclaration -> { }
-            is Stmt.Interface -> { }
+            is Stmt.Constructor -> {
+            }
+            is Stmt.ClassDeclaration -> {
+            }
+            is Stmt.ConstructorDeclaration -> {
+            }
+            is Stmt.FunctionDeclaration -> {
+            }
+            is Stmt.Interface -> {
+            }
             is Stmt.PrintType -> log(stmt.expression.type.toString())
-            is Stmt.VarDeclaration -> { }
+            is Stmt.VarDeclaration -> {
+            }
             is Stmt.Enum -> {
                 environment.define(stmt.name.lexeme, MinervaEnum(stmt.members))
             }
@@ -138,7 +148,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                         environment.define(varDeclaration.name.lexeme, value.elements[index])
                     }
                 }
-        }
+            }
         }
     }
 
@@ -148,7 +158,8 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         is Expr.Binary -> evaluateBinary(expr)
         is Expr.Grouping -> evaluate(expr.expr)
         is Expr.If -> {
-            if (evaluate(expr.condition) == true) {
+            val condition = evaluate(expr.condition) as MinervaBoolean
+            if (condition.value) {
                 evaluate(expr.thenBranch)
             } else {
                 evaluate(expr.elseBranch)
@@ -159,6 +170,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 is Int -> MinervaInteger(expr.value, this)
                 is Double -> MinervaDecimal(expr.value, this)
                 is String -> MinervaString(expr.value, this)
+                is Boolean -> MinervaBoolean(expr.value, this)
                 else -> expr.value
             }
         }
@@ -253,7 +265,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         is Int -> typeChecker.createIntegerType()
         is MinervaInteger -> typeChecker.createIntegerType()
         is Double -> typeChecker.createDecimalType()
-        is Boolean -> Type.BooleanType()
+        is Boolean -> typeChecker.createBooleanType()
         is String -> typeChecker.createStringType()
         null -> Type.NullType()
         is MinervaArray -> {
@@ -309,7 +321,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         if (right is MinervaInstance) {
             val unaryMethods = mapOf(TokenType.PLUS to "plus", TokenType.MINUS to "minus", TokenType.BANG to "not")
             val operatorName = unaryMethods[expr.operator.type]!!
-            val token =  Token(TokenType.IDENTIFIER, operatorName, operatorName, -1)
+            val token = Token(TokenType.IDENTIFIER, operatorName, operatorName, -1)
             val method = right.get(token) as MinervaCallable
             return method.call(this, listOf(right))
         }
@@ -326,11 +338,6 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         val right = evaluate(expr.right)
 
         return when (expr.left.type) {
-            is Type.BooleanType -> when (expr.operator.type) {
-                TokenType.EQUAL_EQUAL -> left == right
-                TokenType.BANG_EQUAL -> left != right
-                else -> null
-            }
             is Type.InstanceType -> {
                 val obj = left as MinervaInstance
                 val operatorMethods = mapOf(
@@ -351,31 +358,34 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
 
                 val operatorName = operatorMethods[expr.operator.type]
                 if (operatorName != null) {
-                    val token =  Token(TokenType.IDENTIFIER, operatorName, operatorName, -1)
+                    val token = Token(TokenType.IDENTIFIER, operatorName, operatorName, -1)
                     val method = obj.get(token) as MinervaCallable
                     return method.call(this, listOf(right))
                 } else {
                     if (expr.operator.type in comparisonOperators) {
-                        val compareMethodName  =  Token(TokenType.IDENTIFIER, "compareTo", "compareTo", -1)
+                        val compareMethodName = Token(TokenType.IDENTIFIER, "compareTo", "compareTo", -1)
                         val compareMethod = obj.get(compareMethodName) as MinervaCallable?
                         if (compareMethod != null) {
 
                             val result = compareMethod.call(this, listOf(right)) as MinervaInteger
-                            return when (expr.operator.type) {
-                                TokenType.GREATER ->  result.value > 0
-                                TokenType.GREATER_EQUAL ->  result.value >= 0
+                            val bool = when (expr.operator.type) {
+                                TokenType.GREATER -> result.value > 0
+                                TokenType.GREATER_EQUAL -> result.value >= 0
                                 TokenType.LESS -> result.value < 0
                                 TokenType.LESS_EQUAL -> result.value <= 0
                                 TokenType.EQUAL_EQUAL -> result.value == 0
                                 TokenType.BANG_EQUAL -> result.value != 0
                                 else -> false
                             }
+                            return MinervaBoolean(bool, this)
                         } else {
                             val equalMethodName = Token(TokenType.IDENTIFIER, "equals", "equals", -1)
                             val equalsMethod = obj.get(equalMethodName) as MinervaCallable
-                            val result = equalsMethod.call(this, listOf(right)) as Boolean
-                            return if (expr.operator.type == TokenType.EQUAL_EQUAL) result
-                            else !result
+                            val result = equalsMethod.call(this, listOf(right)) as MinervaBoolean
+                            return MinervaBoolean(
+                                if (expr.operator.type == TokenType.EQUAL_EQUAL) result.value
+                                else !result.value, this
+                            )
                         }
                     }
                 }

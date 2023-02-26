@@ -1,0 +1,6 @@
+
+external class Boolean {
+
+    operator function equals(other: Boolean): Boolean;
+    operator function not(): Boolean;
+};

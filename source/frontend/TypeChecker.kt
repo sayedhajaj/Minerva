@@ -168,7 +168,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Stmt.If -> {
                 typeCheck(stmt.condition)
                 typeCheck(stmt.thenBranch)
-                if (stmt.condition.type !is Type.BooleanType) {
+                if (!isBooleanType(stmt.condition.type)) {
                     typeErrors.add("If condition should be boolean")
                 }
                 stmt.elseBranch?.let { typeCheck(it) }
@@ -191,7 +191,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Stmt.While -> {
                 typeCheck(stmt.condition)
 
-                if (stmt.condition.type !is Type.BooleanType) {
+                if (!isBooleanType(stmt.condition.type)) {
                     typeErrors.add("While condition should be boolean")
                 }
                 typeCheck(stmt.body)
@@ -488,7 +488,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
             is Expr.If -> {
                 typeCheck(expr.condition)
-                if (expr.condition.type !is Type.BooleanType) {
+                if (!isBooleanType(expr.condition.type)) {
                     typeErrors.add("If condition should be boolean")
                 }
                 val thenType = typeCheck(expr.thenBranch)
@@ -503,7 +503,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     is String -> createStringType()
                     is Double -> createDecimalType()
                     is Int -> createIntegerType()
-                    is Boolean -> Type.BooleanType()
+                    is Boolean -> createBooleanType()
                     else -> Type.NullType()
                 }
                 expr.type = type
@@ -512,10 +512,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Expr.Logical -> {
                 val left = typeCheck(expr.left)
                 val right = typeCheck(expr.right)
-                if (left !is Type.BooleanType || right !is Type.BooleanType) {
+                if (!isBooleanType(left) || !isBooleanType(right)) {
                     typeErrors.add("Logical expression should have boolean left and right")
                 }
-                val thisType = Type.BooleanType()
+                val thisType = createBooleanType()
                 expr.type = thisType
                 thisType
             }
@@ -578,23 +578,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 expr.type = resolved
                 return resolved
             }
+        } else {
+            typeErrors.add("Cannot call ${expr.operator.type} on $left")
         }
 
-        val thisType = when (expr.operator.type) {
-            TokenType.PLUS -> left
-            TokenType.MINUS -> left
-            TokenType.SLASH -> left
-            TokenType.STAR -> left
-            TokenType.GREATER -> Type.BooleanType()
-            TokenType.GREATER_EQUAL -> Type.BooleanType()
-            TokenType.LESS -> Type.BooleanType()
-            TokenType.LESS_EQUAL -> Type.BooleanType()
-            TokenType.EQUAL_EQUAL -> Type.BooleanType()
-            TokenType.BANG_EQUAL -> Type.BooleanType()
-            else -> Type.NullType()
-        }
-        expr.type = thisType
-        return thisType
+        expr.type = Type.NullType()
+        return expr.type
     }
 
     private fun typeCheckCall(expr: Expr.Call): Type {
@@ -895,6 +884,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             Expr.Literal(2)
         )
 
+    fun createBooleanType() =
+        lookUpVariableType(
+            Token(TokenType.IDENTIFIER, "Boolean", null, -1),
+            Expr.Literal(2)
+        )
+
     fun isIntegerType(type: Type): Boolean = when (type) {
         is Type.InstanceType -> type.className.name.lexeme == "Int"
         is Type.UnresolvedType -> isIntegerType(resolveInstanceType(type))
@@ -910,6 +905,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     fun isStringType(type: Type): Boolean = when (type) {
         is Type.InstanceType -> type.className.name.lexeme == "String"
         is Type.UnresolvedType -> isStringType(resolveInstanceType(type))
+        else -> false
+    }
+
+    fun isBooleanType(type: Type): Boolean = when (type) {
+        is Type.InstanceType -> type.className.name.lexeme == "Boolean"
+        is Type.UnresolvedType -> isBooleanType(resolveInstanceType(type))
         else -> false
     }
 

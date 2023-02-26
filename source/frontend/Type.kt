@@ -88,6 +88,11 @@ sealed interface Type {
                 true
             } else superclass?.hasMemberType(member, type, typeChecker) == true
 
+        fun hasMember(member: String, typeChecker: TypeChecker): Boolean =
+            if (members.containsKey(member)) {
+                true
+            } else superclass?.hasMember(member, typeChecker) == true
+
         override fun getMemberType(member: String, typeChecker: TypeChecker): Type =
             if (members.containsKey(member))
                 members[member] ?: NullType()
@@ -121,41 +126,43 @@ sealed interface Type {
             typeChecker: TypeChecker,
             operator: TokenType,
             right: Type
-        ): BooleanType {
+        ): Type {
             val methodName = "compareTo"
-            val compareMethod = getMemberType(methodName, typeChecker) as FunctionType?
-            val allowed = operatorOperandAllowed(operator, compareMethod, right, typeChecker)
-            if (allowed) {
-                if (!typeChecker.isIntegerType(compareMethod!!.result)) {
-                    typeChecker.typeErrors.add("Return type of compare method should be integer")
+            if (hasMember(methodName, typeChecker)) {
+
+                val compareMethod = getMemberType(methodName, typeChecker) as FunctionType?
+                val allowed = operatorOperandAllowed(operator, compareMethod, right, typeChecker)
+                if (allowed) {
+                    if (!typeChecker.isIntegerType(compareMethod!!.result)) {
+                        typeChecker.typeErrors.add("Return type of compare method should be integer")
+                    }
+                } else {
+                    if (operator !in listOf(
+                            TokenType.EQUAL_EQUAL,
+                            TokenType.BANG_EQUAL
+                        )
+                    ) {
+                        typeChecker.typeErrors.add("CompareTo not implemented for $this")
+                    }
                 }
             } else {
-                typeCheckEqual(operator, allowed, typeChecker, right, compareMethod)
+
+                typeCheckEqual(operator, typeChecker, right)
             }
-            return BooleanType()
+            return typeChecker.createBooleanType()
         }
 
         private fun typeCheckEqual(
             operator: TokenType,
-            allowed: Boolean,
             typeChecker: TypeChecker,
             right: Type,
-            compareMethod: FunctionType?
         ) {
-            if (operator !in listOf(
-                    TokenType.EQUAL_EQUAL,
-                    TokenType.BANG_EQUAL
-                )
-                && !allowed
-            ) {
-                typeChecker.typeErrors.add("CompareTo not implemented for $this")
-            }
 
             val equalMethod = getMemberType("equals", typeChecker) as FunctionType?
             val allowed = operatorOperandAllowed(operator, equalMethod, right, typeChecker)
             if (allowed) {
-                if (compareMethod!!.result !is BooleanType) {
-                    typeChecker.typeErrors.add("Return type of compare method should be boolean")
+                if (!typeChecker.isBooleanType(equalMethod!!.result)) {
+                    typeChecker.typeErrors.add("Return type of equals method should be boolean")
                 }
             }
         }
@@ -229,15 +236,6 @@ sealed interface Type {
         override fun toString(): String = "null"
     }
 
-    class BooleanType : Type {
-        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean = otherType is BooleanType
-
-        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean = false
-
-        override fun getMemberType(member: String, typeChecker: TypeChecker): Type = NullType()
-
-        override fun toString(): String = "Boolean"
-    }
 
     class AnyType : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean = true
