@@ -1,0 +1,13 @@
+
+external class Decimal {
+
+    operator function add(other: Decimal): Decimal;
+    operator function subtract(other: Decimal): Decimal;
+    operator function divide(other: Decimal): Decimal;
+    operator function multiply(other: Decimal): Decimal;
+
+    operator function compareTo(other: Decimal): Int;
+
+    operator function plus(): Decimal;
+    operator function minus(): Decimal;
+};

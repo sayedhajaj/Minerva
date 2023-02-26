@@ -472,7 +472,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Expr.Literal -> {
                 val type = when (expr.value) {
                     is String -> Type.StringType()
-                    is Double -> Type.DoubleType()
+                    is Double -> createDecimalType()
                     is Int -> createIntegerType()
                     is Boolean -> Type.BooleanType()
                     else -> Type.NullType()
@@ -671,7 +671,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     private fun getMatchType(expr: Expr.Match): Type {
         typeCheck(expr.expr)
-        if (!isIntegerType(expr.expr.type) && expr.expr.type !is Type.DoubleType && expr.expr.type !is Type.StringType && expr.expr.type !is Type.EnumType) {
+        if (!isIntegerType(expr.expr.type) && !isDecimalType(expr.expr.type) && expr.expr.type !is Type.StringType && expr.expr.type !is Type.EnumType) {
             typeErrors.add("Can only use integer, double, enum, or string types in match")
         }
         val types = mutableListOf<Type>()
@@ -848,11 +848,24 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             Expr.Literal(2)
         )
 
+    fun createDecimalType() =
+        lookUpVariableType(
+            Token(TokenType.IDENTIFIER, "Decimal", null, -1),
+            Expr.Literal(2)
+        )
+
     fun isIntegerType(type: Type): Boolean = when (type) {
         is Type.InstanceType -> type.className.name.lexeme == "Int"
         is Type.UnresolvedType -> isIntegerType(resolveInstanceType(type))
         else -> false
     }
+
+    fun isDecimalType(type: Type): Boolean = when (type) {
+        is Type.InstanceType -> type.className.name.lexeme == "Decimal"
+        is Type.UnresolvedType -> isDecimalType(resolveInstanceType(type))
+        else -> false
+    }
+
 
     fun flattenTypes(elementTypes: List<Type>): Type {
         val instanceTypes = elementTypes.filterIsInstance<Type.InstanceType>().toSet().toList()

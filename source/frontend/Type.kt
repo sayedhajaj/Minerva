@@ -32,16 +32,6 @@ sealed interface Type {
     fun getMemberType(member: String, typeChecker: TypeChecker): Type
 
 
-    class DoubleType : Type {
-        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean = otherType is DoubleType
-
-        override fun hasMemberType(member: String, otherType: Type, typeChecker: TypeChecker): Boolean = false
-
-        override fun getMemberType(member: String, typeChecker: TypeChecker): Type = NullType()
-
-        override fun toString(): String = "Decimal"
-    }
-
     class StringType : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean = otherType is StringType
 

@@ -155,10 +155,10 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             }
         }
         is Expr.Literal -> {
-            if (expr.value is Int) {
-                MinervaInteger(expr.value, this)
-            } else {
-                expr.value
+            when (expr.value) {
+                is Int -> MinervaInteger(expr.value, this)
+                is Double -> MinervaDecimal(expr.value, this)
+                else -> expr.value
             }
         }
         is Expr.Unary -> evaluateUnary(expr)
@@ -251,7 +251,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
     private fun getValueType(value: Any?): Type = when (value) {
         is Int -> typeChecker.createIntegerType()
         is MinervaInteger -> typeChecker.createIntegerType()
-        is Double -> Type.DoubleType()
+        is Double -> typeChecker.createDecimalType()
         is Boolean -> Type.BooleanType()
         is String -> Type.StringType()
         null -> Type.NullType()
@@ -330,25 +330,6 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     TokenType.PLUS -> (left as String) + (right as String)
                     TokenType.EQUAL_EQUAL -> left == right
                     TokenType.BANG_EQUAL -> left != right
-                    else -> null
-                }
-            }
-
-            is Type.DoubleType -> {
-                when (expr.operator.type) {
-                    TokenType.PLUS -> (left as Double) + (right as Double)
-
-                    TokenType.MINUS -> (left as Double) - (right as Double)
-                    TokenType.SLASH -> (left as Double) / (right as Double)
-                    TokenType.STAR -> (left as Double) * (right as Double)
-
-                    TokenType.GREATER -> (left as Double) > (right as Double)
-                    TokenType.GREATER_EQUAL -> (left as Double) >= (right as Double)
-                    TokenType.LESS -> (left as Double) < (right as Double)
-                    TokenType.LESS_EQUAL -> (left as Double) <= (right as Double)
-                    TokenType.EQUAL_EQUAL -> left == right
-                    TokenType.BANG_EQUAL -> left != right
-
                     else -> null
                 }
             }
