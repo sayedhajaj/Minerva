@@ -1,0 +1,8 @@
+class Vector2f (var x: Decimal, var y: Decimal) {
+    operator function add(right: Vector2f) => Vector2f(this.x+right.x, this.y + right.y);
+}
+
+var position = Vector2f(30.0, 30.0);
+var velocity = Vector2f(5.0, 0.0);
+var destination = position + velocity;
+print(destination.x);

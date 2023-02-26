@@ -1,0 +1,10 @@
+class Person(var age: Int) {
+    operator function compareTo(other: Person) =>
+        if (this.age > other.age) 1
+        else if (this.age == other.age) 0
+        else -1;
+}
+
+var henry = Person(50);
+var mary = Person(25);
+print henry > mary;

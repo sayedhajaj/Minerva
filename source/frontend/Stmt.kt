@@ -5,7 +5,7 @@ sealed class Stmt {
         val name: Token,
         val superclass: Expr.Variable?,
         val constructor: Constructor,
-        val methods: List<Function>,
+        val methods: List<Method>,
         val fields: List<Stmt.Var>,
         val interfaces: List<Token>
         ) : Stmt()
@@ -16,6 +16,8 @@ sealed class Stmt {
         val methods: List<FunctionDeclaration>,
         val fields: List<VarDeclaration>
         ): Stmt()
+
+    class Method(val function: Function, val isOperator: Boolean = false)
 
     class Interface(val name: Token, val methods: List<FunctionDeclaration>, val fields: List<VarDeclaration>): Stmt()
 

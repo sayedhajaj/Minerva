@@ -161,14 +161,20 @@ class Parser(private val tokens: List<Token>) {
 
         consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
-        val methods = mutableListOf<Stmt.Function>()
+        val methods = mutableListOf<Stmt.Method>()
         val fields = mutableListOf<Stmt.Var>()
 
         while (!isAtEnd() && !check(TokenType.RIGHT_BRACE)) {
             if (match(TokenType.VAR)) {
                 fields.add(varInitialisation() as Stmt.Var)
-            } else if (match(TokenType.FUNCTION)) {
-                methods.add(function())
+            } else if (match(TokenType.OPERATOR_MODIFIER)) {
+                val isOperator = true
+                consume(TokenType.FUNCTION, "Expect function after modifier")
+                val method = Stmt.Method(function(), isOperator)
+                methods.add(method)
+            }
+            else if (match(TokenType.FUNCTION)) {
+                methods.add(Stmt.Method(function()))
             } else if (match(TokenType.CONSTRUCTOR)) {
                 consume(TokenType.LEFT_BRACE, "Expect '{' after constructor.")
                 constructorBody = Expr.Block(block())
@@ -413,6 +419,7 @@ class Parser(private val tokens: List<Token>) {
                     TokenType.BOOLEAN -> Type.BooleanType()
                     TokenType.STRING -> Type.StringType()
                     TokenType.INTEGER -> Type.IntegerType()
+                    TokenType.DECIMAL -> Type.DoubleType()
                     TokenType.ANY -> Type.AnyType()
                     TokenType.NULL -> Type.NullType()
                     else -> Type.NullType()

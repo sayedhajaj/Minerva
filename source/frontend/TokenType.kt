@@ -20,5 +20,6 @@ enum class TokenType {
     ENUM,
     AS,
     TYPE,
+    OPERATOR_MODIFIER,
     EOF,
 }

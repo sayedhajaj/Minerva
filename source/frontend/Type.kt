@@ -1,5 +1,29 @@
 package frontend
 
+val operatorMethods = mapOf(
+    TokenType.PLUS to "add",
+    TokenType.MINUS to "subtract",
+    TokenType.SLASH to "divide",
+    TokenType.STAR to "multiply",
+)
+
+val arithmeticOperators = listOf(
+    TokenType.PLUS,
+    TokenType.MINUS,
+    TokenType.SLASH,
+    TokenType.STAR,
+)
+
+val comparisonOperators = listOf(
+    TokenType.LESS,
+    TokenType.LESS_EQUAL,
+    TokenType.GREATER,
+    TokenType.GREATER_EQUAL,
+    TokenType.EQUAL_EQUAL,
+    TokenType.BANG_EQUAL
+)
+
+
 sealed interface Type {
     fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean
 
@@ -101,6 +125,94 @@ sealed interface Type {
             else
                 superclass?.getMemberType(member, typeChecker) ?: NullType()
 
+        fun getOperatorType(operator: TokenType, right: Type, typeChecker: TypeChecker): Type? =
+            if (isArithmeticOperator(operator))
+                getArithmeticOperatorType(operator, typeChecker, right)
+            else if (isComparisonOperator(operator)) typeCheckComparison(typeChecker, operator, right)
+            else null
+
+
+        private fun typeCheckComparison(
+            typeChecker: TypeChecker,
+            operator: TokenType,
+            right: Type
+        ): BooleanType {
+            val methodName = "compareTo"
+            val compareMethod = getMemberType(methodName, typeChecker) as FunctionType?
+            val allowed = operatorOperandAllowed(operator, compareMethod, right, typeChecker)
+            if (allowed) {
+                if (compareMethod!!.result !is IntegerType) {
+                    typeChecker.typeErrors.add("Return type of compare method should be integer")
+                }
+            } else {
+                typeCheckEqual(operator, allowed, typeChecker, right, compareMethod)
+            }
+            return BooleanType()
+        }
+
+        private fun typeCheckEqual(
+            operator: TokenType,
+            allowed: Boolean,
+            typeChecker: TypeChecker,
+            right: Type,
+            compareMethod: FunctionType?
+        ) {
+            if (operator !in listOf(
+                    TokenType.EQUAL_EQUAL,
+                    TokenType.BANG_EQUAL
+                )
+                && !allowed
+            ) {
+                typeChecker.typeErrors.add("CompareTo not implemented for $this")
+            }
+
+            val equalMethod = getMemberType("equals", typeChecker) as FunctionType?
+            val allowed = operatorOperandAllowed(operator, equalMethod, right, typeChecker)
+            if (allowed) {
+                if (compareMethod!!.result !is BooleanType) {
+                    typeChecker.typeErrors.add("Return type of compare method should be boolean")
+                }
+            }
+        }
+
+        private fun getArithmeticOperatorType(
+            operator: TokenType,
+            typeChecker: TypeChecker,
+            right: Type
+        ): Type? {
+            val methodName = operatorMethods[operator]!!
+            val method = getMemberType(methodName, typeChecker) as FunctionType?
+            val allowed = operatorOperandAllowed(operator, method, right, typeChecker)
+            if (allowed) {
+                return method!!.result
+            }
+            return null
+        }
+
+        private fun operatorOperandAllowed(
+            operator: TokenType,
+            method: FunctionType?,
+            right: Type,
+            typeChecker: TypeChecker
+        ): Boolean {
+            return if (method != null) {
+                val paramTypes = method.params.types
+                if (paramTypes.size == 1 && paramTypes[0].canAssignTo(right, typeChecker)) {
+                    true
+                } else {
+                    typeChecker.typeErrors.add("$method does not accept $right")
+                    false
+                }
+            } else {
+                typeChecker.typeErrors.add("Class does not override $operator operator")
+                false
+            }
+        }
+
+        private fun isComparisonOperator(operator: TokenType) = operator in comparisonOperators
+
+        private fun isArithmeticOperator(operator: TokenType) = operator in arithmeticOperators
+
         override fun toString(): String {
             val typeArgs = if (typeArguments.isEmpty()) "" else
                 "<" + typeArguments.joinToString(",") + ">"
@@ -187,11 +299,11 @@ sealed interface Type {
         }
     }
 
-    class EnumType(val name: Token, val members: List<Token>): Type {
+    class EnumType(val name: Token, val members: List<Token>) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker) =
             if (otherType is EnumType)
                 (otherType.name.lexeme == name.lexeme)
-             else false
+            else false
 
         override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
             return members.any { it.lexeme == member }
@@ -204,7 +316,7 @@ sealed interface Type {
 
     }
 
-    class TupleType(val types: List<Type>): Type {
+    class TupleType(val types: List<Type>) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return if (otherType is TupleType) {
                 types.size == otherType.types.size &&

@@ -44,6 +44,7 @@ class Scanner(private val source: String) {
             keywords["as"] = TokenType.AS
             keywords["enum"] = TokenType.ENUM
             keywords["type"] = TokenType.TYPE
+            keywords["operator"] = TokenType.OPERATOR_MODIFIER
         }
     }
 

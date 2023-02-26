@@ -3,7 +3,7 @@ import kotlin.test.assertContentEquals
 
 class TuplesTest {
     @Test
-    internal fun testEnums() {
+    internal fun testTuples() {
         val source = HelloWorldTest::class.java.getResource("examples/tuples.minerva").readText()
         val compiler = MinervaCompiler(source)
 

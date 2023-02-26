@@ -39,7 +39,7 @@ class Resolver {
                 }
 
                 stmt.methods.forEach {
-                    resolve(it)
+                    resolve(it.function)
                 }
 
 

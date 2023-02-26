@@ -71,7 +71,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
 //                stmt.constructor.fields.forEach {  ->  }
 
                 val methods = stmt.methods.associate {
-                    it.name.lexeme to MinervaFunction(it.name.lexeme, it.functionBody, environment)
+                    it.function.name.lexeme to MinervaFunction(it.function.name.lexeme, it.function.functionBody, environment)
                 }
 
                 val fields = stmt.fields.associate {
@@ -354,6 +354,56 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 TokenType.EQUAL_EQUAL -> left == right
                 TokenType.BANG_EQUAL -> left != right
                 else -> null
+            }
+            is Type.InstanceType -> {
+                val obj = left as MinervaInstance
+                val operatorMethods = mapOf(
+                    TokenType.PLUS to "add",
+                    TokenType.MINUS to "subtract",
+                    TokenType.SLASH to "divide",
+                    TokenType.STAR to "multiply",
+                )
+
+                val comparisonOperators = listOf(
+                    TokenType.LESS,
+                    TokenType.LESS_EQUAL,
+                    TokenType.GREATER,
+                    TokenType.GREATER_EQUAL,
+                    TokenType.EQUAL_EQUAL,
+                    TokenType.BANG_EQUAL
+                )
+
+                val operatorName = operatorMethods[expr.operator.type]
+                if (operatorName != null) {
+                    val token =  Token(TokenType.IDENTIFIER, operatorName, operatorName, -1)
+                    val method = obj.get(token) as MinervaCallable
+                    return method.call(this, listOf(right))
+                } else {
+                    if (expr.operator.type in comparisonOperators) {
+                        val compareMethodName  =  Token(TokenType.IDENTIFIER, "compareTo", "compareTo", -1)
+                        val compareMethod = obj.get(compareMethodName) as MinervaCallable?
+                        if (compareMethod != null) {
+
+                            val result = compareMethod.call(this, listOf(right)) as Int
+                            return when (expr.operator.type) {
+                                TokenType.GREATER ->  result > 0
+                                TokenType.GREATER_EQUAL ->  result >= 0
+                                TokenType.LESS -> result < 0
+                                TokenType.LESS_EQUAL -> result <= 0
+                                TokenType.EQUAL_EQUAL -> result == 0
+                                TokenType.BANG_EQUAL -> result != 0
+                                else -> false
+                            }
+                        } else {
+                            val equalMethodName = Token(TokenType.IDENTIFIER, "equals", "equals", -1)
+                            val equalsMethod = obj.get(equalMethodName) as MinervaCallable
+                            val result = equalsMethod.call(this, listOf(right)) as Boolean
+                            return if (expr.operator.type == TokenType.EQUAL_EQUAL) result
+                            else !result
+                        }
+                    }
+                }
+                return null
             }
             else -> null
         }
