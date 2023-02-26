@@ -65,7 +65,7 @@ class MinervaArray(val elements: Array<Any?>, interpreter: Interpreter) : Minerv
                     return value
                 }
             }
-            "length" -> elements.size
+            "length" -> MinervaInteger(elements.size, interpreter)
             else -> null
         }
     }

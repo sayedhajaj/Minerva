@@ -389,7 +389,6 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 if (args.containsKey(type.identifier.name.lexeme)) args[type.identifier.name.lexeme] ?: type
                 else type
             }
-            is Type.IntegerType -> type
             is Type.TupleType -> Type.TupleType(type.types.map { resolveTypeArgument(args, it) })
             is Type.FunctionType -> Type.FunctionType(
                 resolveTypeArgument(args, type.params) as Type.TupleType,
@@ -474,7 +473,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 val type = when (expr.value) {
                     is String -> Type.StringType()
                     is Double -> Type.DoubleType()
-                    is Int -> Type.IntegerType()
+                    is Int -> createIntegerType()
                     is Boolean -> Type.BooleanType()
                     else -> Type.NullType()
                 }
@@ -509,8 +508,9 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 if (operandType is Type.InstanceType) {
                     val returnType = operandType.getUnaryOperatorType(expr.operator.type, this)
                     if (returnType != null) {
-                        expr.type = returnType
-                        returnType
+                        val resolved = resolveInstanceType(returnType)
+                        expr.type = resolved
+                        resolved
                     } else {
                         expr.type = operandType
                         operandType
@@ -542,7 +542,13 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
         if (left is Type.InstanceType) {
             val returnType = left.getBinaryOperatorType(expr.operator.type, right, this)
-            if (returnType != null) return returnType
+            val resolved = if (returnType is Type.UnresolvedType) {
+                resolveInstanceType(returnType)
+            } else returnType
+            if (resolved != null) {
+                expr.type = resolved
+                return resolved
+            }
         }
 
         val thisType = when (expr.operator.type) {
@@ -619,7 +625,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         return if (isArrayType(expr.obj.type) && expr.index != null) {
             val thisType = (expr.obj.type as Type.InstanceType).typeArguments[0]
             typeCheck(expr.index)
-            if (expr.index.type !is Type.IntegerType) {
+            if (!isIntegerType(expr.index.type)) {
                 typeErrors.add("Array index should be an integer")
             }
 
@@ -628,8 +634,10 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         } else {
             val calleeType = typeCheck(expr.obj)
             val thisType = calleeType.getMemberType(expr.name.lexeme, this)
-            expr.type = thisType
-            thisType
+            val resolved = if (thisType is Type.UnresolvedType) resolveInstanceType(thisType)
+            else thisType
+            expr.type = resolved
+            resolved
         }
     }
 
@@ -641,7 +649,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             val arrType = (left as Type.InstanceType).typeArguments[0]
             if (expr.index != null) {
                 typeCheck(expr.index)
-                if (expr.index.type !is Type.IntegerType) {
+                if (!isIntegerType(expr.index.type)) {
                     typeErrors.add("Array index should be integer")
                 }
             }
@@ -663,7 +671,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     private fun getMatchType(expr: Expr.Match): Type {
         typeCheck(expr.expr)
-        if (expr.expr.type !is Type.IntegerType && expr.expr.type !is Type.DoubleType && expr.expr.type !is Type.StringType && expr.expr.type !is Type.EnumType) {
+        if (!isIntegerType(expr.expr.type) && expr.expr.type !is Type.DoubleType && expr.expr.type !is Type.StringType && expr.expr.type !is Type.EnumType) {
             typeErrors.add("Can only use integer, double, enum, or string types in match")
         }
         val types = mutableListOf<Type>()
@@ -738,10 +746,14 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 closure.define(token.lexeme, resolveInstanceType(parameterType))
             }
         }
-        val returnType = getBlockType(block.statements, closure)
-        if ((expr.type as Type.FunctionType).result is Type.InferrableType) {
-            expr.type = Type.FunctionType((expr.type as Type.FunctionType).params, typeParameters, returnType)
-        }
+        val blockReturnType = getBlockType(block.statements, closure)
+        val definition = (expr.type as Type.FunctionType)
+        val paramTypes = (expr.type as Type.FunctionType).params.types.map { resolveInstanceType(it) }
+
+        val returnType = if (definition.result is Type.InferrableType) blockReturnType else definition.result
+
+        expr.type = Type.FunctionType(Type.TupleType(paramTypes), typeParameters, returnType)
+
         return expr.type
     }
 
@@ -830,25 +842,24 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         )
     )
 
+    fun createIntegerType() =
+        lookUpVariableType(
+            Token(TokenType.IDENTIFIER, "Int", null, -1),
+            Expr.Literal(2)
+        )
+
+    fun isIntegerType(type: Type): Boolean = when (type) {
+        is Type.InstanceType -> type.className.name.lexeme == "Int"
+        is Type.UnresolvedType -> isIntegerType(resolveInstanceType(type))
+        else -> false
+    }
+
     fun flattenTypes(elementTypes: List<Type>): Type {
-        val instanceTypes = elementTypes.filterIsInstance<Type.InstanceType>()
+        val instanceTypes = elementTypes.filterIsInstance<Type.InstanceType>().toSet().toList()
         val nonInstanceTypes = elementTypes.filter { it !is Type.InstanceType }.distinctBy { it::class }
 
 
-        val constrainedInstances = mutableListOf<Type.InstanceType>()
-        var i = 0
-        while (i < instanceTypes.size - 1) {
-            var j = i + 1
-            while (j < instanceTypes.size) {
-                val left = instanceTypes[i]
-                val right = instanceTypes[j]
-                if (left.canAssignTo(right, this)) constrainedInstances.add(left)
-                if (right.canAssignTo(left, this)) constrainedInstances.add(right)
-                j++
-            }
-            i++
-        }
-        val resultTypes = nonInstanceTypes + constrainedInstances
+        val resultTypes = nonInstanceTypes + instanceTypes
         return if (resultTypes.size == 1) resultTypes[0] else Type.UnionType(resultTypes)
     }
 

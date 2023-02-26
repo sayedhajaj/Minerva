@@ -31,15 +31,6 @@ sealed interface Type {
 
     fun getMemberType(member: String, typeChecker: TypeChecker): Type
 
-    class IntegerType : Type {
-        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean = otherType is IntegerType
-
-        override fun hasMemberType(member: String, otherType: Type, typeChecker: TypeChecker): Boolean = false
-
-        override fun getMemberType(member: String, typeChecker: TypeChecker): Type = NullType()
-
-        override fun toString(): String = "Int"
-    }
 
     class DoubleType : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean = otherType is DoubleType
@@ -157,7 +148,7 @@ sealed interface Type {
             val compareMethod = getMemberType(methodName, typeChecker) as FunctionType?
             val allowed = operatorOperandAllowed(operator, compareMethod, right, typeChecker)
             if (allowed) {
-                if (compareMethod!!.result !is IntegerType) {
+                if (!typeChecker.isIntegerType(compareMethod!!.result)) {
                     typeChecker.typeErrors.add("Return type of compare method should be integer")
                 }
             } else {

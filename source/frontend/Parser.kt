@@ -418,7 +418,6 @@ class Parser(private val tokens: List<Token>) {
                     }
                     TokenType.BOOLEAN -> Type.BooleanType()
                     TokenType.STRING -> Type.StringType()
-                    TokenType.INTEGER -> Type.IntegerType()
                     TokenType.DECIMAL -> Type.DoubleType()
                     TokenType.ANY -> Type.AnyType()
                     TokenType.NULL -> Type.NullType()

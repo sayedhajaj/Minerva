@@ -19,9 +19,9 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             override fun arity(): Int = 2
 
             override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                val size = arguments[0] as Int
+                val size = arguments[0] as MinervaInteger
                 val initialiser = arguments[1] as MinervaCallable
-                val arr = Array(size) { index ->
+                val arr = Array(size.value) { index ->
                     initialiser.call(this@Interpreter, listOf(index))
 
                 }
@@ -33,8 +33,8 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             override fun arity(): Int = 1
 
             override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                val num = arguments[0] as Int
-                return num * num
+                val num = arguments[0] as MinervaInteger
+                return num.value * num.value
             }
         })
 
@@ -154,7 +154,13 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 evaluate(expr.elseBranch)
             }
         }
-        is Expr.Literal -> expr.value
+        is Expr.Literal -> {
+            if (expr.value is Int) {
+                MinervaInteger(expr.value, this)
+            } else {
+                expr.value
+            }
+        }
         is Expr.Unary -> evaluateUnary(expr)
         is Expr.Variable -> evaluateVariable(expr)
         is Expr.Logical -> evaluateLogical(expr)
@@ -163,8 +169,8 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         is Expr.Get -> {
             val obj = evaluate(expr.obj)
             if (obj is MinervaArray && expr.index != null) {
-                val index = evaluate(expr.index) as Int
-                obj.get(index)
+                val index = evaluate(expr.index) as MinervaInteger
+                obj.get(index.value)
             } else if (obj is MinervaEnum) obj.get(expr.name)
             else if (obj is MinervaInstance) obj.get(expr.name)
             else null
@@ -172,7 +178,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         is Expr.Set -> {
             val obj = evaluate(expr.obj)
             if (obj is MinervaArray && expr.index != null) {
-                obj.set((evaluate(expr.index) as Int), evaluate(expr.value))
+                obj.set(((evaluate(expr.index) as MinervaInteger)).value, evaluate(expr.value))
             } else if (obj is MinervaInstance) {
                 val value = evaluate(expr.value)
                 obj.set(expr.name, value)
@@ -223,7 +229,11 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         is Expr.Match -> {
             val value = evaluate(expr.expr)
             val matching = expr.branches.filter {
-                value == evaluate(it.first)
+                if (value is MinervaInteger) {
+                    value.value == (evaluate(it.first) as MinervaInteger).value
+                } else {
+                    value == evaluate(it.first)
+                }
             }
 
             val result = if (matching.isNotEmpty())
@@ -239,7 +249,8 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
     }
 
     private fun getValueType(value: Any?): Type = when (value) {
-        is Int -> Type.IntegerType()
+        is Int -> typeChecker.createIntegerType()
+        is MinervaInteger -> typeChecker.createIntegerType()
         is Double -> Type.DoubleType()
         is Boolean -> Type.BooleanType()
         is String -> Type.StringType()
@@ -322,23 +333,6 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     else -> null
                 }
             }
-            is Type.IntegerType -> {
-                when (expr.operator.type) {
-                    TokenType.PLUS -> (left as Int) + (right as Int)
-                    TokenType.MINUS -> (left as Int) - (right as Int)
-                    TokenType.SLASH -> (left as Int) / (right as Int)
-                    TokenType.STAR -> (left as Int) * (right as Int)
-
-                    TokenType.GREATER -> (left as Int) > (right as Int)
-                    TokenType.GREATER_EQUAL -> (left as Int) >= (right as Int)
-                    TokenType.LESS -> (left as Int) < (right as Int)
-                    TokenType.LESS_EQUAL -> (left as Int) <= (right as Int)
-                    TokenType.EQUAL_EQUAL -> left == right
-                    TokenType.BANG_EQUAL -> left != right
-
-                    else -> null
-                }
-            }
 
             is Type.DoubleType -> {
                 when (expr.operator.type) {
@@ -393,14 +387,14 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                         val compareMethod = obj.get(compareMethodName) as MinervaCallable?
                         if (compareMethod != null) {
 
-                            val result = compareMethod.call(this, listOf(right)) as Int
+                            val result = compareMethod.call(this, listOf(right)) as MinervaInteger
                             return when (expr.operator.type) {
-                                TokenType.GREATER ->  result > 0
-                                TokenType.GREATER_EQUAL ->  result >= 0
-                                TokenType.LESS -> result < 0
-                                TokenType.LESS_EQUAL -> result <= 0
-                                TokenType.EQUAL_EQUAL -> result == 0
-                                TokenType.BANG_EQUAL -> result != 0
+                                TokenType.GREATER ->  result.value > 0
+                                TokenType.GREATER_EQUAL ->  result.value >= 0
+                                TokenType.LESS -> result.value < 0
+                                TokenType.LESS_EQUAL -> result.value <= 0
+                                TokenType.EQUAL_EQUAL -> result.value == 0
+                                TokenType.BANG_EQUAL -> result.value != 0
                                 else -> false
                             }
                         } else {
