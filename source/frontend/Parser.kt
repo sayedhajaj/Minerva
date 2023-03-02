@@ -627,9 +627,7 @@ class Parser(private val tokens: List<Token>) {
             var typeArguments: List<Type> = emptyList()
             if (check(TokenType.LESS)) {
                 val nextCharacterIsType = check(TokenType.IDENTIFIER, 1) ||
-                        check(TokenType.STRING, 1) ||
-                        check(TokenType.INTEGER, 1) || check(TokenType.DECIMAL, 1) ||
-                        check(TokenType.NULL, 1) || check(TokenType.BOOLEAN)
+                        check(TokenType.NULL, 1)
                 if (
                     nextCharacterIsType
                     and (check(TokenType.COMMA, 2) or
@@ -688,7 +686,7 @@ class Parser(private val tokens: List<Token>) {
     private fun primary(): Expr {
         if (match(TokenType.TRUE)) return Expr.Literal(true)
         if (match(TokenType.FALSE)) return Expr.Literal(false)
-        if (match(TokenType.DECIMAL, TokenType.INTEGER, TokenType.STRING)) return Expr.Literal(previous().literal)
+        if (match(TokenType.DECIMAL, TokenType.INTEGER, TokenType.STRING, TokenType.CHAR)) return Expr.Literal(previous().literal)
         if (match(TokenType.NULL)) return Expr.Literal(null)
 
         if (match(TokenType.SUPER)) {

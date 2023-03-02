@@ -1,0 +1,4 @@
+var c = 'a';
+
+print c == 'a';
+print c;

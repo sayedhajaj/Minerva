@@ -1,0 +1,6 @@
+
+external class Char  {
+
+    operator function equals(other: Char): Boolean;
+
+};

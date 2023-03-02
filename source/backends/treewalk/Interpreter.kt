@@ -171,6 +171,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 is Double -> MinervaDecimal(expr.value, this)
                 is String -> MinervaString(expr.value, this)
                 is Boolean -> MinervaBoolean(expr.value, this)
+                is Char -> MinervaChar(expr.value, this)
                 else -> expr.value
             }
         }

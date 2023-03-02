@@ -504,6 +504,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     is Double -> createDecimalType()
                     is Int -> createIntegerType()
                     is Boolean -> createBooleanType()
+                    is Char -> createCharType()
                     else -> Type.NullType()
                 }
                 expr.type = type
@@ -887,6 +888,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     fun createBooleanType() =
         lookUpVariableType(
             Token(TokenType.IDENTIFIER, "Boolean", null, -1),
+            Expr.Literal(2)
+        )
+
+    fun createCharType() =
+        lookUpVariableType(
+            Token(TokenType.IDENTIFIER, "Char", null, -1),
             Expr.Literal(2)
         )
 

@@ -92,6 +92,7 @@ class Scanner(private val source: String) {
                 }
             }
             '"' -> string()
+            '\'' -> char()
             else -> if (isDigit(c)) {
                 number()
             } else if (isAlpha(c)) {
@@ -157,6 +158,19 @@ class Scanner(private val source: String) {
         advance()
         val value = source.substring(start+1, current-1)
         addToken(TokenType.STRING, value)
+    }
+
+    fun char() {
+        val char = advance()
+
+        val terminator = advance()
+
+        if (terminator != '\'') {
+            error("Char should only be one character")
+            return
+        }
+
+        addToken(TokenType.CHAR, char)
     }
 
     private fun advance(): Char {
