@@ -1,5 +1,8 @@
-package backends.treewalk
+package backends.treewalk.natives
 
+import backends.treewalk.Interpreter
+import backends.treewalk.MinervaCallable
+import backends.treewalk.MinervaInstance
 import frontend.Token
 
 class MinervaMap(interpreter: Interpreter) : MinervaInstance(null, interpreter) {

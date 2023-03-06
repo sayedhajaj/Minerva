@@ -1,5 +1,9 @@
 import backends.treewalk.Interpreter
 import frontend.*
+import frontend.analysis.Resolver
+import frontend.analysis.TypeChecker
+import frontend.parsing.Parser
+import frontend.parsing.Scanner
 
 class MinervaCompiler(val source: String) {
 

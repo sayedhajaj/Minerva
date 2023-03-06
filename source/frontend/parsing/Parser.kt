@@ -1,5 +1,6 @@
-package frontend
+package frontend.parsing
 
+import frontend.*
 import java.lang.RuntimeException
 import frontend.Expr.Binary
 import java.util.ArrayList
@@ -686,7 +687,12 @@ class Parser(private val tokens: List<Token>) {
     private fun primary(): Expr {
         if (match(TokenType.TRUE)) return Expr.Literal(true)
         if (match(TokenType.FALSE)) return Expr.Literal(false)
-        if (match(TokenType.DECIMAL, TokenType.INTEGER, TokenType.STRING, TokenType.CHAR)) return Expr.Literal(previous().literal)
+        if (match(
+                TokenType.DECIMAL,
+                TokenType.INTEGER,
+                TokenType.STRING,
+                TokenType.CHAR
+            )) return Expr.Literal(previous().literal)
         if (match(TokenType.NULL)) return Expr.Literal(null)
 
         if (match(TokenType.SUPER)) {

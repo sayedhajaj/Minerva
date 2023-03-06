@@ -1,5 +1,7 @@
 package frontend
 
+import frontend.analysis.TypeChecker
+
 val operatorMethods = mapOf(
     TokenType.PLUS to "add",
     TokenType.MINUS to "subtract",

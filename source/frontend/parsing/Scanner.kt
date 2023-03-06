@@ -1,5 +1,7 @@
-package frontend
+package frontend.parsing
 
+import frontend.Token
+import frontend.TokenType
 import java.util.ArrayList
 import java.util.HashMap
 

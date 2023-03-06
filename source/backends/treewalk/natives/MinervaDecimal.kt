@@ -1,12 +1,13 @@
-package backends.treewalk
+package backends.treewalk.natives
 
-import frontend.Environment
+import backends.treewalk.*
+import frontend.analysis.Environment
 import frontend.Expr
 import frontend.Token
 
-class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance(
+class MinervaDecimal(val value: Double, interpreter: Interpreter) : MinervaInstance(
     MinervaClass(
-        "Int", null, emptyList(),
+        "Decimal", null, emptyList(),
         MinervaConstructor(
             emptyMap(), emptyList(),
             Expr.Block(emptyList()),
@@ -26,8 +27,8 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                 override fun arity() = 1
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaInteger
-                    return MinervaInteger(value + right.value, interpreter)
+                    val right = arguments[0] as MinervaDecimal
+                    return MinervaDecimal(value + right.value, interpreter)
                 }
             }
 
@@ -35,8 +36,8 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                 override fun arity() = 1
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaInteger
-                    return MinervaInteger(value - right.value, interpreter)
+                    val right = arguments[0] as MinervaDecimal
+                    return MinervaDecimal(value - right.value, interpreter)
                 }
             }
 
@@ -44,8 +45,8 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                 override fun arity() = 1
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaInteger
-                    return MinervaInteger(value / right.value, interpreter)
+                    val right = arguments[0] as MinervaDecimal
+                    return MinervaDecimal(value / right.value, interpreter)
                 }
             }
 
@@ -53,17 +54,8 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                 override fun arity() = 1
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaInteger
-                    return MinervaInteger(value * right.value, interpreter)
-                }
-            }
-
-            "rem" -> object : MinervaCallable {
-                override fun arity() = 1
-
-                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaInteger
-                    return MinervaInteger(value % right.value, interpreter)
+                    val right = arguments[0] as MinervaDecimal
+                    return MinervaDecimal(value * right.value, interpreter)
                 }
             }
 
@@ -71,7 +63,7 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                 override fun arity() = 1
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaInteger
+                    val right = arguments[0] as MinervaDecimal
                     return MinervaInteger(value.compareTo(right.value), interpreter)
                 }
             }
@@ -80,7 +72,7 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                 override fun arity() = 0
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    return MinervaInteger(+value, interpreter)
+                    return MinervaDecimal(+value, interpreter)
                 }
             }
 
@@ -88,7 +80,7 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                 override fun arity() = 0
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    return MinervaInteger(-value, interpreter)
+                    return MinervaDecimal(-value, interpreter)
                 }
             }
             else -> null

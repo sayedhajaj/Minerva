@@ -1,8 +1,9 @@
 package backends.treewalk
 
-import frontend.Environment
+import backends.treewalk.natives.*
+import frontend.analysis.Environment
 import frontend.Type
-import frontend.TypeChecker
+import frontend.analysis.TypeChecker
 import frontend.Expr
 import frontend.Stmt
 import frontend.Token

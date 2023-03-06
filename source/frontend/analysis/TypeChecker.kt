@@ -1,4 +1,6 @@
-package frontend
+package frontend.analysis
+
+import frontend.*
 
 class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
@@ -398,7 +400,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     val newType = resolveInstanceType(it.value)
                     it.key to newType
                 }
-                return Type.InterfaceType(members=newMembers)
+                return Type.InterfaceType(members = newMembers)
             }
             is Type.FunctionType -> {
                 val result = resolveInstanceType(type.result)

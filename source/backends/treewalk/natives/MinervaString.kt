@@ -1,6 +1,7 @@
-package backends.treewalk
+package backends.treewalk.natives
 
-import frontend.Environment
+import backends.treewalk.*
+import frontend.analysis.Environment
 import frontend.Expr
 import frontend.Token
 

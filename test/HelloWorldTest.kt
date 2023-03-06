@@ -1,5 +1,3 @@
-import frontend.Resolver
-import frontend.TypeChecker
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContains
 

@@ -1,4 +1,7 @@
-package frontend
+package frontend.analysis
+
+import frontend.Token
+import frontend.Type
 
 class TypeScope {
     private val values = mutableMapOf<String, Type?>()
