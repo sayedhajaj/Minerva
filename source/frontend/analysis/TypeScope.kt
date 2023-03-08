@@ -29,9 +29,19 @@ class TypeScope {
         values[name] = value
     }
 
+    fun defineType(name: String, value: Type?) {
+        types[name] = value
+    }
+
     fun getValue(name: Token) : Type? {
         if(values.containsKey(name.lexeme)) return values[name.lexeme]
         if (enclosing != null) return enclosing.getValue(name)
+        return null
+    }
+
+    fun getType(name: Token) : Type? {
+        if(types.containsKey(name.lexeme)) return types[name.lexeme]
+        if (enclosing != null) return enclosing.getType(name)
         return null
     }
 
@@ -46,6 +56,10 @@ class TypeScope {
 
     fun getValueAt(distance: Int, name: String): Any? {
         return ancestor(distance)?.values?.get(name)
+    }
+
+    fun getTypeAt(distance: Int, name: String): Any? {
+        return ancestor(distance)?.types?.get(name)
     }
 
     fun assignValueAt(distance: Int, name: Token, value: Type?) {

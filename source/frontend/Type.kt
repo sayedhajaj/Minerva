@@ -216,7 +216,7 @@ sealed interface Type {
         }
     }
 
-    class InterfaceType(val members: Map<String, Type>) : Type {
+    data class InterfaceType(val members: Map<String, Type>) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean =
             members.all { otherType.hasMemberType(it.key, it.value, typeChecker) }
 
@@ -286,24 +286,40 @@ sealed interface Type {
         }
     }
 
-    class EnumType(val name: Token, val members: List<Token>) : Type {
-        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker) =
-            if (otherType is EnumType)
-                (otherType.name.lexeme == name.lexeme)
-            else false
+
+    data class EnumContainer(val name: Token, val members: List<Token>) : Type {
+        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
 
         override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
             return members.any { it.lexeme == member }
         }
 
         override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
-            return if (hasMemberType(member, AnyType(), typeChecker)) this
+            return if (hasMemberType(member, AnyType(), typeChecker)) {
+                val index = members.indexOfFirst { it.lexeme == member }
+                return EnumType(this)
+            }
             else NullType()
         }
+    }
+
+    class EnumType(val parent: EnumContainer) : Type {
+        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker) =
+            if (otherType is EnumType)
+                (otherType.parent == parent)
+            else false
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker) = false
+
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker) = NullType()
+
 
     }
 
-    class TupleType(val types: List<Type>) : Type {
+    data class TupleType(val types: List<Type>) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return if (otherType is TupleType) {
                 types.size == otherType.types.size &&

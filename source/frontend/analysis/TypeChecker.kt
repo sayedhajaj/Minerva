@@ -84,7 +84,8 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 stmt.fields.forEach {
                     members[it.name.lexeme] = it.type
                 }
-                environment.defineValue(stmt.name.lexeme, Type.InterfaceType(members))
+//                environment.defineValue(stmt.name.lexeme, Type.InterfaceType(members))
+                environment.defineType(stmt.name.lexeme, Type.InterfaceType(members))
             }
             is Stmt.Print -> {
             }
@@ -98,12 +99,14 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 checkDeclarations(stmt.body)
             }
             is Stmt.Enum -> {
-                environment.defineValue(stmt.name.lexeme, Type.EnumType(stmt.name, stmt.members))
+                val container = Type.EnumContainer(stmt.name, stmt.members)
+                environment.defineValue(stmt.name.lexeme, container)
+                environment.defineType(stmt.name.lexeme, Type.EnumType(container))
             }
             is Stmt.Destructure -> {
             }
             is Stmt.TypeDeclaration -> {
-                environment.defineValue(stmt.name.lexeme, stmt.type)
+                environment.defineType(stmt.name.lexeme, stmt.type)
             }
         }
     }
@@ -178,7 +181,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Stmt.Print -> typeCheck(stmt.expression)
             is Stmt.PrintType -> typeCheck(stmt.expression)
             is Stmt.Var -> {
-                val initialiserType = resolveInstanceType(stmt.type)
+                val initialiserType = lookupInitialiserType(stmt.type)
                 val assignedType = typeCheck(stmt.initializer)
                 val type = if (stmt.type is Type.InferrableType)
                     assignedType else resolveInstanceType(initialiserType)
@@ -356,7 +359,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         )
 
         stmt.interfaces.forEach {
-            val referencedInterface = resolveInstanceType(environment.getValue(it) as Type.InterfaceType) as Type.InterfaceType
+            val referencedInterface = resolveInstanceType(environment.getType(it) as Type.InterfaceType) as Type.InterfaceType
 
             referencedInterface.members.entries.forEach {  }
             if (!referencedInterface.canAssignTo(instance, this)) {
@@ -368,6 +371,15 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
 
         }
+    }
+
+
+    private fun lookupInitialiserType(type: Type): Type = when (type) {
+        is Type.UnresolvedType -> {
+            if (!typeExists(type.identifier.name, type.identifier))  resolveInstanceType(type)
+            else lookUpType(type.identifier.name, type.identifier)
+        }
+        else -> type
     }
 
     private fun resolveInstanceType(type: Type): Type {
@@ -764,12 +776,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             if (parameterType is Type.InstanceType && expr.typeParameters.any { it.lexeme == parameterType.className.name.lexeme }) {
                 closure.defineValue(token.lexeme, Type.InferrableType())
             } else {
-                closure.defineValue(token.lexeme, resolveInstanceType(parameterType))
+                closure.defineValue(token.lexeme, lookupInitialiserType(parameterType))
             }
         }
         val blockReturnType = getBlockType(block.statements, closure)
         val definition = (expr.type as Type.FunctionType)
-        val paramTypes = (expr.type as Type.FunctionType).params.types.map { resolveInstanceType(it) }
+        val paramTypes = (expr.type as Type.FunctionType).params.types.map { lookupInitialiserType(it) }
 
         val returnType = if (definition.result is Type.InferrableType) blockReturnType else definition.result
 
@@ -941,12 +953,20 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             globals.getValue(name) != null
     }
 
+    fun typeExists(name: Token, expr: Expr): Boolean {
+        return environment.getType(name) != null
+    }
+
     fun lookUpVariableType(name: Token, expr: Expr): Type {
         val distance = locals[expr]
         return if (distance != null)
             environment.getValueAt(distance, name.lexeme) as Type
         else
             globals.getValue(name) as Type
+    }
+
+    fun lookUpType(name: Token, expr: Expr): Type {
+        return environment.getType(name) as Type
     }
 
     fun getBlockType(statements: List<Stmt>, environment: TypeScope): Type {
