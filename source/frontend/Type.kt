@@ -50,6 +50,21 @@ sealed interface Type {
         override fun toString(): String = types.joinToString("|")
     }
 
+    data class ClassType(val className: Expr.Variable): Type {
+        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
+            return true
+        }
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return false
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return NullType()
+        }
+
+    }
+
     data class InstanceType(
         val className: Expr.Variable,
         val params: List<Type>,
