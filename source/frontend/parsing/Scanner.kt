@@ -26,6 +26,8 @@ class Scanner(private val source: String) {
             keywords["or"] = TokenType.OR
             keywords["while"] = TokenType.WHILE
             keywords["for"] = TokenType.FOR
+            keywords["foreach"] = TokenType.FOREACH
+            keywords["in"] = TokenType.IN
             keywords["until"] = TokenType.UNTIL
             keywords["function"] = TokenType.FUNCTION
             keywords["constructor"] = TokenType.CONSTRUCTOR

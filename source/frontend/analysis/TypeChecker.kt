@@ -113,6 +113,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Stmt.TypeDeclaration -> {
                 environment.defineType(stmt.name.lexeme, stmt.type)
             }
+            else -> {}
         }
     }
 
@@ -161,6 +162,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Expr.Unary -> checkDeclarations(expr.right)
             is Expr.Variable -> {
             }
+            else -> {}
         }
     }
 
@@ -206,6 +208,27 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 }
                 typeCheck(stmt.body)
             }
+            is Stmt.ForEach -> {
+                val iterableType = typeCheck(stmt.iterable)
+                val iterableInterface = lookUpType(
+                    Token(TokenType.IDENTIFIER, "Iterable", null, -1)
+                )
+
+                if (!iterableInterface.canAssignTo(iterableType, this)) {
+                    typeErrors.add("$iterableType is not iterable")
+                }
+
+                val previous = environment
+                this.environment = TypeScope(environment)
+                val iterator = ((iterableType as Type.InstanceType).members["iterator"] as Type.FunctionType).result
+                val resolvedIterator = (iterator as Type.UnresolvedType).typeArguments[0]
+
+                environment.defineValue(stmt.name.lexeme, lookupInitialiserType(resolvedIterator))
+
+                typeCheck(stmt.body)
+
+                this.environment = previous
+            }
             is Stmt.Interface -> {
             }
             is Stmt.VarDeclaration -> {
@@ -232,6 +255,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     typeErrors.add("Can only destructure tuples")
                 }
             }
+            else -> {}
         }
     }
 
@@ -316,7 +340,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         }
 
         val superclass =
-            if (stmt.superclass != null) lookUpType(stmt.superclass.name, stmt.superclass) as Type.InstanceType
+            if (stmt.superclass != null) lookUpType(stmt.superclass.name) as Type.InstanceType
             else null
 
         val superTypeArgs = stmt.constructor.superTypeArgs
@@ -391,7 +415,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         is Type.UnresolvedType -> {
             if (!typeExists(type.identifier.name, type.identifier))  resolveInstanceType(type)
             else {
-                val resolvedType = lookUpType(type.identifier.name, type.identifier)
+                val resolvedType = lookUpType(type.identifier.name)
                 if (resolvedType is Type.InstanceType) {
                     if (type.typeArguments.size == resolvedType.typeParams.size) {
                         val args = mutableMapOf<String, Type>()
@@ -417,7 +441,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 if (!exists(type.identifier.name, type.identifier)) {
                     return type
                 }
-                val resolvedType = lookUpType(type.identifier.name, type.identifier)
+                val resolvedType = lookUpType(type.identifier.name)
                 if (resolvedType is Type.InstanceType) {
                     if (type.typeArguments.size == resolvedType.typeParams.size) {
                         val args = mutableMapOf<String, Type>()
@@ -642,7 +666,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     }
 
     private fun typeCheckInstanceCall(calleeType: Type.ClassType, expr: Expr.Call): Type {
-        val classInstance = lookUpType(calleeType.className.name, calleeType.className) as Type.InstanceType
+        val classInstance = lookUpType(calleeType.className.name) as Type.InstanceType
         val typeParams = classInstance.typeParams
         val params = classInstance.params
         val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments)
@@ -917,33 +941,24 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     fun createIntegerType() =
         lookUpType(
-            Token(TokenType.IDENTIFIER, "Int", null, -1),
-            Expr.Literal(2)
+            Token(TokenType.IDENTIFIER, "Int", null, -1)
         )
 
     fun createDecimalType() =
         lookUpType(
-            Token(TokenType.IDENTIFIER, "Decimal", null, -1),
-            Expr.Literal(2)
+            Token(TokenType.IDENTIFIER, "Decimal", null, -1)
         )
 
     fun createStringType() =
         lookUpType(
-            Token(TokenType.IDENTIFIER, "String", null, -1),
-            Expr.Literal(2)
+            Token(TokenType.IDENTIFIER, "String", null, -1)
         )
 
     fun createBooleanType() =
-        lookUpType(
-            Token(TokenType.IDENTIFIER, "Boolean", null, -1),
-            Expr.Literal(2)
-        )
+        lookUpType(Token(TokenType.IDENTIFIER, "Boolean", null, -1))
 
     fun createCharType() =
-        lookUpType(
-            Token(TokenType.IDENTIFIER, "Char", null, -1),
-            Expr.Literal(2)
-        )
+        lookUpType(Token(TokenType.IDENTIFIER, "Char", null, -1))
 
     fun isIntegerType(type: Type): Boolean = when (type) {
         is Type.InstanceType -> type.className.name.lexeme == "Int"
@@ -999,7 +1014,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             globals.getValue(name) as Type
     }
 
-    fun lookUpType(name: Token, expr: Expr): Type {
+    fun lookUpType(name: Token): Type {
         return environment.getType(name) as Type
     }
 

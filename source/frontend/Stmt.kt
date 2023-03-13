@@ -57,6 +57,8 @@ sealed class Stmt {
 
     class While(val condition: Expr, val body: Stmt): Stmt()
 
+    class ForEach(val name: Token, val iterable: Expr, val body: Stmt): Stmt()
+
 
     class Enum(val name: Token, val members: List<Token>): Stmt()
 

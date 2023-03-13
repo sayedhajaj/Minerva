@@ -126,6 +126,18 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     execute(stmt.body)
                 }
             }
+            is Stmt.ForEach -> {
+                val iterable = evaluate(stmt.iterable) as MinervaInstance
+                val iteratorFunction = iterable.get(Token(TokenType.IDENTIFIER, "iterator", "iterator", -1)) as MinervaCallable
+                val iterator = iteratorFunction.call(this, emptyList()) as MinervaInstance
+                val hasNext = iterator.get(Token(TokenType.IDENTIFIER, "hasNext", "hasNext", -1)) as MinervaCallable
+                while ((hasNext.call(this, emptyList()) as MinervaBoolean).value) {
+                    val getNext = iterator.get(Token(TokenType.IDENTIFIER, "next", "next", -1)) as MinervaCallable
+                    val current = getNext.call(this, emptyList())
+                    environment.define(stmt.name.lexeme, current)
+                    execute(stmt.body)
+                }
+            }
             is Stmt.Constructor -> {
             }
             is Stmt.ClassDeclaration -> {
@@ -150,6 +162,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     }
                 }
             }
+            else -> {}
         }
     }
 
@@ -276,7 +289,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         }
         is MinervaInstance -> {
             var className = Expr.Variable(Token(TokenType.IDENTIFIER, value.klass?.name ?: "null", null, -10))
-            val instance = typeChecker.lookUpType(className.name, className) as Type.InstanceType
+            val instance = typeChecker.lookUpType(className.name) as Type.InstanceType
             val argMap = mutableMapOf<String, Type>()
             instance.typeParams.forEach {
                 argMap[it.identifier.name.lexeme] = getValueType(value.fields[it.identifier.name.lexeme])
