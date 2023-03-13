@@ -39,6 +39,6 @@ class InterfacesTest {
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()
-        assertContentEquals(arrayOf(), output, "")
+        assertContentEquals(arrayOf("14", "10", "6"), output, "")
     }
 }

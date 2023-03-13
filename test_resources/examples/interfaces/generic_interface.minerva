@@ -1,17 +1,7 @@
-interface Iterable<E> {
-    function iterator(): Iterator<E>;
-}
-
-interface Iterator<E> {
-    function hasNext(): Boolean;
-    function next(): T|null;
-
-}
-
 class Node<T>(var value: T, var next: Node<T> | null) {}
 
 class LinkedListIterator<T>(var first: Node<T>|null) implements Iterator<T> {
-    var current: Node<T> | null = null;
+    var current: Node<T> | null = this.first;
 
     function hasNext(): Boolean => {
         var current = this.current;
@@ -22,8 +12,7 @@ class LinkedListIterator<T>(var first: Node<T>|null) implements Iterator<T> {
         };
     };
     function next():T|null => {
-        null;
-        /*var current = this.current;
+        var current = this.current;
 
         var returnValue = typematch(current) {
             null=> null;
@@ -36,17 +25,18 @@ class LinkedListIterator<T>(var first: Node<T>|null) implements Iterator<T> {
         };
         current = this.current;
 
-        returnValue;*/
+        returnValue;
     };
 }
 class LinkedList<T> implements Iterable<T> {
     var head: Node<T> | null = null;
-    size = 0;
+    var size: Int = 0;
 
     function isEmpty() => this.size == 0;
 
     function add(value: T) => {
             this.head = Node<T>(value, this.head);
+            this.size = this.size + 1;
     };
 
 
@@ -55,18 +45,18 @@ class LinkedList<T> implements Iterable<T> {
 
 
 
-/*
+
 function iterate<T>(iterable: Iterable<T>, code: (T)=>Any) => {
     var iterator = iterable.iterator();
 
     while(iterator.hasNext()) {
         var current = iterator.next();
-        print current;
+        code(current);
     };
-}*/
+}
 
 var lst = LinkedList<Int>();
 lst.add(3);
 lst.add(5);
 lst.add(7);
-//iterate<Int>(lst, function(num: Int) => {var result = num*2; print result; result;});
+iterate<Int>(lst, function(num: Int) => {var result = num*2; print result; result;});

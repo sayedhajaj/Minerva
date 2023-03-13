@@ -1,0 +1,30 @@
+
+class IntRangeIterator(var start: Int, var end: Int, var step: Int) implements Iterator<Int> {
+    var current: Int = this.start;
+
+    function hasNext(): Boolean => this.current < this.end;
+    function next():Int => {
+        var returnValue = this.current;
+        this.current = returnValue  + this.step;
+        returnValue;
+    };
+}
+class IntRange(var start: Int, var end: Int, var step: Int) implements Iterable<Int> {
+
+    function iterator(): Iterator<Int> => IntRangeIterator(this.start, this.end, this.step);
+};
+
+
+
+
+function iterate<T>(iterable: Iterable<T>, code: (T)=>Any) => {
+    var iterator = iterable.iterator();
+
+    while(iterator.hasNext()) {
+        var current = iterator.next();
+        code(current);
+    };
+}
+
+var lst = IntRange(1, 5, 1);
+iterate<Int>(lst, function(num: Int) => {var result = num*2; print result; result;});

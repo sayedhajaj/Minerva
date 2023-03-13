@@ -1,0 +1,8 @@
+interface Iterable<E> {
+    function iterator(): Iterator<E>;
+}
+
+interface Iterator<E> {
+    function hasNext(): Boolean;
+    function next(): E|null;
+}
