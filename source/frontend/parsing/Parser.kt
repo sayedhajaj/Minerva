@@ -134,7 +134,7 @@ class Parser(private val tokens: List<Token>) {
         val condition = expression()
         consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
         val body = statement()
-        return Stmt.While(Expr.Unary(Token(TokenType.BANG, "", null, -1), condition), body)
+        return Stmt.While(Expr.Unary(Token(TokenType.BANG, "", null, -1), condition, false), body)
     }
 
     private fun classDeclaration(): Stmt {
@@ -570,10 +570,21 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun unary(): Expr {
-        if (match(TokenType.BANG, TokenType.MINUS, TokenType.PLUS)) {
+        if (match(TokenType.BANG, TokenType.MINUS, TokenType.PLUS, TokenType.PLUS_PLUS, TokenType.MINUS_MINUS)) {
             val operator = previous()
             val right = unary()
-            return Expr.Unary(operator, right)
+            return Expr.Unary(operator, right, false)
+        }
+        return postfix()
+    }
+
+    private fun postfix(): Expr {
+        if (match(TokenType.PLUS_PLUS, TokenType.MINUS_MINUS, distance = 1)) {
+            val operator = peek()
+            current--
+            val left = primary()
+            advance()
+            return Expr.Unary(operator, left, true)
         }
         return call()
     }
@@ -832,9 +843,9 @@ class Parser(private val tokens: List<Token>) {
         return previous()
     }
 
-    private fun match(vararg types: TokenType): Boolean {
+    private fun match(vararg types: TokenType, distance: Int = 0): Boolean {
         for (type in types) {
-            if (check(type)) {
+            if (check(type, distance)) {
                 advance()
                 return true
             }

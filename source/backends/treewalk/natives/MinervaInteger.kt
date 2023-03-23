@@ -92,6 +92,22 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                     return MinervaInteger(-value, interpreter)
                 }
             }
+
+            "inc" -> object : MinervaCallable {
+                override fun arity() = 0
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    return MinervaInteger(value+1, interpreter)
+                }
+            }
+
+            "dec" -> object : MinervaCallable {
+                override fun arity() = 0
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    return MinervaInteger(value-1, interpreter)
+                }
+            }
             else -> null
         }
     }

@@ -21,7 +21,7 @@ sealed class Expr(var type: Type) {
     class Super(val keyword: Token, val method: Token): Expr(Type.AnyType())
     class This(val keyword: Token): Expr(Type.InstanceType(Variable(keyword), emptyList(), emptyList(), emptyList(), emptyMap(), null, emptyList()))
     class TypeMatch(val variable: Variable, var conditions: List<Triple<Type, Expr, Token?>>, val elseBranch: Expr?): Expr(Type.AnyType())
-    class Unary(val operator: Token, val right: Expr) : Expr(Type.AnyType())
+    class Unary(val operator: Token, val right: Expr, val postfix: Boolean) : Expr(Type.AnyType())
     class Variable(val name: Token): Expr(Type.AnyType())
 
     class Tuple(val values: List<Expr>): Expr(Type.TupleType(values.map { it.type }))

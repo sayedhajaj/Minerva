@@ -11,4 +11,7 @@ external class Int {
 
     operator function plus(): Int;
     operator function minus(): Int;
+
+    operator function inc(): Int;
+    operator function dec(): Int;
 };

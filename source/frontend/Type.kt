@@ -118,18 +118,40 @@ sealed interface Type {
             else
                 superclass?.getMemberType(member, typeChecker) ?: NullType()
 
+
+
         fun getUnaryOperatorType(operator: TokenType, typeChecker: TypeChecker): Type? {
             val unaryMethods = mapOf(TokenType.PLUS to "plus", TokenType.MINUS to "minus", TokenType.BANG to "not")
-            val methodName = unaryMethods[operator]!!
-            val method = getMemberType(methodName, typeChecker) as FunctionType?
-            if (method != null) {
-                if (method.params.types.isNotEmpty()) {
-                    typeChecker.typeErrors.add("Unary method should have no parameters")
+            val methodName = unaryMethods[operator]
+            if (methodName != null) {
+                val method = getMemberType(methodName, typeChecker) as FunctionType?
+                if (method != null) {
+                    if (method.params.types.isNotEmpty()) {
+                        typeChecker.typeErrors.add("Unary method should have no parameters")
+                    } else {
+                        return method.result
+                    }
                 } else {
-                    return method.result
+                    typeChecker.typeErrors.add("Operator $operator is not overloaded for $this")
                 }
             } else {
-                typeChecker.typeErrors.add("Operator $operator is not overloaded for $this")
+                val incMethods = mapOf(TokenType.PLUS_PLUS to "inc", TokenType.MINUS_MINUS to "dec")
+                val methodName = incMethods[operator]
+                if (methodName != null) {
+                    val method = getMemberType(methodName, typeChecker) as FunctionType?
+                    if (method != null) {
+                        if (method.params.types.isNotEmpty()) {
+                            typeChecker.typeErrors.add("Unary method should have no parameters")
+                        }
+
+//                        if (!this.canAssignTo(method.result, typeChecker)) {
+//                            typeChecker.typeErrors.add("Cannot assign ${method.result} to $this")
+//                        }
+                        return method.result
+                    } else {
+                        typeChecker.typeErrors.add("Operator $operator is not overloaded for $this")
+                    }
+                }
             }
             return null
         }
