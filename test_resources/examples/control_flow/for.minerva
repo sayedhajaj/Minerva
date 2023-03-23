@@ -1,5 +1,5 @@
 
-for (var iterations = 0; iterations < 10; iterations = iterations+1) {
+for (var iterations = 0; iterations < 10; iterations++) {
 	print iterations;
 };
 

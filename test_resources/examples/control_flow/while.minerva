@@ -2,7 +2,7 @@ var iterations = 0;
 
 while (iterations < 10) {
 	print iterations;
-	iterations = iterations + 1;
+	iterations++;
 };
 
 /*
