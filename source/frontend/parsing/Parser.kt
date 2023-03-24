@@ -488,13 +488,21 @@ class Parser(private val tokens: List<Token>) {
     private fun assignment(): Expr {
         val expr = or()
 
-        if (match(TokenType.EQUAL)) {
+        if (match(
+                TokenType.EQUAL,
+                TokenType.PLUS_EQUAL,
+                TokenType.MINUS_EQUAL,
+                TokenType.STAR_EQUAL,
+                TokenType.SLASH_EQUAL,
+                TokenType.MODULO_EQUAL
+            )
+        ) {
             val equals = previous()
             val value = assignment()
 
             if (expr is Expr.Variable) {
                 val name = expr.name
-                return Expr.Assign(name, value)
+                return Expr.Assign(name, value, equals)
             } else if (expr is Expr.Get)
                 return Expr.Set(expr.obj, expr.name, value, expr.index)
         }

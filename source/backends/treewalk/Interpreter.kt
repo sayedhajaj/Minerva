@@ -438,7 +438,35 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
     }
 
     fun evaluateAssign(expr: Expr.Assign): Any? {
-        val value = evaluate(expr.value)
+        var value = evaluate(expr.value)
+
+        val current = environment.get(expr.name) as MinervaInstance
+
+        if (expr.equals.type in listOf(
+                TokenType.PLUS_EQUAL,
+                TokenType.MINUS_EQUAL,
+                TokenType.SLASH_EQUAL,
+                TokenType.STAR_EQUAL,
+                TokenType.MODULO_EQUAL
+            )
+        ) {
+            val operatorMethods = mapOf(
+                TokenType.PLUS_EQUAL to "add",
+                TokenType.MINUS_EQUAL to "subtract",
+                TokenType.SLASH_EQUAL to "divide",
+                TokenType.STAR_EQUAL to "multiply",
+                TokenType.MODULO_EQUAL to "rem"
+            )
+
+            val operatorName = operatorMethods[expr.equals.type]
+
+            if (operatorName != null) {
+                val token = Token(TokenType.IDENTIFIER, operatorName, operatorName, -1)
+                val method = current.get(token) as MinervaCallable
+                value = method.call(this, listOf(value))
+            }
+        }
+
         val distance = locals[expr]
         if (distance != null) {
             environment.assignAt(distance, expr.name, value)

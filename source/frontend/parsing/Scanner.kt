@@ -67,10 +67,19 @@ class Scanner(private val source: String) {
             '}' -> addToken(TokenType.RIGHT_BRACE)
             '[' -> addToken(TokenType.LEFT_SUB)
             ']' -> addToken(TokenType.RIGHT_SUB)
-            '+' -> addToken(if (match('+')) TokenType.PLUS_PLUS else TokenType.PLUS)
-            '-' -> addToken(if (match('-')) TokenType.MINUS_MINUS else TokenType.MINUS)
-            '*' -> addToken(TokenType.STAR)
-            '%' -> addToken(TokenType.MODULO)
+            '+' -> when {
+                match('+') -> addToken(TokenType.PLUS_PLUS)
+                match('=') -> addToken(TokenType.PLUS_EQUAL)
+                else -> addToken(TokenType.PLUS)
+            }
+            '-' -> when {
+                match('-') -> addToken(TokenType.MINUS_MINUS)
+                match('=') -> addToken(TokenType.MINUS_EQUAL)
+                else -> addToken(TokenType.MINUS)
+            }
+
+            '*' -> addToken(if (match('=')) TokenType.STAR_EQUAL else TokenType.STAR)
+            '%' -> addToken(if (match('=')) TokenType.MODULO_EQUAL else TokenType.MODULO)
             '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
             '=' -> when {
                     match('=') -> addToken(TokenType.EQUAL_EQUAL)
@@ -94,7 +103,7 @@ class Scanner(private val source: String) {
                     advance()
                     advance()
                 } else {
-                    addToken(TokenType.SLASH)
+                    addToken(if (match('=')) TokenType.SLASH_EQUAL else TokenType.SLASH)
                 }
             }
             '"' -> string()
