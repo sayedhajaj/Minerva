@@ -23,6 +23,7 @@ class Parser(private val tokens: List<Token>) {
         match(TokenType.INTERFACE) -> interfaceDeclaration()
         match(TokenType.FUNCTION) -> function()
         match(TokenType.VAR) -> varInitialisation()
+        match(TokenType.CONST) -> varInitialisation(true)
         match(TokenType.ENUM) -> enumDeclaration()
         match(TokenType.TYPE) -> typeDeclaration()
         else -> statement()
@@ -58,7 +59,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
 
-    private fun varInitialisation(): Stmt {
+    private fun varInitialisation(isConst: Boolean = false): Stmt {
         if (match(TokenType.LEFT_PAREN)) {
             val variables = mutableListOf<Stmt.VarDeclaration>()
             if (!check(TokenType.RIGHT_PAREN)) {
@@ -81,7 +82,7 @@ class Parser(private val tokens: List<Token>) {
             consume(TokenType.EQUAL, "Expect initialiser")
             val initialiser = expression()
             consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
-            return Stmt.Var(name, initialiser, type)
+            return Stmt.Var(name, initialiser, isConst, type)
         }
     }
 

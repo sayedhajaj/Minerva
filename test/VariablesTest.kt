@@ -10,4 +10,13 @@ class VariablesTest {
         val output = compiler.interpret().toTypedArray()
         assertContentEquals(arrayOf("hello", "world", "bar", "4"), output, "")
     }
+
+    @Test
+    internal fun testConstants() {
+        val source = HelloWorldTest::class.java.getResource("examples/constants.minerva").readText()
+        val compiler = MinervaCompiler(source)
+
+        val output = compiler.interpret().toTypedArray()
+        assertContentEquals(arrayOf("hello"), output, "")
+    }
 }

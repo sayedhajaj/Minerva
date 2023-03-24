@@ -1,0 +1,5 @@
+const foo = "hello";
+
+print foo; //expect hello
+
+foo = "world";

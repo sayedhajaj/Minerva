@@ -20,6 +20,7 @@ class Scanner(private val source: String) {
             keywords["true"] = TokenType.TRUE
             keywords["false"] = TokenType.FALSE
             keywords["var"] = TokenType.VAR
+            keywords["const"] = TokenType.CONST
             keywords["if"] = TokenType.IF
             keywords["else"] = TokenType.ELSE
             keywords["and"] = TokenType.AND

@@ -52,7 +52,7 @@ sealed class Stmt {
         var type: Type
     ): Stmt()
 
-    class Var(val name: Token, val initializer: Expr, var type: Type): Stmt()
+    class Var(val name: Token, val initializer: Expr, val isConst: Boolean = false, var type: Type): Stmt()
     class VarDeclaration(val name: Token, val type: Type): Stmt()
 
     class While(val condition: Expr, val body: Stmt): Stmt()
