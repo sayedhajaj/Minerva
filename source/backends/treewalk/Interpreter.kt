@@ -138,19 +138,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     execute(stmt.body)
                 }
             }
-            is Stmt.Constructor -> {
-            }
-            is Stmt.ClassDeclaration -> {
-            }
-            is Stmt.ConstructorDeclaration -> {
-            }
-            is Stmt.FunctionDeclaration -> {
-            }
-            is Stmt.Interface -> {
-            }
             is Stmt.PrintType -> log(stmt.expression.type.toString())
-            is Stmt.VarDeclaration -> {
-            }
             is Stmt.Enum -> {
                 environment.define(stmt.name.lexeme, MinervaEnum(stmt.members))
             }
@@ -277,11 +265,6 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
     }
 
     private fun getValueType(value: Any?): Type = when (value) {
-        is Int -> typeChecker.createIntegerType()
-        is MinervaInteger -> typeChecker.createIntegerType()
-        is Double -> typeChecker.createDecimalType()
-        is Boolean -> typeChecker.createBooleanType()
-        is String -> typeChecker.createStringType()
         null -> Type.NullType()
         is MinervaArray -> {
             val elementTypes = value.elements.map { getValueType(it) }
@@ -355,11 +338,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             return result
         }
 
-        return when (expr.operator.type) {
-            TokenType.MINUS -> -(right as Double)
-            TokenType.BANG -> !(right as Boolean)
-            else -> null
-        }
+        return null
     }
 
     fun evaluateBinary(expr: Expr.Binary): Any? {
