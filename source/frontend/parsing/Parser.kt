@@ -8,6 +8,8 @@ import java.util.ArrayList
 class Parser(private val tokens: List<Token>) {
     private class ParseError : RuntimeException()
 
+    val parseErrors: MutableList<String> = mutableListOf()
+
     private var current = 0
     fun parse(): List<Stmt> {
         val statements: MutableList<Stmt> = ArrayList()
@@ -873,8 +875,10 @@ class Parser(private val tokens: List<Token>) {
     private fun previous(): Token = tokens[current - 1]
 
     private fun consume(type: TokenType, message: String): Token {
-        if (check(type)) return advance()
-        throw error(peek(), message)
+        if (!check(type))
+            error(peek(), message)
+
+        return advance()
     }
 
     private fun check(tokenType: TokenType): Boolean {
@@ -884,9 +888,9 @@ class Parser(private val tokens: List<Token>) {
     private fun check(tokenType: TokenType, distance: Int): Boolean =
         if (isAtEnd(distance)) false else peek(distance).type == tokenType
 
-    private fun error(token: Token, message: String): ParseError {
+    private fun error(token: Token, message: String) {
         // log here
         println(message)
-        return ParseError()
+        parseErrors.add(message)
     }
 }
