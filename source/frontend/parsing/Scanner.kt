@@ -2,11 +2,14 @@ package frontend.parsing
 
 import frontend.Token
 import frontend.TokenType
-import java.util.ArrayList
 import java.util.HashMap
+import kotlin.collections.ArrayList
+
+data class ScannerError(val line: Int, val message: String)
 
 class Scanner(private val source: String) {
     private val tokens: MutableList<Token> = ArrayList()
+    val scannerErrors: MutableList<ScannerError> = ArrayList()
     private var start = 0
     private var current = 0
     private var line = 1
@@ -82,10 +85,10 @@ class Scanner(private val source: String) {
             '%' -> addToken(if (match('=')) TokenType.MODULO_EQUAL else TokenType.MODULO)
             '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
             '=' -> when {
-                    match('=') -> addToken(TokenType.EQUAL_EQUAL)
-                    match('>') -> addToken(TokenType.ARROW)
-                    else -> addToken(TokenType.EQUAL)
-                }
+                match('=') -> addToken(TokenType.EQUAL_EQUAL)
+                match('>') -> addToken(TokenType.ARROW)
+                else -> addToken(TokenType.EQUAL)
+            }
 
             '>' -> addToken(if (match('=')) TokenType.GREATER_EQUAL else TokenType.GREATER)
             '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
@@ -97,7 +100,7 @@ class Scanner(private val source: String) {
             '/' -> {
                 if (match('/')) {
                     while (peek() != '\n' && !isAtEnd) advance()
-                } else if(match('*')) {
+                } else if (match('*')) {
                     while (!(peek() == '*' && peekNext() == '/')) advance()
 
                     advance()
@@ -163,11 +166,11 @@ class Scanner(private val source: String) {
         }
 
         if (isAtEnd) {
-            error("Unterminated string")
+            scannerErrors.add(ScannerError(line, "Unterminated string"))
             return
         }
         advance()
-        val value = source.substring(start+1, current-1)
+        val value = source.substring(start + 1, current - 1)
         addToken(TokenType.STRING, value)
     }
 
@@ -176,7 +179,7 @@ class Scanner(private val source: String) {
         val terminator = advance()
 
         if (terminator != '\'') {
-            error("Char should only be one character")
+            scannerErrors.add(ScannerError(line, "Char should only be one character"))
             return
         }
 
