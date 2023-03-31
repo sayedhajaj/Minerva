@@ -729,70 +729,57 @@ class Parser(private val tokens: List<Token>) {
         return Expr.Call(callee, arguments, typeArguments)
     }
 
-    private fun primary(): Expr {
-        if (match(TokenType.TRUE)) return Expr.Literal(true)
-        if (match(TokenType.FALSE)) return Expr.Literal(false)
-        if (match(
+    private fun primary(): Expr = when {
+            match(TokenType.TRUE) ->  Expr.Literal(true)
+            match(TokenType.FALSE) -> Expr.Literal(false)
+            match(
                 TokenType.DECIMAL,
                 TokenType.INTEGER,
                 TokenType.STRING,
                 TokenType.CHAR
-            )
-        ) return Expr.Literal(previous().literal)
-        if (match(TokenType.NULL)) return Expr.Literal(null)
-
-        if (match(TokenType.SUPER)) {
-            val keyword = previous()
-            consume(TokenType.DOT, "Expect '.' after 'super'.")
-            val method = consume(TokenType.IDENTIFIER, "Expect superclass method name.")
-            return Expr.Super(keyword, method)
-        }
-
-        if (match(TokenType.THIS)) return Expr.This(previous())
-
-        if (match(TokenType.IDENTIFIER)) {
-            return Expr.Variable(previous())
-        }
-
-        if (match(TokenType.LEFT_PAREN)) {
-            val values = mutableListOf<Expr>()
-            if (!check(TokenType.RIGHT_SUB)) {
-                do {
-                    values.add(expression())
-                } while (match(TokenType.COMMA))
+            ) ->  Expr.Literal(previous().literal)
+            match(TokenType.NULL) ->  Expr.Literal(null)
+            match(TokenType.SUPER) -> {
+                val keyword = previous()
+                consume(TokenType.DOT, "Expect '.' after 'super'.")
+                val method = consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+                 Expr.Super(keyword, method)
             }
-            consume(TokenType.RIGHT_PAREN, "Expect ')' after expression. ")
-            return if (values.size == 1) {
-                Expr.Grouping(values[0])
-            } else {
-                Expr.Tuple(values)
+            match(TokenType.THIS) ->  Expr.This(previous())
+            match(TokenType.IDENTIFIER) -> Expr.Variable(previous())
+            match(TokenType.LEFT_PAREN) -> {
+                val values = mutableListOf<Expr>()
+                if (!check(TokenType.RIGHT_SUB)) {
+                    do {
+                        values.add(expression())
+                    } while (match(TokenType.COMMA))
+                }
+                consume(TokenType.RIGHT_PAREN, "Expect ')' after expression. ")
+                if (values.size == 1) {
+                    Expr.Grouping(values[0])
+                } else {
+                    Expr.Tuple(values)
+                }
             }
+            match(TokenType.LEFT_SUB) -> {
+                val values = mutableListOf<Expr>()
+                if (!check(TokenType.RIGHT_SUB)) {
+                    do {
+                        values.add(expression())
+                    } while (match(TokenType.COMMA))
+                }
+                consume(TokenType.RIGHT_SUB, "Expect closing ']'")
+                Expr.Array(values)
+            }
+            match(TokenType.LEFT_BRACE) -> Expr.Block(block())
+            match(TokenType.IF) ->  ifExpr()
+            match(TokenType.TYPEMATCH) ->  typeMatchExpr()
+            match(TokenType.MATCH) ->  matchExpression()
+            match(TokenType.FUNCTION) ->  lambdaExpression()
+            else ->  Expr.Literal(null)
         }
 
-        if (match(TokenType.LEFT_SUB)) {
-            val values = mutableListOf<Expr>()
-            if (!check(TokenType.RIGHT_SUB)) {
-                do {
-                    values.add(expression())
-                } while (match(TokenType.COMMA))
-            }
-            consume(TokenType.RIGHT_SUB, "Expect closing ']'")
-            return Expr.Array(values)
-        }
 
-
-        if (match(TokenType.LEFT_BRACE)) return Expr.Block(block())
-
-        if (match(TokenType.IF)) return ifExpr()
-
-        if (match(TokenType.TYPEMATCH)) return typeMatchExpr()
-
-        if (match(TokenType.MATCH)) return matchExpression()
-
-        if (match(TokenType.FUNCTION)) return lambdaExpression()
-
-        return Expr.Literal(null)
-    }
 
     private fun function(): Stmt.Function {
         val name = consume(TokenType.IDENTIFIER, "Expect function name.")
