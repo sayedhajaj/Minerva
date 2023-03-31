@@ -1,7 +1,6 @@
 package frontend.parsing
 
 import frontend.*
-import java.lang.RuntimeException
 import frontend.Expr.Binary
 import java.util.ArrayList
 
@@ -185,11 +184,11 @@ class Parser(private val tokens: List<Token>) {
 
         if (match(TokenType.IMPLEMENTS)) {
             do {
-                val name = consume(TokenType.IDENTIFIER, "Expect interface name.")
+                val interfaceName = consume(TokenType.IDENTIFIER, "Expect interface name.")
                 if (match(TokenType.LESS)) {
                     genericCall()
                 }
-                interfaces.add(name)
+                interfaces.add(interfaceName)
             } while (match(TokenType.COMMA))
         }
 
@@ -206,8 +205,7 @@ class Parser(private val tokens: List<Token>) {
                 consume(TokenType.FUNCTION, "Expect function after modifier")
                 val method = Stmt.Method(function(), isOperator)
                 methods.add(method)
-            }
-            else if (match(TokenType.FUNCTION)) {
+            } else if (match(TokenType.FUNCTION)) {
                 methods.add(Stmt.Method(function()))
             } else if (match(TokenType.CONSTRUCTOR)) {
                 consume(TokenType.LEFT_BRACE, "Expect '{' after constructor.")
@@ -430,62 +428,55 @@ class Parser(private val tokens: List<Token>) {
         return Type.TupleType(paramTypes)
     }
 
-    private fun typeExpression(): Type {
+    private fun getType(): Type {
+        var type = when {
+            match(TokenType.ANY) -> Type.AnyType()
+            match(TokenType.NULL) -> Type.NullType()
+            match(TokenType.IDENTIFIER) -> {
+                val identifier = previous()
+                val typeArguments = mutableListOf<Type>()
+                if (match(TokenType.LESS)) {
+                    do {
+                        typeArguments.add(typeExpression())
+                    } while (match(TokenType.COMMA))
+                    consume(TokenType.GREATER, "Expect closing '>'")
+                }
+                Type.UnresolvedType(Expr.Variable(identifier), typeArguments)
+            }
+            match(TokenType.LEFT_PAREN) -> {
+                var result: Type = tupleType()
+                if (match(TokenType.ARROW)) {
+                    result = Type.FunctionType(result as Type.TupleType, emptyList(), typeExpression())
+                }
+                result
+            }
+            else -> Type.NullType()
+        }
+
+        if (match(TokenType.LEFT_SUB)) {
+            consume(TokenType.RIGHT_SUB, "Expect closing ']'")
+            type =
+                Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type))
+        }
+
+        return type
+    }
+
+    private fun typeList(): List<Type> {
         val types: MutableList<Type> = mutableListOf()
         do {
-            if (match(
-                    TokenType.IDENTIFIER, TokenType.STRING,
-                    TokenType.BOOLEAN, TokenType.ANY,
-                    TokenType.INTEGER, TokenType.DECIMAL,
-                    TokenType.NULL
-                )
-            ) {
-                val identifier = previous()
-                var type = when (identifier.type) {
-                    TokenType.IDENTIFIER -> {
-                        val typeArguments = mutableListOf<Type>()
-                        if (match(TokenType.LESS)) {
-                            do {
-                                typeArguments.add(typeExpression())
-                            } while (match(TokenType.COMMA))
-                            consume(TokenType.GREATER, "Expect closing '>'")
-                        }
-                        Type.UnresolvedType(Expr.Variable(identifier), typeArguments)
-                    }
-                    TokenType.ANY -> Type.AnyType()
-                    TokenType.NULL -> Type.NullType()
-                    else -> Type.NullType()
-                }
-                if (match(TokenType.LEFT_SUB)) {
-                    consume(TokenType.RIGHT_SUB, "Expect closing ']'")
-                    type =
-                        Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type))
-                }
-
-                types.add(type)
-
-            }
-            if (match(TokenType.LEFT_PAREN)) {
-                var type: Type = tupleType()
-                if (match(TokenType.ARROW)) {
-                    type = Type.FunctionType(type as Type.TupleType, emptyList(), typeExpression())
-                }
-
-                if (match(TokenType.LEFT_SUB)) {
-                    consume(TokenType.RIGHT_SUB, "Expect closing ']'")
-                    type =
-                        Type.UnresolvedType(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)), listOf(type))
-                }
-                types.add(type)
-            }
-
+            types.add(getType())
         } while (match(TokenType.UNION))
+        return types
+    }
+
+    private fun typeExpression(): Type {
+        val types = typeList()
         return when (types.size) {
             0 -> Type.AnyType()
             1 -> types[0]
             else -> Type.UnionType(types)
         }
-
     }
 
     private fun assignment(): Expr {
@@ -746,7 +737,8 @@ class Parser(private val tokens: List<Token>) {
                 TokenType.INTEGER,
                 TokenType.STRING,
                 TokenType.CHAR
-            )) return Expr.Literal(previous().literal)
+            )
+        ) return Expr.Literal(previous().literal)
         if (match(TokenType.NULL)) return Expr.Literal(null)
 
         if (match(TokenType.SUPER)) {
