@@ -122,18 +122,14 @@ class Scanner(private val source: String) {
     }
 
     private fun isAlpha(c: Char): Boolean {
-        return c >= 'a' && c <= 'z' ||
-                c >= 'A' && c <= 'Z' ||
+        return c in 'a'..'z' ||
+                c in 'A'..'Z' ||
                 c == '_'
     }
 
-    private fun isAlphaNumeric(c: Char): Boolean {
-        return isAlpha(c) || isDigit(c)
-    }
+    private fun isAlphaNumeric(c: Char): Boolean = isAlpha(c) || isDigit(c)
 
-    private fun isDigit(c: Char): Boolean {
-        return c >= '0' && c <= '9'
-    }
+    private fun isDigit(c: Char): Boolean = c in '0'..'9'
 
     fun identifier() {
         while (isAlphaNumeric(peek())) advance()
@@ -177,7 +173,6 @@ class Scanner(private val source: String) {
 
     fun char() {
         val char = advance()
-
         val terminator = advance()
 
         if (terminator != '\'') {
@@ -193,21 +188,16 @@ class Scanner(private val source: String) {
         return source[current - 1]
     }
 
-    private fun peek(): Char {
-        return if (isAtEnd) '\u0000' else source[current]
-    }
+    private fun peek(): Char = if (isAtEnd) '\u0000' else source[current]
 
-    private fun peekNext(): Char {
-        return if (current >= source.length - 1) '\u0000' else source[current + 1]
-    }
+    private fun peekNext(): Char = if (current >= source.length - 1) '\u0000' else source[current + 1]
 
     private fun match(expected: Char): Boolean {
-        if (isAtEnd) return false
-        if (source[current] != expected) return false
+        if (isAtEnd || source[current] != expected) return false
         current++
         return true
     }
 
     private val isAtEnd: Boolean
-        private get() = current >= source.length
+        get() = current >= source.length
 }
