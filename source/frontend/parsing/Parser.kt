@@ -5,10 +5,11 @@ import java.lang.RuntimeException
 import frontend.Expr.Binary
 import java.util.ArrayList
 
-class Parser(private val tokens: List<Token>) {
-    private class ParseError : RuntimeException()
+data class ParserError(val token: Token, val message: String)
 
-    val parseErrors: MutableList<String> = mutableListOf()
+class Parser(private val tokens: List<Token>) {
+
+    val parseErrors: MutableList<ParserError> = mutableListOf()
 
     private var current = 0
     fun parse(): List<Stmt> {
@@ -889,8 +890,6 @@ class Parser(private val tokens: List<Token>) {
         if (isAtEnd(distance)) false else peek(distance).type == tokenType
 
     private fun error(token: Token, message: String) {
-        // log here
-        println(message)
-        parseErrors.add(message)
+        parseErrors.add(ParserError(token, message))
     }
 }
