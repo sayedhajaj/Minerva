@@ -49,7 +49,7 @@ class Parser(private val tokens: List<Token>) {
                 members.add(consume(TokenType.IDENTIFIER, "Expect identifier"))
             } while (match(TokenType.COMMA))
         }
-        consume(TokenType.RIGHT_BRACE, "Expect ')' after parameters")
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after enum members")
 
         return Stmt.Enum(name, members)
     }
