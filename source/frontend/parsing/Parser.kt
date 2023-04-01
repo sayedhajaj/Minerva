@@ -602,8 +602,7 @@ class Parser(private val tokens: List<Token>) {
 
         if (!check(TokenType.RIGHT_PAREN)) {
             do {
-                if (check(TokenType.VAR)) {
-                    advance()
+                if (match(TokenType.VAR)) {
                     isField = true
                 }
                 val identifier = consume(TokenType.IDENTIFIER, "Expect parameter name")
@@ -730,55 +729,54 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun primary(): Expr = when {
-            match(TokenType.TRUE) ->  Expr.Literal(true)
-            match(TokenType.FALSE) -> Expr.Literal(false)
-            match(
-                TokenType.DECIMAL,
-                TokenType.INTEGER,
-                TokenType.STRING,
-                TokenType.CHAR
-            ) ->  Expr.Literal(previous().literal)
-            match(TokenType.NULL) ->  Expr.Literal(null)
-            match(TokenType.SUPER) -> {
-                val keyword = previous()
-                consume(TokenType.DOT, "Expect '.' after 'super'.")
-                val method = consume(TokenType.IDENTIFIER, "Expect superclass method name.")
-                 Expr.Super(keyword, method)
-            }
-            match(TokenType.THIS) ->  Expr.This(previous())
-            match(TokenType.IDENTIFIER) -> Expr.Variable(previous())
-            match(TokenType.LEFT_PAREN) -> {
-                val values = mutableListOf<Expr>()
-                if (!check(TokenType.RIGHT_SUB)) {
-                    do {
-                        values.add(expression())
-                    } while (match(TokenType.COMMA))
-                }
-                consume(TokenType.RIGHT_PAREN, "Expect ')' after expression. ")
-                if (values.size == 1) {
-                    Expr.Grouping(values[0])
-                } else {
-                    Expr.Tuple(values)
-                }
-            }
-            match(TokenType.LEFT_SUB) -> {
-                val values = mutableListOf<Expr>()
-                if (!check(TokenType.RIGHT_SUB)) {
-                    do {
-                        values.add(expression())
-                    } while (match(TokenType.COMMA))
-                }
-                consume(TokenType.RIGHT_SUB, "Expect closing ']'")
-                Expr.Array(values)
-            }
-            match(TokenType.LEFT_BRACE) -> Expr.Block(block())
-            match(TokenType.IF) ->  ifExpr()
-            match(TokenType.TYPEMATCH) ->  typeMatchExpr()
-            match(TokenType.MATCH) ->  matchExpression()
-            match(TokenType.FUNCTION) ->  lambdaExpression()
-            else ->  Expr.Literal(null)
+        match(TokenType.TRUE) -> Expr.Literal(true)
+        match(TokenType.FALSE) -> Expr.Literal(false)
+        match(
+            TokenType.DECIMAL,
+            TokenType.INTEGER,
+            TokenType.STRING,
+            TokenType.CHAR
+        ) -> Expr.Literal(previous().literal)
+        match(TokenType.NULL) -> Expr.Literal(null)
+        match(TokenType.SUPER) -> {
+            val keyword = previous()
+            consume(TokenType.DOT, "Expect '.' after 'super'.")
+            val method = consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+            Expr.Super(keyword, method)
         }
-
+        match(TokenType.THIS) -> Expr.This(previous())
+        match(TokenType.IDENTIFIER) -> Expr.Variable(previous())
+        match(TokenType.LEFT_PAREN) -> {
+            val values = mutableListOf<Expr>()
+            if (!check(TokenType.RIGHT_SUB)) {
+                do {
+                    values.add(expression())
+                } while (match(TokenType.COMMA))
+            }
+            consume(TokenType.RIGHT_PAREN, "Expect ')' after expression. ")
+            if (values.size == 1) {
+                Expr.Grouping(values[0])
+            } else {
+                Expr.Tuple(values)
+            }
+        }
+        match(TokenType.LEFT_SUB) -> {
+            val values = mutableListOf<Expr>()
+            if (!check(TokenType.RIGHT_SUB)) {
+                do {
+                    values.add(expression())
+                } while (match(TokenType.COMMA))
+            }
+            consume(TokenType.RIGHT_SUB, "Expect closing ']'")
+            Expr.Array(values)
+        }
+        match(TokenType.LEFT_BRACE) -> Expr.Block(block())
+        match(TokenType.IF) -> ifExpr()
+        match(TokenType.TYPEMATCH) -> typeMatchExpr()
+        match(TokenType.MATCH) -> matchExpression()
+        match(TokenType.FUNCTION) -> lambdaExpression()
+        else -> Expr.Literal(null)
+    }
 
 
     private fun function(): Stmt.Function {
@@ -792,7 +790,7 @@ class Parser(private val tokens: List<Token>) {
             genericDeclaration()
         } else emptyList()
 
-        consume(TokenType.LEFT_PAREN, "Expect ')' after function name.")
+        consume(TokenType.LEFT_PAREN, "Expect '(' after function name.")
         val parameters = mutableListOf<Token>()
         val parameterTypes = mutableListOf<Type>()
 
@@ -846,24 +844,20 @@ class Parser(private val tokens: List<Token>) {
 
     private fun isAtEnd(distance: Int = 0) = peek(distance).type === TokenType.EOF
 
-
     private fun peek() = tokens[current]
 
     private fun peek(distance: Int) = tokens[current + distance]
 
-
     private fun previous(): Token = tokens[current - 1]
 
     private fun consume(type: TokenType, message: String): Token {
-        if (!check(type))
-            error(peek(), message)
+        if (!check(type)) error(peek(), message)
 
         return advance()
     }
 
-    private fun check(tokenType: TokenType): Boolean {
-        return if (isAtEnd()) false else peek().type === tokenType
-    }
+    private fun check(tokenType: TokenType): Boolean = if (isAtEnd()) false else peek().type === tokenType
+
 
     private fun check(tokenType: TokenType, distance: Int): Boolean =
         if (isAtEnd(distance)) false else peek(distance).type == tokenType
