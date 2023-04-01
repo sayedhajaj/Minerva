@@ -177,12 +177,9 @@ class Parser(private val tokens: List<Token>) {
                     do {
                         superArgs.add(expression())
                     } while (match(TokenType.COMMA))
-
                 }
-
                 consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
             }
-
         }
 
         if (match(TokenType.IMPLEMENTS)) {
@@ -723,7 +720,6 @@ class Parser(private val tokens: List<Token>) {
             do {
                 arguments.add(expression())
             } while (match(TokenType.COMMA))
-
         }
 
         consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
