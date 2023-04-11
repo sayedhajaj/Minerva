@@ -1,0 +1,31 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.8.20'
+}
+
+apply plugin: 'kotlin'
+apply plugin: 'application'
+
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+
+
+sourceSets {
+    main.kotlin.srcDirs = main.java.srcDirs = ['source']
+    test.kotlin.srcDirs = test.java.srcDirs = ['test']
+    main.resources.srcDirs = ['resources']
+    test.resources.srcDirs = ['test_resources']
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+}
+
+test {
+    useJUnitPlatform()
+}
