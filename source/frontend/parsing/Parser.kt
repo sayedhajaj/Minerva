@@ -28,6 +28,7 @@ class Parser(private val tokens: List<Token>) {
         match(TokenType.CONST) -> varInitialisation(true)
         match(TokenType.ENUM) -> enumDeclaration()
         match(TokenType.TYPE) -> typeDeclaration()
+        match(TokenType.MODULE) -> moduleDeclaration()
         else -> statement()
     }
 
@@ -38,7 +39,7 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.TypeDeclaration(name, type)
     }
 
-    private fun enumDeclaration(): Stmt {
+    private fun enumDeclaration(): Stmt.Enum {
         val name = consume(TokenType.IDENTIFIER, "Expect enum name")
         val members = mutableListOf<Token>()
 
@@ -52,6 +53,32 @@ class Parser(private val tokens: List<Token>) {
         consume(TokenType.RIGHT_BRACE, "Expect '}' after enum members")
 
         return Stmt.Enum(name, members)
+    }
+
+    private fun moduleDeclaration(): Stmt {
+        val name = consume(TokenType.IDENTIFIER, "Expect module name")
+        val functions = mutableListOf<Stmt.Function>()
+        val fields = mutableListOf<Stmt.Var>()
+        val enums = mutableListOf<Stmt.Enum>()
+
+
+        consume(TokenType.LEFT_BRACE, "Expect '{' before module body")
+
+        val classes = mutableListOf<Stmt.Class>()
+
+        while (!isAtEnd() && !check(TokenType.RIGHT_BRACE)) {
+            if (match(TokenType.CLASS)) classes.add(classDeclaration())
+            else if (match(TokenType.FUNCTION)) functions.add(function())
+            else if (match(TokenType.ENUM)) enums.add(enumDeclaration())
+//            else if (match(TokenType.CONST)) fields.add(varInitialisation(true))
+            else {
+                advance()
+            }
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after module")
+
+        return Stmt.Module(name, classes, functions, enums, fields)
     }
 
     private fun externalDeclaration(): Stmt = when {
@@ -143,7 +170,7 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.While(Expr.Unary(Token(TokenType.BANG, "", null, -1), condition, false), body)
     }
 
-    private fun classDeclaration(): Stmt {
+    private fun classDeclaration(): Stmt.Class {
         val name = consume(TokenType.IDENTIFIER, "Expect class name.")
         val interfaces = mutableListOf<Token>()
 

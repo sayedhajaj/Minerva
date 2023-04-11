@@ -108,6 +108,19 @@ class Resolver {
                     define(it.name)
                 }
             }
+            is Stmt.Module -> {
+                declare(stmt.name)
+                define(stmt.name)
+
+                beginScope()
+
+                stmt.classes.forEach { resolve(it) }
+                stmt.enums.forEach { resolve(it) }
+                stmt.functions.forEach { resolve(it) }
+                stmt.fields.forEach { resolve(it) }
+
+                endScope()
+            }
             else -> {}
         }
     }

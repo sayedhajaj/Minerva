@@ -8,24 +8,24 @@ sealed class Stmt {
         val methods: List<Method>,
         val fields: List<Stmt.Var>,
         val interfaces: List<Token>
-        ) : Stmt()
+    ) : Stmt()
 
     class ClassDeclaration(
         val name: Token,
         val constructor: ConstructorDeclaration,
         val methods: List<FunctionDeclaration>,
         val fields: List<VarDeclaration>
-        ): Stmt()
+    ) : Stmt()
 
     class Method(val function: Function, val isOperator: Boolean = false)
 
-    class Interface(val name: Token, val methods: List<FunctionDeclaration>, val fields: List<VarDeclaration>): Stmt()
+    class Interface(val name: Token, val methods: List<FunctionDeclaration>, val fields: List<VarDeclaration>) : Stmt()
 
-    class If(val condition: Expr, val thenBranch: Stmt, val elseBranch: Stmt?): Stmt()
+    class If(val condition: Expr, val thenBranch: Stmt, val elseBranch: Stmt?) : Stmt()
 
-    class Print(val expression: Expr): Stmt()
+    class Print(val expression: Expr) : Stmt()
 
-    class PrintType(val expression: Expr): Stmt()
+    class PrintType(val expression: Expr) : Stmt()
 
     class Expression(val expression: Expr) : Stmt()
 
@@ -44,25 +44,33 @@ sealed class Stmt {
         val typeParameters: List<Token>,
     ) : Stmt()
 
-    class Function(val name: Token, val functionBody: Expr.Function): Stmt()
+    class Function(val name: Token, val functionBody: Expr.Function) : Stmt()
     class FunctionDeclaration(
         val name: Token,
         val parameters: List<Token>,
         val typeParameters: List<Token>,
         var type: Type
-    ): Stmt()
+    ) : Stmt()
 
-    class Var(val name: Token, val initializer: Expr, val isConst: Boolean = false, var type: Type): Stmt()
-    class VarDeclaration(val name: Token, val type: Type): Stmt()
+    class Var(val name: Token, val initializer: Expr, val isConst: Boolean = false, var type: Type) : Stmt()
+    class VarDeclaration(val name: Token, val type: Type) : Stmt()
 
-    class While(val condition: Expr, val body: Stmt): Stmt()
+    class While(val condition: Expr, val body: Stmt) : Stmt()
 
-    class ForEach(val name: Token, val iterable: Expr, val body: Stmt): Stmt()
+    class ForEach(val name: Token, val iterable: Expr, val body: Stmt) : Stmt()
 
 
-    class Enum(val name: Token, val members: List<Token>): Stmt()
+    class Enum(val name: Token, val members: List<Token>) : Stmt()
 
-    class Destructure(val names: List<VarDeclaration>, val initializer: Expr, var type: Type): Stmt()
+    class Destructure(val names: List<VarDeclaration>, val initializer: Expr, var type: Type) : Stmt()
 
-    class TypeDeclaration(val name: Token, val type: Type): Stmt()
+    class TypeDeclaration(val name: Token, val type: Type) : Stmt()
+
+    class Module(
+        val name: Token,
+        val classes: List<Class>,
+        val functions: List<Function>,
+        val enums: List<Enum>,
+        val fields: List<Var>
+    ) : Stmt()
 }

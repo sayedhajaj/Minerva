@@ -378,4 +378,20 @@ sealed interface Type {
         override fun toString(): String = "(${types.joinToString(",")})"
 
     }
+
+    data class ModuleType(val name: Token, val members: Map<String, Type>): Type {
+
+        override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
+            return otherType is ModuleType && otherType.name.lexeme == name.lexeme
+        }
+
+        override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean {
+            return members.containsKey(member)
+        }
+
+        override fun getMemberType(member: String, typeChecker: TypeChecker): Type {
+            return members[member] ?: NullType()
+        }
+
+    }
 }

@@ -150,6 +150,37 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     }
                 }
             }
+            is Stmt.Module -> {
+                val members = mutableMapOf<String, Any?>()
+
+                val previous = this.environment
+
+                this.environment = Environment(this.environment)
+                val functions = stmt.functions.associate {
+                    it.name.lexeme to MinervaFunction(
+                        it.name.lexeme,
+                        it.functionBody,
+                        environment
+                    )
+                }
+
+                functions.forEach { (name, func) ->
+                    environment.define(name, func)
+                    members[name] = func
+                }
+
+                val fields = stmt.fields.associate {
+                    it.name.lexeme to it.initializer
+                }
+
+//                val classes = stmt.classes.associate {
+//                    it.name.lexeme to MinervaClass()
+//                }
+
+                this.environment = previous
+
+                environment.define(stmt.name.lexeme, MinervaModule(members, this))
+            }
             else -> {}
         }
     }

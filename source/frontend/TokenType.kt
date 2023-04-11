@@ -23,6 +23,6 @@ enum class TokenType {
     ENUM,
     AS,
     TYPE,
-    OPERATOR_MODIFIER,
+    OPERATOR_MODIFIER, MODULE,
     EOF,
 }

@@ -1,0 +1,7 @@
+module Foo {
+    function bar() => {print "bar";}
+    function double(number: Int) => number * 2;
+}
+
+Foo.bar();
+print Foo.double(3) + 5;

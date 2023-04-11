@@ -113,6 +113,30 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Stmt.TypeDeclaration -> {
                 environment.defineType(stmt.name.lexeme, stmt.type)
             }
+            is Stmt.Module -> {
+                val moduleFields = mutableMapOf<String, Type>()
+
+                stmt.classes.forEach {
+                    checkDeclarations(it)
+
+                }
+                stmt.enums.forEach {
+                    checkDeclarations(it)
+                }
+                stmt.functions.forEach {
+                    checkDeclarations(it)
+//                    moduleFields[it.name] = look
+                    environment.getValue(it.name)?.let { fn ->
+                        moduleFields[it.name.lexeme] = fn
+                    }
+                }
+                stmt.fields.forEach { checkDeclarations(it) }
+
+
+                val type = Type.ModuleType(stmt.name, moduleFields)
+                environment.defineValue(stmt.name.lexeme, type)
+                environment.defineType(stmt.name.lexeme, type)
+            }
             else -> {}
         }
     }
@@ -254,6 +278,31 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 } else {
                     typeErrors.add("Can only destructure tuples")
                 }
+            }
+            is Stmt.Module -> {
+                val moduleFields = mutableMapOf<String, Type>()
+
+                stmt.classes.forEach {
+                    typeCheck(it)
+
+                }
+                stmt.enums.forEach {
+                    typeCheck(it)
+                }
+                stmt.functions.forEach {
+                    typeCheck(it)
+//                    moduleFields[it.name] = look
+                    environment.getValue(it.name)?.let { fn ->
+                        moduleFields[it.name.lexeme] = fn
+                    }
+                }
+                stmt.fields.forEach { typeCheck(it) }
+
+
+
+                val type = Type.ModuleType(stmt.name, moduleFields)
+                environment.defineValue(stmt.name.lexeme, type)
+                environment.defineType(stmt.name.lexeme, type)
             }
             else -> {}
         }
