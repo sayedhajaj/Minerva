@@ -170,7 +170,12 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 }
 
                 val fields = stmt.fields.associate {
-                    it.name.lexeme to it.initializer
+                    it.name.lexeme to evaluate(it.initializer)
+                }
+
+                fields.forEach {(name, field) ->
+                    environment.define(name, field)
+                    members[name] = field
                 }
 
 //                val classes = stmt.classes.associate {

@@ -70,7 +70,7 @@ class Parser(private val tokens: List<Token>) {
             if (match(TokenType.CLASS)) classes.add(classDeclaration())
             else if (match(TokenType.FUNCTION)) functions.add(function())
             else if (match(TokenType.ENUM)) enums.add(enumDeclaration())
-//            else if (match(TokenType.CONST)) fields.add(varInitialisation(true))
+            else if (match(TokenType.CONST)) fields.add(varInit(true))
             else {
                 advance()
             }
@@ -88,17 +88,16 @@ class Parser(private val tokens: List<Token>) {
     }
 
 
-    private fun varInitialisation(isConst: Boolean = false): Stmt {
-        return if (match(TokenType.LEFT_PAREN)) {
-            destructure()
-        } else {
-            val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
-            val type: Type = if (match(TokenType.COLON)) typeExpression() else Type.InferrableType()
-            consume(TokenType.EQUAL, "Expect initialiser")
-            val initialiser = expression()
-            consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
-            Stmt.Var(name, initialiser, isConst, type)
-        }
+    private fun varInitialisation(isConst: Boolean = false): Stmt =
+        if (match(TokenType.LEFT_PAREN)) destructure() else varInit(isConst)
+
+    private fun varInit(isConst: Boolean): Stmt.Var {
+        val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
+        val type: Type = if (match(TokenType.COLON)) typeExpression() else Type.InferrableType()
+        consume(TokenType.EQUAL, "Expect initialiser")
+        val initialiser = expression()
+        consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
+        return Stmt.Var(name, initialiser, isConst, type)
     }
 
     private fun destructure(): Stmt.Destructure {
