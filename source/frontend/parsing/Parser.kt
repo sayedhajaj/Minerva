@@ -55,11 +55,12 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.Enum(name, members)
     }
 
-    private fun moduleDeclaration(): Stmt {
+    private fun moduleDeclaration(): Stmt.Module {
         val name = consume(TokenType.IDENTIFIER, "Expect module name")
         val functions = mutableListOf<Stmt.Function>()
         val fields = mutableListOf<Stmt.Var>()
         val enums = mutableListOf<Stmt.Enum>()
+        val modules = mutableListOf<Stmt.Module>()
 
 
         consume(TokenType.LEFT_BRACE, "Expect '{' before module body")
@@ -71,6 +72,7 @@ class Parser(private val tokens: List<Token>) {
             else if (match(TokenType.FUNCTION)) functions.add(function())
             else if (match(TokenType.ENUM)) enums.add(enumDeclaration())
             else if (match(TokenType.CONST)) fields.add(varInit(true))
+            else if (match(TokenType.MODULE)) modules.add(moduleDeclaration())
             else {
                 advance()
             }
@@ -78,7 +80,7 @@ class Parser(private val tokens: List<Token>) {
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after module")
 
-        return Stmt.Module(name, classes, functions, enums, fields)
+        return Stmt.Module(name, modules, classes, functions, enums, fields)
     }
 
     private fun externalDeclaration(): Stmt = when {

@@ -312,6 +312,12 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     }
                 }
 
+                stmt.modules.forEach {
+                    typeCheck(it)
+                    environment.getValue(it.name)?.let { module ->
+                        moduleFields[it.name.lexeme] = module
+                    }
+                }
 
 
                 val type = Type.ModuleType(stmt.name, moduleFields)

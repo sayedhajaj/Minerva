@@ -179,6 +179,11 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                     environment.get(it.name)?.let {e -> members[it.name.lexeme] = e}
                 }
 
+                stmt.modules.forEach {
+                    execute(it)
+                    environment.get(it.name)?.let { module -> members[it.name.lexeme] = module }
+                }
+
                 this.environment = previous
 
                 environment.define(stmt.name.lexeme, MinervaModule(members, this))

@@ -13,6 +13,10 @@ module Foo {
     enum Color {
         RED, GREEN, BLUE
     }
+
+    module SubModule {
+        const NAME = "SubModule";
+    }
 }
 
 Foo.bar();
@@ -23,3 +27,6 @@ var blah = Foo.Blah();
 blah.sayHello();
 
 var colour = Foo.Color.RED;
+
+
+print Foo.SubModule.NAME;

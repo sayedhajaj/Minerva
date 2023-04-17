@@ -68,6 +68,7 @@ sealed class Stmt {
 
     class Module(
         val name: Token,
+        val modules: List<Module>,
         val classes: List<Class>,
         val functions: List<Function>,
         val enums: List<Enum>,
