@@ -142,6 +142,46 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 environment.defineValue(stmt.name.lexeme, type)
                 environment.defineType(stmt.name.lexeme, type)
             }
+            is Stmt.ModuleDeclaration -> {
+                val moduleFields = mutableMapOf<String, Type>()
+
+                stmt.classes.forEach {
+                    checkDeclarations(it)
+                    environment.getValue(it.name)?.let { cls ->
+                        moduleFields[it.name.lexeme] = cls
+                    }
+                }
+                stmt.enums.forEach {
+                    checkDeclarations(it)
+                    environment.getValue(it.name)?.let { e ->
+                        moduleFields[it.name.lexeme] = e
+                    }
+                }
+                stmt.functions.forEach {
+                    checkDeclarations(it)
+                    environment.getValue(it.name)?.let { fn ->
+                        moduleFields[it.name.lexeme] = fn
+                    }
+                }
+                stmt.fields.forEach {
+                    checkDeclarations(it)
+                    environment.getValue(it.name)?.let { field ->
+                        moduleFields[it.name.lexeme] = field
+                    }
+                }
+
+                stmt.modules.forEach {
+                    checkDeclarations(it)
+                    environment.getValue(it.name)?.let { module ->
+                        moduleFields[it.name.lexeme] = module
+                    }
+                }
+
+
+                val type = Type.ModuleType(stmt.name, moduleFields)
+                environment.defineValue(stmt.name.lexeme, type)
+                environment.defineType(stmt.name.lexeme, type)
+            }
             else -> {}
         }
     }

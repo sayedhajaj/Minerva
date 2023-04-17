@@ -1,0 +1,11 @@
+external module Example {
+    const NAME;
+
+    function view(): Any;
+
+}
+
+
+print Example.NAME;
+
+print Example.view();

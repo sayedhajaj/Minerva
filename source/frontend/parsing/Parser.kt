@@ -86,6 +86,7 @@ class Parser(private val tokens: List<Token>) {
     private fun externalDeclaration(): Stmt = when {
         match(TokenType.FUNCTION) -> functionDeclaration()
         match(TokenType.CLASS) -> classTypeDeclaration()
+        match(TokenType.MODULE) -> externalModule()
         else -> statement()
     }
 
@@ -258,7 +259,7 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.Class(name, superClass, constructor, methods, fields, interfaces)
     }
 
-    private fun classTypeDeclaration(): Stmt {
+    private fun classTypeDeclaration(): Stmt.ClassDeclaration {
         val name = consume(TokenType.IDENTIFIER, "Expect class name.")
         val typeParameters = if (match(TokenType.LESS)) {
             genericDeclaration()
@@ -295,6 +296,33 @@ class Parser(private val tokens: List<Token>) {
         val constructor = Stmt.ConstructorDeclaration(constructorFields, constructorParams, typeParameters)
 
         return Stmt.ClassDeclaration(name, constructor, methods, fields)
+    }
+
+    fun externalModule(): Stmt.ModuleDeclaration {
+        val name = consume(TokenType.IDENTIFIER, "Expect module name")
+        val functions = mutableListOf<Stmt.FunctionDeclaration>()
+        val fields = mutableListOf<Stmt.VarDeclaration>()
+        val enums = mutableListOf<Stmt.Enum>()
+        val modules = mutableListOf<Stmt.ModuleDeclaration>()
+        val classes = mutableListOf<Stmt.ClassDeclaration>()
+
+
+        consume(TokenType.LEFT_BRACE, "Expect '{' before module body")
+
+
+        while (!isAtEnd() && !check(TokenType.RIGHT_BRACE)) {
+            if (match(TokenType.CLASS)) classes.add(classTypeDeclaration())
+            else if (match(TokenType.FUNCTION)) functions.add(functionDeclaration())
+            else if (match(TokenType.CONST)) fields.add(varDeclaration())
+            else if (match(TokenType.MODULE)) modules.add(externalModule())
+            else {
+                advance()
+            }
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after module")
+
+        return Stmt.ModuleDeclaration(name, modules, classes, functions, enums, fields)
     }
 
     private fun interfaceDeclaration(): Stmt {

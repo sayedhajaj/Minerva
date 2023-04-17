@@ -46,6 +46,17 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 return MinervaMap(interpreter)
             }
         })
+
+        globals.define("Example", MinervaModule(members = mapOf(
+            "NAME" to MinervaString("Example", this),
+            "view" to object : MinervaCallable {
+                override fun arity(): Int = 0
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    return MinervaString("This is an example", this@Interpreter)
+                }
+            }
+        ), this))
     }
 
     fun interpet() {

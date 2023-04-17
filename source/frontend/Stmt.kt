@@ -74,4 +74,13 @@ sealed class Stmt {
         val enums: List<Enum>,
         val fields: List<Var>
     ) : Stmt()
+
+    class ModuleDeclaration(
+        val name: Token,
+        val modules: List<ModuleDeclaration>,
+        val classes: List<ClassDeclaration>,
+        val functions: List<FunctionDeclaration>,
+        val enums: List<Enum>,
+        val fields: List<VarDeclaration>
+    ) : Stmt()
 }
