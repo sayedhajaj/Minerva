@@ -289,14 +289,18 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
                 stmt.classes.forEach {
                     typeCheck(it)
-
+                    environment.getValue(it.name)?.let { cls ->
+                        moduleFields[it.name.lexeme] = cls
+                    }
                 }
                 stmt.enums.forEach {
                     typeCheck(it)
+                    environment.getValue(it.name)?.let { e ->
+                        moduleFields[it.name.lexeme] = e
+                    }
                 }
                 stmt.functions.forEach {
                     typeCheck(it)
-//                    moduleFields[it.name] = look
                     environment.getValue(it.name)?.let { fn ->
                         moduleFields[it.name.lexeme] = fn
                     }

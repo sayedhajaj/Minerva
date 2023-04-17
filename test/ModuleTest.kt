@@ -8,6 +8,6 @@ class ModuleTest {
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()
-        assertContentEquals(arrayOf("bar", "11", "4"), output, "")
+        assertContentEquals(arrayOf("bar", "11", "4", "hello"), output, "")
     }
 }

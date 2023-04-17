@@ -3,8 +3,23 @@ module Foo {
     function double(number: Int) => number * 2;
 
     const BAZ = 2;
+
+    class Blah {
+        function sayHello() => {
+            print "hello";
+        }
+    }
+
+    enum Color {
+        RED, GREEN, BLUE
+    }
 }
 
 Foo.bar();
 print Foo.double(3) + 5;
 print Foo.BAZ * 2;
+
+var blah = Foo.Blah();
+blah.sayHello();
+
+var colour = Foo.Color.RED;

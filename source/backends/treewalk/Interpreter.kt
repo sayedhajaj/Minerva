@@ -156,31 +156,28 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 val previous = this.environment
 
                 this.environment = Environment(this.environment)
-                val functions = stmt.functions.associate {
-                    it.name.lexeme to MinervaFunction(
-                        it.name.lexeme,
-                        it.functionBody,
-                        environment
-                    )
+
+                stmt.fields.forEach {
+                    execute(it)
+                    environment.get(it.name)?.let { field ->
+                        members[it.name.lexeme] = field
+                    }
                 }
 
-                functions.forEach { (name, func) ->
-                    environment.define(name, func)
-                    members[name] = func
+                stmt.classes.forEach {
+                    execute(it)
+                    environment.get(it.name)?.let {cls -> members[it.name.lexeme] = cls}
                 }
 
-                val fields = stmt.fields.associate {
-                    it.name.lexeme to evaluate(it.initializer)
+                stmt.functions.forEach {
+                    execute(it)
+                    environment.get(it.name)?.let {fn -> members[it.name.lexeme] = fn}
                 }
 
-                fields.forEach {(name, field) ->
-                    environment.define(name, field)
-                    members[name] = field
+                stmt.enums.forEach {
+                    execute(it)
+                    environment.get(it.name)?.let {e -> members[it.name.lexeme] = e}
                 }
-
-//                val classes = stmt.classes.associate {
-//                    it.name.lexeme to MinervaClass()
-//                }
 
                 this.environment = previous
 
