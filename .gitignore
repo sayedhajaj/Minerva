@@ -1,0 +1,8 @@
+/bin/*
+/build/*
+/out/*
+/lib/*
+.gradle/*
+.idea/*
+.vscode/*
+*.jar

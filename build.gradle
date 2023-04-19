@@ -9,7 +9,7 @@ apply plugin: 'application'
 group 'org.example'
 version '1.0-SNAPSHOT'
 
-
+mainClassName = 'MinervaKt'
 
 sourceSets {
     main.kotlin.srcDirs = main.java.srcDirs = ['source']
