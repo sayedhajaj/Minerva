@@ -73,9 +73,7 @@ class Parser(private val tokens: List<Token>) {
             else if (match(TokenType.ENUM)) enums.add(enumDeclaration())
             else if (match(TokenType.CONST)) fields.add(varInit(true))
             else if (match(TokenType.MODULE)) modules.add(moduleDeclaration())
-            else {
-                advance()
-            }
+            else advance()
         }
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after module")
@@ -315,9 +313,7 @@ class Parser(private val tokens: List<Token>) {
             else if (match(TokenType.FUNCTION)) functions.add(functionDeclaration())
             else if (match(TokenType.CONST)) fields.add(varDeclaration())
             else if (match(TokenType.MODULE)) modules.add(externalModule())
-            else {
-                advance()
-            }
+            else advance()
         }
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after module")
@@ -351,7 +347,7 @@ class Parser(private val tokens: List<Token>) {
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after interface body")
 
-        return Stmt.Interface(name, methods, fields)
+        return Stmt.Interface(name, methods, fields, typeParameters)
     }
 
 

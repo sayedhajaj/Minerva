@@ -6,7 +6,7 @@ sealed class Stmt {
         val superclass: Expr.Variable?,
         val constructor: Constructor,
         val methods: List<Method>,
-        val fields: List<Stmt.Var>,
+        val fields: List<Var>,
         val interfaces: List<Token>
     ) : Stmt()
 
@@ -19,7 +19,12 @@ sealed class Stmt {
 
     class Method(val function: Function, val isOperator: Boolean = false)
 
-    class Interface(val name: Token, val methods: List<FunctionDeclaration>, val fields: List<VarDeclaration>) : Stmt()
+    class Interface(
+        val name: Token,
+        val methods: List<FunctionDeclaration>,
+        val fields: List<VarDeclaration>,
+        val typeParameters: List<Token>
+    ) : Stmt()
 
     class If(val condition: Expr, val thenBranch: Stmt, val elseBranch: Stmt?) : Stmt()
 

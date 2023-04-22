@@ -14,9 +14,7 @@ class MinervaConstructor(
 ) {
     var instance: MinervaInstance? = null
 
-    override fun arity(): Int {
-        return parameters.size
-    }
+    override fun arity(): Int = parameters.size
 
 
     override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
@@ -24,7 +22,6 @@ class MinervaConstructor(
 
         for (i in 0 until (parameters.size)) {
             environment.define(parameters[i].lexeme, arguments[i])
-
         }
 
         interpreter.executeBlock(body.statements, environment)

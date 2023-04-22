@@ -50,7 +50,7 @@ sealed interface Type {
         override fun toString(): String = types.joinToString("|")
     }
 
-    data class ClassType(val className: Expr.Variable): Type {
+    data class ClassType(val className: Expr.Variable) : Type {
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return true
         }
@@ -103,21 +103,19 @@ sealed interface Type {
         }
 
         override fun hasMemberType(member: String, type: Type, typeChecker: TypeChecker): Boolean =
-            if (members.containsKey(member) && members[member]!!.canAssignTo(type, typeChecker)) {
+            if (members.containsKey(member) && members[member]!!.canAssignTo(type, typeChecker))
                 true
-            } else superclass?.hasMemberType(member, type, typeChecker) == true
+            else superclass?.hasMemberType(member, type, typeChecker) == true
 
         fun hasMember(member: String, typeChecker: TypeChecker): Boolean =
-            if (members.containsKey(member)) {
-                true
-            } else superclass?.hasMember(member, typeChecker) == true
+            if (members.containsKey(member)) true
+            else superclass?.hasMember(member, typeChecker) == true
 
         override fun getMemberType(member: String, typeChecker: TypeChecker): Type =
             if (members.containsKey(member))
                 members[member] ?: NullType()
             else
                 superclass?.getMemberType(member, typeChecker) ?: NullType()
-
 
 
         fun getUnaryOperatorType(operator: TokenType, typeChecker: TypeChecker): Type? {
@@ -337,8 +335,7 @@ sealed interface Type {
             return if (hasMemberType(member, AnyType(), typeChecker)) {
                 val index = members.indexOfFirst { it.lexeme == member }
                 return EnumType(this)
-            }
-            else NullType()
+            } else NullType()
         }
     }
 
@@ -379,7 +376,7 @@ sealed interface Type {
 
     }
 
-    data class ModuleType(val name: Token, val members: Map<String, Type>): Type {
+    data class ModuleType(val name: Token, val members: Map<String, Type>) : Type {
 
         override fun canAssignTo(otherType: Type, typeChecker: TypeChecker): Boolean {
             return otherType is ModuleType && otherType.name.lexeme == name.lexeme

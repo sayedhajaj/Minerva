@@ -71,14 +71,13 @@ class MinervaClass(
         boundConstructor.call(interpreter, arguments)
     }
 
-    override fun toString(): String {
-        return name
-    }
+    override fun toString(): String = name
 
-    fun findMethod(lexeme: String): MinervaFunction? {
-        if (methods.containsKey(lexeme)) return methods[lexeme]
-        if (superClass != null) return superClass.findMethod(lexeme)
-        return null
+
+    fun findMethod(lexeme: String): MinervaFunction? = when {
+        methods.containsKey(lexeme) -> methods[lexeme]
+        superClass != null -> superClass.findMethod(lexeme)
+        else -> null
     }
 
 }
