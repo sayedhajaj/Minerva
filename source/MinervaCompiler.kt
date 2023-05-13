@@ -1,5 +1,6 @@
 import backends.treewalk.Interpreter
 import frontend.*
+import frontend.analysis.ITypeChecker
 import frontend.analysis.Resolver
 import frontend.analysis.TypeChecker
 import frontend.parsing.Parser
@@ -24,7 +25,7 @@ class MinervaCompiler(val source: String) {
         return parser.parse()
     }
 
-    fun frontEndPass(): Pair<TypeChecker, List<Stmt>> {
+    fun frontEndPass(): Pair<ITypeChecker, List<Stmt>> {
         val resolver = Resolver()
         val syntaxTree = getSyntaxTree()
         resolver.resolve(syntaxTree)

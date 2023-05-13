@@ -8,8 +8,9 @@ import frontend.Expr
 import frontend.Stmt
 import frontend.Token
 import frontend.TokenType
+import frontend.analysis.ITypeChecker
 
-class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>, val typeChecker: TypeChecker) {
+class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>, val typeChecker: ITypeChecker) {
 
     val globals = Environment()
     var environment = globals

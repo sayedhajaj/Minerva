@@ -18,12 +18,12 @@ val operatorMethods = mapOf(
     TokenType.MODULO to "rem"
 )
 
-class TypeChecker(val locals: MutableMap<Expr, Int>) {
+class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
 
     val globals = TypeScope()
     var environment = globals
 
-    val typeErrors: MutableList<String> = mutableListOf()
+    override val typeErrors: MutableList<String> = mutableListOf()
 
     fun typeCheck(statements: List<Stmt>) {
         statements.forEach { checkDeclarations(it) }
@@ -608,7 +608,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         }
     }
 
-    fun resolveTypeArgument(args: Map<String, Type>, type: Type): Type {
+    override fun resolveTypeArgument(args: Map<String, Type>, type: Type): Type {
         return when (type) {
             is Type.UnresolvedType -> {
                 if (args.containsKey(type.identifier.name.lexeme)) args[type.identifier.name.lexeme] ?: type
@@ -1143,7 +1143,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     private fun isArrayType(type: Type): Boolean =
         type is Type.InstanceType && type.className.name.lexeme == "Array"
 
-    fun createArrayType(type: Type): Type = resolveInstanceType(
+    override fun createArrayType(type: Type): Type = resolveInstanceType(
         Type.UnresolvedType(
             Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)),
             listOf(type)
@@ -1196,7 +1196,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     }
 
 
-    fun flattenTypes(elementTypes: List<Type>): Type {
+    override fun flattenTypes(elementTypes: List<Type>): Type {
         val instanceTypes = elementTypes.filterIsInstance<Type.InstanceType>().toSet().toList()
         val nonInstanceTypes = elementTypes.filter { it !is Type.InstanceType }.distinctBy { it::class }
 
@@ -1225,7 +1225,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             globals.getValue(name) as Type
     }
 
-    fun lookUpType(name: Token): Type {
+    override fun lookUpType(name: Token): Type {
         return environment.getType(name) as Type
     }
 
