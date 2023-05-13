@@ -266,7 +266,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
             val value = lookUpVariable(expr.variable.name, expr.variable)
             val valueType = getValueType(value)
             val matching = expr.conditions.filter {
-                it.first.canAssignTo(valueType, typeChecker)
+                it.first.canAssignTo(valueType)
             }
 
             var result: Any? = null

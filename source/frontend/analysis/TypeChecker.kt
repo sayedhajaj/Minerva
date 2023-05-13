@@ -2,6 +2,22 @@ package frontend.analysis
 
 import frontend.*
 
+val arithmeticOperators = listOf(
+    TokenType.PLUS,
+    TokenType.MINUS,
+    TokenType.SLASH,
+    TokenType.STAR,
+    TokenType.MODULO
+)
+
+val operatorMethods = mapOf(
+    TokenType.PLUS to "add",
+    TokenType.MINUS to "subtract",
+    TokenType.SLASH to "divide",
+    TokenType.STAR to "multiply",
+    TokenType.MODULO to "rem"
+)
+
 class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     val globals = TypeScope()
@@ -16,54 +32,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     fun checkDeclarations(stmt: Stmt) {
         when (stmt) {
-            is Stmt.Class -> {
-                val typeParameters = stmt.constructor.typeParameters.map {
-                    Type.UnresolvedType(
-                        Expr.Variable(it),
-                        emptyList()
-                    )
-                }
-
-                val memberMap = mutableMapOf<String, Type>()
-                val params = mutableListOf<Type>()
-                stmt.fields.forEach {
-                    memberMap[it.name.lexeme] = it.type
-                }
-
-                stmt.methods.forEach {
-                    checkDeclarations(it.function)
-                    memberMap[it.function.name.lexeme] = it.function.functionBody.type
-                }
-
-                checkDeclarations(stmt.constructor)
-
-                stmt.constructor.parameters.forEachIndexed { index, pair ->
-                    params.add(pair.second)
-                    if (stmt.constructor.fields.containsKey(index)) {
-                        memberMap[pair.first.lexeme] = pair.second
-                    }
-                }
-
-                val instance = Type.InstanceType(
-                    Expr.Variable(stmt.name),
-                    params,
-                    typeParameters,
-                    emptyList(),
-                    memberMap,
-                    null,
-                    emptyList()
-                )
-
-                environment.defineValue(
-                    stmt.name.lexeme,
-                    Type.ClassType(instance.className)
-                )
-
-                environment.defineType(
-                    stmt.name.lexeme,
-                    instance
-                )
-            }
+            is Stmt.Class -> declareClass(stmt)
             is Stmt.ClassDeclaration -> typeCheckClassDeclaration(stmt)
             is Stmt.Constructor -> {
             }
@@ -74,7 +43,6 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             }
             is Stmt.ConstructorDeclaration -> typeCheckConstructorDeclaration(stmt)
             is Stmt.FunctionDeclaration -> {
-                val declaration = stmt.type as Type.FunctionType
                 environment.defineValue(stmt.name.lexeme, stmt.type)
             }
             is Stmt.If -> {
@@ -97,6 +65,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Stmt.PrintType -> {
             }
             is Stmt.Var -> {
+
             }
             is Stmt.VarDeclaration -> {
             }
@@ -186,6 +155,55 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         }
     }
 
+    private fun declareClass(stmt: Stmt.Class) {
+        val typeParameters = stmt.constructor.typeParameters.map {
+            Type.UnresolvedType(
+                Expr.Variable(it),
+                emptyList()
+            )
+        }
+
+        val memberMap = mutableMapOf<String, Type>()
+        val params = mutableListOf<Type>()
+        stmt.fields.forEach {
+            memberMap[it.name.lexeme] = it.type
+        }
+
+        stmt.methods.forEach {
+            checkDeclarations(it.function)
+            memberMap[it.function.name.lexeme] = it.function.functionBody.type
+        }
+
+        checkDeclarations(stmt.constructor)
+
+        stmt.constructor.parameters.forEachIndexed { index, pair ->
+            params.add(pair.second)
+            if (stmt.constructor.fields.containsKey(index)) {
+                memberMap[pair.first.lexeme] = pair.second
+            }
+        }
+
+        val instance = Type.InstanceType(
+            Expr.Variable(stmt.name),
+            params,
+            typeParameters,
+            emptyList(),
+            memberMap,
+            null,
+            emptyList()
+        )
+
+        environment.defineValue(
+            stmt.name.lexeme,
+            Type.ClassType(instance.className)
+        )
+
+        environment.defineType(
+            stmt.name.lexeme,
+            instance
+        )
+    }
+
     fun checkDeclarations(expr: Expr) {
         when (expr) {
             is Expr.Array -> expr.values.forEach { typeCheck(it) }
@@ -239,7 +257,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         when (stmt) {
             is Stmt.Class -> typeCheckClass(stmt)
             is Stmt.Constructor -> typeCheckConstructor(stmt)
-            is Stmt.ConstructorDeclaration, is Stmt.ClassDeclaration, is Stmt.FunctionDeclaration -> { }
+            is Stmt.ConstructorDeclaration, is Stmt.ClassDeclaration, is Stmt.FunctionDeclaration -> {}
             is Stmt.Expression -> typeCheck(stmt.expression)
             is Stmt.Function -> {
                 environment.defineValue(stmt.name.lexeme, stmt.functionBody.type)
@@ -261,7 +279,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                 val assignedType = typeCheck(stmt.initializer)
                 val type = if (stmt.type is Type.InferrableType)
                     assignedType else resolveInstanceType(initialiserType)
-                val canAssign = initialiserType.canAssignTo(assignedType, this)
+                val canAssign = initialiserType.canAssignTo(assignedType)
 
                 if (!canAssign) {
                     typeErrors.add("Cannot assign ${assignedType} to $initialiserType")
@@ -283,7 +301,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     Token(TokenType.IDENTIFIER, "Iterable", null, -1)
                 )
 
-                if (!iterableInterface.canAssignTo(iterableType, this)) {
+                if (!iterableInterface.canAssignTo(iterableType)) {
                     typeErrors.add("$iterableType is not iterable")
                 }
 
@@ -311,7 +329,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                         val sliceType = assignedType.types[index]
                         val declaredType = if (varDeclaration.type is Type.InferrableType)
                             sliceType else resolveInstanceType(varDeclaration.type)
-                        val canAssign = declaredType.canAssignTo(sliceType, this)
+                        val canAssign = declaredType.canAssignTo(sliceType)
 
                         if (!canAssign) {
                             typeErrors.add("Cannot assign ${sliceType} to $declaredType")
@@ -419,14 +437,14 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         }
 
         this.environment = previous
-        val instanceType =  Type.InstanceType(
-        Expr.Variable(stmt.name),
-        params,
-        typeParameters,
-        emptyList(),
-        memberMap,
-        null,
-        emptyList()
+        val instanceType = Type.InstanceType(
+            Expr.Variable(stmt.name),
+            params,
+            typeParameters,
+            emptyList(),
+            memberMap,
+            null,
+            emptyList()
         )
         environment.defineValue(stmt.name.lexeme, Type.ClassType(instanceType.className))
         environment.defineType(stmt.name.lexeme, instanceType)
@@ -505,12 +523,13 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         )
 
         stmt.interfaces.forEach {
-            val referencedInterface = resolveInstanceType(environment.getType(it) as Type.InterfaceType) as Type.InterfaceType
+            val referencedInterface =
+                resolveInstanceType(environment.getType(it) as Type.InterfaceType) as Type.InterfaceType
 
-            referencedInterface.members.entries.forEach {  }
-            if (!referencedInterface.canAssignTo(instance, this)) {
+            referencedInterface.members.entries.forEach { }
+            if (!referencedInterface.canAssignTo(instance)) {
                 typeErrors.add("Cannot assign ${stmt.name.lexeme} to ${it.lexeme}")
-                val missing = referencedInterface.members.filter { !instance.hasMemberType(it.key, it.value, this) }
+                val missing = referencedInterface.members.filter { !instance.hasMemberType(it.key, it.value) }
                 missing.entries.forEach {
                     typeErrors.add("${stmt.name.lexeme} is missing ${it.key}, ${it.value}")
                 }
@@ -522,14 +541,15 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     private fun lookupInitialiserType(type: Type): Type = when (type) {
         is Type.UnresolvedType -> {
-            if (!typeExists(type.identifier.name, type.identifier))  resolveInstanceType(type)
+            if (!typeExists(type.identifier.name, type.identifier)) resolveInstanceType(type)
             else {
                 val resolvedType = lookUpType(type.identifier.name)
                 if (resolvedType is Type.InstanceType) {
                     if (type.typeArguments.size == resolvedType.typeParams.size) {
                         val args = mutableMapOf<String, Type>()
                         resolvedType.typeParams.forEachIndexed { index, unresolvedType ->
-                            args[unresolvedType.identifier.name.lexeme] = lookupInitialiserType(type.typeArguments[index])
+                            args[unresolvedType.identifier.name.lexeme] =
+                                lookupInitialiserType(type.typeArguments[index])
                         }
                         resolveTypeArgument(args, resolvedType)
                     } else resolvedType
@@ -644,7 +664,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Expr.Assign -> {
                 val left = lookUpVariableType(expr.name, expr)
                 typeCheck(expr.value)
-                if (!left.canAssignTo(expr.value.type, this)) {
+                if (!left.canAssignTo(expr.value.type)) {
                     typeErrors.add("Cannot assign ${expr.value.type} to ${left}")
                 }
                 val thisType = expr.value.type
@@ -700,7 +720,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Expr.Super -> {
                 val distance = locals[expr]
                 val superclass = distance?.let { environment.getValueAt(it - 1, "super") } as Type.InstanceType
-                val thisType = (superclass).getMemberType(expr.method.lexeme, this)
+                val thisType = (superclass).getMemberType(expr.method.lexeme)
                 expr.type = thisType
                 thisType
             }
@@ -712,7 +732,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             is Expr.Unary -> {
                 val operandType = typeCheck(expr.right)
                 if (operandType is Type.InstanceType) {
-                    val returnType = operandType.getUnaryOperatorType(expr.operator.type, this)
+                    val returnType = getUnaryReturnType(expr, operandType)
                     if (returnType != null) {
                         val resolved = resolveInstanceType(returnType)
                         expr.type = resolved
@@ -742,12 +762,55 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         }
     }
 
+    private fun getUnaryReturnType(expr: Expr.Unary, operandType: Type): Type? {
+        val unaryMethods = mapOf(
+            TokenType.PLUS to "plus",
+            TokenType.MINUS to "minus",
+            TokenType.BANG to "not",
+            TokenType.PLUS_PLUS to "inc",
+            TokenType.MINUS_MINUS to "dec"
+        )
+        val methodName = unaryMethods[expr.operator.type]
+        if (methodName != null) {
+            val method = operandType.getMemberType(methodName) as Type.FunctionType?
+            if (method != null) {
+                if (method.params.types.isNotEmpty()) {
+                    typeErrors.add("Unary method should have no parameters")
+                } else {
+                    return method.result
+                }
+            } else {
+                typeErrors.add("Operator ${expr.operator.type} is not overloaded for $operandType")
+            }
+        }
+        return null
+    }
+
+    private fun operatorOperandAllowed(
+        operator: TokenType,
+        method: Type.FunctionType?,
+        right: Type,
+    ): Boolean {
+        return if (method != null) {
+            val paramTypes = method.params.types
+            if (paramTypes.size == 1 && paramTypes[0].canAssignTo(right)) {
+                true
+            } else {
+                typeErrors.add("$method does not accept $right")
+                false
+            }
+        } else {
+            typeErrors.add("Class does not override $operator operator")
+            false
+        }
+    }
+
     private fun typeCheckBinary(expr: Expr.Binary): Type {
         val left = typeCheck(expr.left)
         val right = typeCheck(expr.right)
 
         if (left is Type.InstanceType) {
-            val returnType = left.getBinaryOperatorType(expr.operator.type, right, this)
+            val returnType = getBinaryOperatorType(expr, left, right)
             val resolved = if (returnType is Type.UnresolvedType) {
                 resolveInstanceType(returnType)
             } else returnType
@@ -761,6 +824,46 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
         expr.type = Type.NullType()
         return expr.type
+    }
+
+    private fun getBinaryOperatorType(expr: Expr.Binary, left: Type.InstanceType, right: Type): Type? {
+        if (expr.operator.type in arithmeticOperators) {
+            val methodName = operatorMethods[expr.operator.type]!!
+            val method = left.getMemberType(methodName) as Type.FunctionType?
+            val allowed = operatorOperandAllowed(expr.operator.type, method, right)
+            if (allowed) {
+                return method?.result!!
+            }
+        } else {
+            val methodName = "compareTo"
+            if (left.hasMember(methodName)) {
+                val method = left.getMemberType(methodName) as Type.FunctionType
+                val allowed = operatorOperandAllowed(expr.operator.type, method, right)
+                if (allowed) {
+                    if (!isIntegerType(method!!.result)) {
+                        typeErrors.add("Return type of compare method should be integer")
+                    }
+                } else {
+                    if (expr.operator.type !in listOf(
+                            TokenType.EQUAL_EQUAL,
+                            TokenType.BANG_EQUAL
+                        )
+                    ) {
+                        typeErrors.add("CompareTo not implemented for $this")
+                    }
+                }
+            } else {
+                val equalMethod = left.getMemberType("equals") as Type.FunctionType?
+                val allowed = operatorOperandAllowed(expr.operator.type, equalMethod, right)
+                if (allowed) {
+                    if (!isBooleanType(equalMethod!!.result)) {
+                        typeErrors.add("Return type of equals method should be boolean")
+                    }
+                }
+            }
+            return createBooleanType()
+        }
+        return null
     }
 
     private fun typeCheckCall(expr: Expr.Call): Type {
@@ -798,7 +901,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
         val params = (resolveInstanceType(calleeType.params) as Type.TupleType).types
         val typeParams = calleeType.typeParams
         val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments)
-            .map{lookupInitialiserType(it)}
+            .map { lookupInitialiserType(it) }
 
         typeCheckArguments(params, arguments)
 
@@ -833,7 +936,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             thisType
         } else {
             val calleeType = typeCheck(expr.obj)
-            val thisType = calleeType.getMemberType(expr.name.lexeme, this)
+            val thisType = calleeType.getMemberType(expr.name.lexeme)
             val resolved = if (thisType is Type.UnresolvedType) resolveInstanceType(thisType)
             else thisType
             expr.type = resolved
@@ -853,15 +956,15 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                     typeErrors.add("Array index should be integer")
                 }
             }
-            if (!arrType.canAssignTo(expr.value.type, this)) {
+            if (!arrType.canAssignTo(expr.value.type)) {
                 typeErrors.add("Cannot assign ${expr.value.type} to ${arrType}")
             }
             val thisType = expr.value.type
             thisType
         } else {
-            val field = left.getMemberType(expr.name.lexeme, this)
+            val field = left.getMemberType(expr.name.lexeme)
             typeCheck(expr.value)
-            if (!field.canAssignTo(expr.value.type, this)) {
+            if (!field.canAssignTo(expr.value.type)) {
                 typeErrors.add("Cannot assign ${expr.value.type} to $field")
             }
             val thisType = expr.value.type
@@ -871,7 +974,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
 
     private fun getMatchType(expr: Expr.Match): Type {
         typeCheck(expr.expr)
-        if (!isIntegerType(expr.expr.type) && !isDecimalType(expr.expr.type) && !isStringType(expr.expr.type)  && expr.expr.type !is Type.EnumType) {
+        if (!isIntegerType(expr.expr.type) && !isDecimalType(expr.expr.type) && !isStringType(expr.expr.type) && expr.expr.type !is Type.EnumType) {
             typeErrors.add("Can only use integer, double, enum, or string types in match")
         }
         val types = mutableListOf<Type>()
@@ -1004,7 +1107,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
                         expectedType = lookupInitialiserType(expectedType)
                     }
                 }
-                if (!arg.type.canAssignTo(expectedType, this)) {
+                if (!arg.type.canAssignTo(expectedType)) {
                     typeErrors.add("Expected $expectedType and got ${arg.type}")
                 }
             }
@@ -1017,7 +1120,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
     ) {
         params.forEachIndexed { index, param ->
             val argType = arguments[index].type
-            if (!param.canAssignTo(argType, this)) {
+            if (!param.canAssignTo(argType)) {
                 typeErrors.add("Expected $param and got $argType")
             }
         }
@@ -1030,8 +1133,7 @@ class TypeChecker(val locals: MutableMap<Expr, Int>) {
             if (type is Type.UnionType) type.types.all {
                 branches.any { branch ->
                     it.canAssignTo(
-                        resolveInstanceType(branch),
-                        this
+                        resolveInstanceType(branch)
                     )
                 }
             } else false
