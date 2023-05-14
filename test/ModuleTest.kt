@@ -4,7 +4,7 @@ import kotlin.test.assertContentEquals
 class ModuleTest {
     @Test
     internal fun testModules() {
-        val source = HelloWorldTest::class.java.getResource("examples/module.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/modules/module.minerva").readText()
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()
@@ -13,7 +13,7 @@ class ModuleTest {
 
     @Test
     internal fun testExternalModule() {
-        val source = HelloWorldTest::class.java.getResource("examples/external_module.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/modules/external_module.minerva").readText()
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()

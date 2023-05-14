@@ -1,3 +1,7 @@
+package expressions
+
+import HelloWorldTest
+import MinervaCompiler
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
 
@@ -5,7 +9,7 @@ class ArithmeticTest {
 
     @Test
     internal fun testArithmetic() {
-        val source = HelloWorldTest::class.java.getResource("examples/arithmetic.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/expressions/arithmetic.minerva").readText()
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()

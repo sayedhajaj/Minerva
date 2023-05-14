@@ -1,10 +1,14 @@
+package variables
+
+import HelloWorldTest
+import MinervaCompiler
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
 
 class ScopeTest {
     @Test
     internal fun testScope() {
-        val source = HelloWorldTest::class.java.getResource("examples/scope.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/variables/scope.minerva").readText()
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()
