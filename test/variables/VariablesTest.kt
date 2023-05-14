@@ -4,6 +4,8 @@ import HelloWorldTest
 import MinervaCompiler
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class VariablesTest {
     @Test
@@ -22,5 +24,14 @@ class VariablesTest {
 
         val output = compiler.interpret().toTypedArray()
         assertContentEquals(arrayOf("hello"), output, "")
+    }
+
+    @Test
+    internal fun testIncompatibleAssign() {
+        val source = HelloWorldTest::class.java.getResource("examples/variables/incompatible_assign.minerva").readText()
+        val compiler = MinervaCompiler(source)
+
+        val (compileErrors) = compiler.frontEndPass()
+        assertEquals("Cannot assign Int to String", compileErrors[0].message)
     }
 }
