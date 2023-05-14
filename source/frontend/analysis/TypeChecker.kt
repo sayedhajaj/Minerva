@@ -23,7 +23,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
     val globals = TypeScope()
     var environment = globals
 
-    override val typeErrors: MutableList<String> = mutableListOf()
+    override val typeErrors: MutableList<CompileError.TypeError> = mutableListOf()
 
     fun typeCheck(statements: List<Stmt>) {
         statements.forEach { checkDeclarations(it) }
@@ -268,7 +268,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 typeCheck(stmt.condition)
                 typeCheck(stmt.thenBranch)
                 if (!isBooleanType(stmt.condition.type)) {
-                    typeErrors.add("If condition should be boolean")
+                    typeErrors.add(CompileError.TypeError("If condition should be boolean"))
                 }
                 stmt.elseBranch?.let { typeCheck(it) }
             }
@@ -282,7 +282,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 val canAssign = initialiserType.canAssignTo(assignedType)
 
                 if (!canAssign) {
-                    typeErrors.add("Cannot assign ${assignedType} to $initialiserType")
+                    typeErrors.add(CompileError.TypeError("Cannot assign ${assignedType} to $initialiserType"))
                 }
                 stmt.type = type
                 environment.defineValue(stmt.name.lexeme, type)
@@ -291,7 +291,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 typeCheck(stmt.condition)
 
                 if (!isBooleanType(stmt.condition.type)) {
-                    typeErrors.add("While condition should be boolean")
+                    typeErrors.add(CompileError.TypeError("While condition should be boolean"))
                 }
                 typeCheck(stmt.body)
             }
@@ -302,7 +302,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 )
 
                 if (!iterableInterface.canAssignTo(iterableType)) {
-                    typeErrors.add("$iterableType is not iterable")
+                    typeErrors.add(CompileError.TypeError("$iterableType is not iterable"))
                 }
 
                 val previous = environment
@@ -332,14 +332,14 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                         val canAssign = declaredType.canAssignTo(sliceType)
 
                         if (!canAssign) {
-                            typeErrors.add("Cannot assign ${sliceType} to $declaredType")
+                            typeErrors.add(CompileError.TypeError("Cannot assign ${sliceType} to $declaredType"))
                         }
 
                         environment.defineValue(varDeclaration.name.lexeme, declaredType)
 
                     }
                 } else {
-                    typeErrors.add("Can only destructure tuples")
+                    typeErrors.add(CompileError.TypeError("Can only destructure tuples"))
                 }
             }
             is Stmt.Module -> {
@@ -528,10 +528,10 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
 
             referencedInterface.members.entries.forEach { }
             if (!referencedInterface.canAssignTo(instance)) {
-                typeErrors.add("Cannot assign ${stmt.name.lexeme} to ${it.lexeme}")
+                typeErrors.add(CompileError.TypeError("Cannot assign ${stmt.name.lexeme} to ${it.lexeme}"))
                 val missing = referencedInterface.members.filter { !instance.hasMemberType(it.key, it.value) }
                 missing.entries.forEach {
-                    typeErrors.add("${stmt.name.lexeme} is missing ${it.key}, ${it.value}")
+                    typeErrors.add(CompileError.TypeError("${stmt.name.lexeme} is missing ${it.key}, ${it.value}"))
                 }
             }
 
@@ -665,7 +665,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 val left = lookUpVariableType(expr.name, expr)
                 typeCheck(expr.value)
                 if (!left.canAssignTo(expr.value.type)) {
-                    typeErrors.add("Cannot assign ${expr.value.type} to ${left}")
+                    typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to ${left}"))
                 }
                 val thisType = expr.value.type
                 thisType
@@ -685,7 +685,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             is Expr.If -> {
                 typeCheck(expr.condition)
                 if (!isBooleanType(expr.condition.type)) {
-                    typeErrors.add("If condition should be boolean")
+                    typeErrors.add(CompileError.TypeError("If condition should be boolean"))
                 }
                 val thenType = typeCheck(expr.thenBranch)
                 val elseType = typeCheck(expr.elseBranch)
@@ -710,7 +710,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 val left = typeCheck(expr.left)
                 val right = typeCheck(expr.right)
                 if (!isBooleanType(left) || !isBooleanType(right)) {
-                    typeErrors.add("Logical expression should have boolean left and right")
+                    typeErrors.add(CompileError.TypeError("Logical expression should have boolean left and right"))
                 }
                 val thisType = createBooleanType()
                 expr.type = thisType
@@ -775,12 +775,12 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             val method = operandType.getMemberType(methodName) as Type.FunctionType?
             if (method != null) {
                 if (method.params.types.isNotEmpty()) {
-                    typeErrors.add("Unary method should have no parameters")
+                    typeErrors.add(CompileError.TypeError("Unary method should have no parameters"))
                 } else {
                     return method.result
                 }
             } else {
-                typeErrors.add("Operator ${expr.operator.type} is not overloaded for $operandType")
+                typeErrors.add(CompileError.TypeError("Operator ${expr.operator.type} is not overloaded for $operandType"))
             }
         }
         return null
@@ -796,11 +796,11 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             if (paramTypes.size == 1 && paramTypes[0].canAssignTo(right)) {
                 true
             } else {
-                typeErrors.add("$method does not accept $right")
+                typeErrors.add(CompileError.TypeError("$method does not accept $right"))
                 false
             }
         } else {
-            typeErrors.add("Class does not override $operator operator")
+            typeErrors.add(CompileError.TypeError("Class does not override $operator operator"))
             false
         }
     }
@@ -819,7 +819,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 return resolved
             }
         } else {
-            typeErrors.add("Cannot call ${expr.operator.type} on $left")
+            typeErrors.add(CompileError.TypeError("Cannot call ${expr.operator.type} on $left"))
         }
 
         expr.type = Type.NullType()
@@ -841,7 +841,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 val allowed = operatorOperandAllowed(expr.operator.type, method, right)
                 if (allowed) {
                     if (!isIntegerType(method!!.result)) {
-                        typeErrors.add("Return type of compare method should be integer")
+                        typeErrors.add(CompileError.TypeError("Return type of compare method should be integer"))
                     }
                 } else {
                     if (expr.operator.type !in listOf(
@@ -849,7 +849,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                             TokenType.BANG_EQUAL
                         )
                     ) {
-                        typeErrors.add("CompareTo not implemented for $this")
+                        typeErrors.add(CompileError.TypeError("CompareTo not implemented for $this"))
                     }
                 }
             } else {
@@ -857,7 +857,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 val allowed = operatorOperandAllowed(expr.operator.type, equalMethod, right)
                 if (allowed) {
                     if (!isBooleanType(equalMethod!!.result)) {
-                        typeErrors.add("Return type of equals method should be boolean")
+                        typeErrors.add(CompileError.TypeError("Return type of equals method should be boolean"))
                     }
                 }
             }
@@ -929,7 +929,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             val thisType = (expr.obj.type as Type.InstanceType).typeArguments[0]
             typeCheck(expr.index)
             if (!isIntegerType(expr.index.type)) {
-                typeErrors.add("Array index should be an integer")
+                typeErrors.add(CompileError.TypeError("Array index should be an integer"))
             }
 
             expr.type = thisType
@@ -953,11 +953,11 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             if (expr.index != null) {
                 typeCheck(expr.index)
                 if (!isIntegerType(expr.index.type)) {
-                    typeErrors.add("Array index should be integer")
+                    typeErrors.add(CompileError.TypeError("Array index should be integer"))
                 }
             }
             if (!arrType.canAssignTo(expr.value.type)) {
-                typeErrors.add("Cannot assign ${expr.value.type} to ${arrType}")
+                typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to ${arrType}"))
             }
             val thisType = expr.value.type
             thisType
@@ -965,7 +965,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             val field = left.getMemberType(expr.name.lexeme)
             typeCheck(expr.value)
             if (!field.canAssignTo(expr.value.type)) {
-                typeErrors.add("Cannot assign ${expr.value.type} to $field")
+                typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $field"))
             }
             val thisType = expr.value.type
             thisType
@@ -975,13 +975,13 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
     private fun getMatchType(expr: Expr.Match): Type {
         typeCheck(expr.expr)
         if (!isIntegerType(expr.expr.type) && !isDecimalType(expr.expr.type) && !isStringType(expr.expr.type) && expr.expr.type !is Type.EnumType) {
-            typeErrors.add("Can only use integer, double, enum, or string types in match")
+            typeErrors.add(CompileError.TypeError("Can only use integer, double, enum, or string types in match"))
         }
         val types = mutableListOf<Type>()
         expr.branches.forEach {
             typeCheck(it.first)
             if (it.first.type::class != expr.expr.type::class) {
-                typeErrors.add("Conditions must be same type as match type")
+                typeErrors.add(CompileError.TypeError("Conditions must be same type as match type"))
             }
             typeCheck(it.second)
             types.add(it.second.type)
@@ -995,7 +995,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
     private fun getTypeMatchType(expr: Expr.TypeMatch): Type {
         val variableType = typeCheck(expr.variable)
         if (expr.variable.type !is Type.AnyType && expr.variable.type !is Type.UnionType) {
-            typeErrors.add("Can only type match any and union types")
+            typeErrors.add(CompileError.TypeError("Can only type match any and union types"))
         }
         val types = mutableListOf<Type>()
         expr.conditions = expr.conditions.map {
@@ -1025,7 +1025,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
 
         val hasElse = expr.elseBranch != null
         if (!isExhuastive(expr.variable.type, expr.conditions.map { resolveInstanceType(it.first) }, hasElse)) {
-            typeErrors.add("Typematch is not exhuastive")
+            typeErrors.add(CompileError.TypeError("Typematch is not exhuastive"))
         }
         expr.type = flattenTypes(types)
         return expr.type
@@ -1088,7 +1088,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 }
                 return newTypeArgs
             } else {
-                typeErrors.add("Number of type params and type arguments don't match")
+                typeErrors.add(CompileError.TypeError("Number of type params and type arguments don't match"))
                 return emptyList()
             }
         } else {
@@ -1108,7 +1108,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                     }
                 }
                 if (!arg.type.canAssignTo(expectedType)) {
-                    typeErrors.add("Expected $expectedType and got ${arg.type}")
+                    typeErrors.add(CompileError.TypeError("Expected $expectedType and got ${arg.type}"))
                 }
             }
         }
@@ -1121,7 +1121,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         params.forEachIndexed { index, param ->
             val argType = arguments[index].type
             if (!param.canAssignTo(argType)) {
-                typeErrors.add("Expected $param and got $argType")
+                typeErrors.add(CompileError.TypeError("Expected $param and got $argType"))
             }
         }
     }

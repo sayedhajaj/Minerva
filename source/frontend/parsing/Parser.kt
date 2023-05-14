@@ -4,11 +4,9 @@ import frontend.*
 import frontend.Expr.Binary
 import java.util.ArrayList
 
-data class ParserError(val token: Token, val message: String)
-
 class Parser(private val tokens: List<Token>) {
 
-    val parseErrors: MutableList<ParserError> = mutableListOf()
+    val parseErrors: MutableList<CompileError.ParserError> = mutableListOf()
 
     private var current = 0
     fun parse(): List<Stmt> {
@@ -914,6 +912,6 @@ class Parser(private val tokens: List<Token>) {
         if (isAtEnd(distance)) false else peek(distance).type == tokenType
 
     private fun error(token: Token, message: String) {
-        parseErrors.add(ParserError(token, message))
+        parseErrors.add(CompileError.ParserError(token, message))
     }
 }

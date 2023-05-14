@@ -6,7 +6,7 @@ class HelloWorldTest {
     internal fun resolvesCorrectly() {
         val source = HelloWorldTest::class.java.getResource("examples/hello_world.minerva").readText()
         val compiler = MinervaCompiler(source)
-        val errors = compiler.frontEndPass().first.typeErrors
+        val errors = compiler.frontEndPass().first
 
         assert(errors.isEmpty())
     }

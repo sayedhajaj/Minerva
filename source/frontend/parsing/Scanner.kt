@@ -1,15 +1,16 @@
 package frontend.parsing
 
+import frontend.CompileError
 import frontend.Token
 import frontend.TokenType
 import java.util.HashMap
 import kotlin.collections.ArrayList
 
-data class ScannerError(val line: Int, val message: String)
+
 
 class Scanner(private val source: String) {
     private val tokens: MutableList<Token> = ArrayList()
-    val scannerErrors: MutableList<ScannerError> = ArrayList()
+    val scannerErrors: MutableList<CompileError.ScannerError> = ArrayList()
     private var start = 0
     private var current = 0
     private var line = 1
@@ -167,7 +168,7 @@ class Scanner(private val source: String) {
         }
 
         if (isAtEnd) {
-            scannerErrors.add(ScannerError(line, "Unterminated string"))
+            scannerErrors.add(CompileError.ScannerError(line, "Unterminated string"))
             return
         }
         advance()
@@ -180,7 +181,7 @@ class Scanner(private val source: String) {
         val terminator = advance()
 
         if (terminator != '\'') {
-            scannerErrors.add(ScannerError(line, "Char should only be one character"))
+            scannerErrors.add(CompileError.ScannerError(line, "Char should only be one character"))
             return
         }
 

@@ -20,7 +20,7 @@ class InterfacesTest {
         val source = HelloWorldTest::class.java.getResource("examples/interfaces/unimplimented_method.minerva").readText()
         val compiler = MinervaCompiler(source)
 
-        val output = compiler.frontEndPass().first.typeErrors.toTypedArray()
+        val output = compiler.frontEndPass().first.map { it.message }.toTypedArray()
         assertContentEquals(arrayOf("Cannot assign ConsoleLog to Loggable", "ConsoleLog is missing log, (String):Any"), output, "")
     }
 

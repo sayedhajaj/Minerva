@@ -25,7 +25,7 @@ class MinervaCompiler(val source: String) {
         return parser.parse()
     }
 
-    fun frontEndPass(): Pair<ITypeChecker, List<Stmt>> {
+    fun frontEndPass(): Triple<List<CompileError>, ITypeChecker, List<Stmt>> {
         val resolver = Resolver()
         val syntaxTree = getSyntaxTree()
         resolver.resolve(syntaxTree)
@@ -34,7 +34,7 @@ class MinervaCompiler(val source: String) {
         typeChecker.typeErrors.forEach {
             println(it)
         }
-        return Pair(typeChecker, syntaxTree)
+        return Triple(typeChecker.typeErrors.toList(), typeChecker, syntaxTree)
 
     }
 
@@ -43,8 +43,8 @@ class MinervaCompiler(val source: String) {
     }
 
     fun interpret(): List<String> {
-        val (typeChecker, syntaxTree) = frontEndPass()
-        return if (typeChecker.typeErrors.isEmpty()) {
+        val (compileErrors, typeChecker, syntaxTree) = frontEndPass()
+        return if (compileErrors.isEmpty()) {
             val interpreter = Interpreter(syntaxTree, typeChecker.locals, typeChecker)
             interpreter.interpet()
             interpreter.printStatements
