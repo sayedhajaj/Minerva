@@ -18,23 +18,28 @@ class MinervaCompiler(val source: String) {
                 MinervaCompiler::class.java.getResource("standard_library/array.minerva").readText()
 
 
-    fun getSyntaxTree(): List<Stmt> {
+    fun getSyntaxTree(): Pair<List<Stmt>, List<CompileError>> {
+        val parseErrors = mutableListOf<CompileError>()
         val scanner = Scanner(getStandardLibrary()+source)
         val tokens = scanner.scanTokens()
+        parseErrors.addAll(scanner.scannerErrors)
         val parser = Parser(tokens)
-        return parser.parse()
+        val tree = parser.parse()
+        parseErrors.addAll(parser.parseErrors)
+        return Pair(tree, parseErrors)
     }
 
     fun frontEndPass(): Triple<List<CompileError>, ITypeChecker, List<Stmt>> {
         val resolver = Resolver()
-        val syntaxTree = getSyntaxTree()
+        val (syntaxTree, parseErrors) = getSyntaxTree()
         resolver.resolve(syntaxTree)
         val typeChecker = TypeChecker(resolver.locals)
         typeChecker.typeCheck(syntaxTree)
-        typeChecker.typeErrors.forEach {
-            println(it)
+        val compileErrors = parseErrors + typeChecker.typeErrors
+        compileErrors.forEach {
+            println(it.message)
         }
-        return Triple(typeChecker.typeErrors.toList(), typeChecker, syntaxTree)
+        return Triple(compileErrors.toList(), typeChecker, syntaxTree)
 
     }
 

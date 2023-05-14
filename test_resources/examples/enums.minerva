@@ -7,6 +7,8 @@ var direction: Direction = Direction.NORTH;
 print match (direction)  {
     Direction.NORTH => "North"
     Direction.SOUTH => "South"
+    Direction.WEST => "West"
+    Direction.EAST => "East"
 };
 
 print direction;

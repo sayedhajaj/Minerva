@@ -422,9 +422,7 @@ class Parser(private val tokens: List<Token>) {
             } else branches.add(matchCondition())
         }
 
-        if (!hasElse) {
-            error(previous(), "Expect else in match")
-        }
+
 
         return Expr.Match(expr, branches, elseBranch)
     }

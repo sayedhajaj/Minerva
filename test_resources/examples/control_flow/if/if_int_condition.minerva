@@ -1,0 +1,6 @@
+var age = 20;
+
+if (age) {
+	print "You are an adult"; // expect "you are an adult"
+};
+

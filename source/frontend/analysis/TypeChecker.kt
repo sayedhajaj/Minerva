@@ -1024,7 +1024,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
 
         val hasElse = expr.elseBranch != null
-        if (!isExhuastive(expr.variable.type, expr.conditions.map { resolveInstanceType(it.first) }, hasElse)) {
+        if (!isTypeMatchExhuastive(expr.variable.type, expr.conditions.map { resolveInstanceType(it.first) }, hasElse)) {
             typeErrors.add(CompileError.TypeError("Typematch is not exhuastive"))
         }
         expr.type = flattenTypes(types)
@@ -1126,7 +1126,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
     }
 
-    private fun isExhuastive(type: Type, branches: List<Type>, hasElse: Boolean): Boolean {
+    private fun isTypeMatchExhuastive(type: Type, branches: List<Type>, hasElse: Boolean): Boolean {
         return if (hasElse) true
         else {
             if (type is Type.AnyType) return false
@@ -1139,6 +1139,8 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             } else false
         }
     }
+
+
 
     private fun isArrayType(type: Type): Boolean =
         type is Type.InstanceType && type.className.name.lexeme == "Array"
