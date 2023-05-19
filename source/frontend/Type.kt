@@ -224,10 +224,10 @@ sealed interface Type {
 
     }
 
-    data class ModuleType(val name: Token, val members: Map<String, Type>) : Type {
+    data class ModuleType(val members: Map<String, Type>) : Type {
 
         override fun canAssignTo(otherType: Type): Boolean {
-            return otherType is ModuleType && otherType.name.lexeme == name.lexeme
+            return otherType is ModuleType && otherType.members.all { hasMemberType(it.key, it.value) }
         }
 
         override fun hasMemberType(member: String, type: Type): Boolean {

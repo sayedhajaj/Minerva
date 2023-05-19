@@ -26,136 +26,120 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
     override val typeErrors: MutableList<CompileError.TypeError> = mutableListOf()
 
     fun typeCheck(statements: List<Stmt>) {
-        statements.forEach { checkDeclarations(it) }
+        statements.filterIsInstance<Stmt.ClassDeclaration>().forEach { typeCheckClassDeclaration(it) }
+        statements.filterIsInstance<Stmt.Enum>().forEach {
+            val container = Type.EnumContainer(it.name, it.members)
+            environment.defineValue(it.name.lexeme, container)
+            environment.defineType(it.name.lexeme, Type.EnumType(container))
+        }
+        statements.filterIsInstance<Stmt.ModuleDeclaration>().forEach {
+            val type = getModuleDeclarationType(it)
+            environment.defineValue(it.name.lexeme, type)
+            environment.defineType(it.name.lexeme, type)
+        }
+        statements.filterIsInstance<Stmt.Interface>().forEach { declareInterface(it) }
+
+        statements.filterIsInstance<Stmt.TypeDeclaration>()
+            .forEach { environment.defineType(it.name.lexeme, it.type) }
+
+        statements.filterIsInstance<Stmt.FunctionDeclaration>()
+            .forEach { environment.defineValue(it.name.lexeme, it.type) }
+
+        val classes = statements.filterIsInstance<Stmt.Class>()
+        classes.forEach { declareClass(it) }
+
+        val functions = statements.filterIsInstance<Stmt.Function>()
+        functions.forEach { environment.defineValue(it.name.lexeme, it.functionBody.type) }
+
+        val modules = statements.filterIsInstance<Stmt.Module>()
+        modules.forEach { module ->
+            val type = getModuleSignature(module)
+            environment.defineValue(module.name.lexeme, type)
+            environment.defineType(module.name.lexeme, type)
+        }
+
+//        classes.forEach { typeCheck(it) }
+//        functions.forEach { typeCheck(it) }
+
         statements.forEach { typeCheck(it) }
     }
 
-    fun checkDeclarations(stmt: Stmt) {
-        when (stmt) {
-            is Stmt.Class -> declareClass(stmt)
-            is Stmt.ClassDeclaration -> typeCheckClassDeclaration(stmt)
-            is Stmt.Constructor -> {
-            }
-            is Stmt.Expression -> checkDeclarations(stmt.expression)
-            is Stmt.Function -> {
-                environment.defineValue(stmt.name.lexeme, stmt.functionBody.type)
-                checkDeclarations(stmt.functionBody)
-            }
-            is Stmt.ConstructorDeclaration -> typeCheckConstructorDeclaration(stmt)
-            is Stmt.FunctionDeclaration -> {
-                environment.defineValue(stmt.name.lexeme, stmt.type)
-            }
-            is Stmt.If -> {
-                checkDeclarations(stmt.thenBranch)
-                stmt.elseBranch?.let { checkDeclarations(it) }
-            }
-            is Stmt.Interface -> {
-                val members = mutableMapOf<String, Type>()
-                stmt.methods.forEach {
-                    members[it.name.lexeme] = it.type
-                }
-                stmt.fields.forEach {
-                    members[it.name.lexeme] = it.type
-                }
+    private fun getModuleSignature(module: Stmt.Module): Type.ModuleType {
+        val moduleFields = mutableMapOf<String, Type>()
 
-                environment.defineType(stmt.name.lexeme, Type.InterfaceType(members))
-            }
-            is Stmt.Print -> {
-            }
-            is Stmt.PrintType -> {
-            }
-            is Stmt.Var -> {
-
-            }
-            is Stmt.VarDeclaration -> {
-            }
-            is Stmt.While -> {
-                checkDeclarations(stmt.body)
-            }
-            is Stmt.Enum -> {
-                val container = Type.EnumContainer(stmt.name, stmt.members)
-                environment.defineValue(stmt.name.lexeme, container)
-                environment.defineType(stmt.name.lexeme, Type.EnumType(container))
-            }
-            is Stmt.Destructure -> {
-            }
-            is Stmt.TypeDeclaration -> {
-                environment.defineType(stmt.name.lexeme, stmt.type)
-            }
-            is Stmt.Module -> {
-                val moduleFields = mutableMapOf<String, Type>()
-
-                stmt.classes.forEach {
-                    checkDeclarations(it)
-
-                }
-                stmt.enums.forEach {
-                    checkDeclarations(it)
-                }
-                stmt.functions.forEach {
-                    checkDeclarations(it)
-//                    moduleFields[it.name] = look
-                    environment.getValue(it.name)?.let { fn ->
-                        moduleFields[it.name.lexeme] = fn
-                    }
-                }
-                stmt.fields.forEach {
-                    checkDeclarations(it)
-                    environment.getValue(it.name)?.let { field ->
-                        moduleFields[it.name.lexeme] = field
-                    }
-                }
-
-
-                val type = Type.ModuleType(stmt.name, moduleFields)
-                environment.defineValue(stmt.name.lexeme, type)
-                environment.defineType(stmt.name.lexeme, type)
-            }
-            is Stmt.ModuleDeclaration -> {
-                val moduleFields = mutableMapOf<String, Type>()
-
-                stmt.classes.forEach {
-                    checkDeclarations(it)
-                    environment.getValue(it.name)?.let { cls ->
-                        moduleFields[it.name.lexeme] = cls
-                    }
-                }
-                stmt.enums.forEach {
-                    checkDeclarations(it)
-                    environment.getValue(it.name)?.let { e ->
-                        moduleFields[it.name.lexeme] = e
-                    }
-                }
-                stmt.functions.forEach {
-                    checkDeclarations(it)
-                    environment.getValue(it.name)?.let { fn ->
-                        moduleFields[it.name.lexeme] = fn
-                    }
-                }
-                stmt.fields.forEach {
-                    checkDeclarations(it)
-                    environment.getValue(it.name)?.let { field ->
-                        moduleFields[it.name.lexeme] = field
-                    }
-                }
-
-                stmt.modules.forEach {
-                    checkDeclarations(it)
-                    environment.getValue(it.name)?.let { module ->
-                        moduleFields[it.name.lexeme] = module
-                    }
-                }
-
-
-                val type = Type.ModuleType(stmt.name, moduleFields)
-                environment.defineValue(stmt.name.lexeme, type)
-                environment.defineType(stmt.name.lexeme, type)
-            }
-            else -> {}
+        module.classes.forEach {
+            moduleFields[it.name.lexeme] = declareClassSignature(it)
         }
+        module.enums.forEach {
+            moduleFields[it.name.lexeme] = Type.EnumContainer(it.name, it.members)
+        }
+        module.functions.forEach {
+            moduleFields[it.name.lexeme] = it.functionBody.type
+        }
+        module.fields.forEach {
+            moduleFields[it.name.lexeme] = it.type
+        }
+
+        module.modules.forEach {
+            moduleFields[it.name.lexeme] = getModuleSignature(it)
+        }
+
+        return Type.ModuleType(moduleFields)
+    }
+
+
+    private fun getModuleDeclarationType(stmt: Stmt.ModuleDeclaration): Type.ModuleType {
+        val moduleFields = mutableMapOf<String, Type>()
+
+        stmt.classes.forEach {
+            moduleFields[it.name.lexeme] = getClassDeclarationType(it)
+        }
+        stmt.enums.forEach {
+            moduleFields[it.name.lexeme] = Type.EnumContainer(it.name, it.members)
+        }
+        stmt.functions.forEach {
+            moduleFields[it.name.lexeme] = it.type
+        }
+        stmt.fields.forEach {
+            moduleFields[it.name.lexeme] = it.type
+        }
+
+        stmt.modules.forEach {
+            moduleFields[it.name.lexeme] = getModuleDeclarationType(it)
+        }
+
+
+        val type = Type.ModuleType(moduleFields)
+        return type
+    }
+
+    private fun declareInterface(stmt: Stmt.Interface) {
+        val members = mutableMapOf<String, Type>()
+        stmt.methods.forEach {
+            members[it.name.lexeme] = it.type
+        }
+        stmt.fields.forEach {
+            members[it.name.lexeme] = it.type
+        }
+
+        environment.defineType(stmt.name.lexeme, Type.InterfaceType(members))
     }
 
     private fun declareClass(stmt: Stmt.Class) {
+        val instance = declareClassSignature(stmt)
+
+        environment.defineValue(
+            stmt.name.lexeme,
+            Type.ClassType(instance.className)
+        )
+
+        environment.defineType(
+            stmt.name.lexeme,
+            instance
+        )
+    }
+
+    private fun declareClassSignature(stmt: Stmt.Class): Type.InstanceType {
         val typeParameters = stmt.constructor.typeParameters.map {
             Type.UnresolvedType(
                 Expr.Variable(it),
@@ -170,11 +154,9 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
 
         stmt.methods.forEach {
-            checkDeclarations(it.function)
             memberMap[it.function.name.lexeme] = it.function.functionBody.type
         }
 
-        checkDeclarations(stmt.constructor)
 
         stmt.constructor.parameters.forEachIndexed { index, pair ->
             params.add(pair.second)
@@ -192,65 +174,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             null,
             emptyList()
         )
-
-        environment.defineValue(
-            stmt.name.lexeme,
-            Type.ClassType(instance.className)
-        )
-
-        environment.defineType(
-            stmt.name.lexeme,
-            instance
-        )
-    }
-
-    fun checkDeclarations(expr: Expr) {
-        when (expr) {
-            is Expr.Array -> expr.values.forEach { typeCheck(it) }
-            is Expr.Assign -> {
-            }
-            is Expr.Binary -> {
-            }
-            is Expr.Block -> {
-                val previous = this.environment
-
-                this.environment = TypeScope(environment)
-
-                expr.statements.forEach { checkDeclarations(it) }
-                this.environment = previous
-            }
-            is Expr.Call -> {
-            }
-            is Expr.Function -> {
-            }
-            is Expr.Get -> {
-            }
-            is Expr.Grouping -> {
-            }
-            is Expr.If -> {
-                checkDeclarations(expr.condition)
-                checkDeclarations(expr.thenBranch)
-                checkDeclarations(expr.elseBranch)
-            }
-            is Expr.Literal -> {
-            }
-            is Expr.Logical -> {
-            }
-            is Expr.Match -> {
-            }
-            is Expr.Set -> {
-            }
-            is Expr.Super -> {
-            }
-            is Expr.This -> {
-            }
-            is Expr.TypeMatch -> {
-            }
-            is Expr.Unary -> checkDeclarations(expr.right)
-            is Expr.Variable -> {
-            }
-            else -> {}
-        }
+        return instance
     }
 
     fun typeCheck(stmt: Stmt) {
@@ -316,8 +240,6 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
 
                 this.environment = previous
             }
-            is Stmt.Interface -> {
-            }
             is Stmt.VarDeclaration -> {
             }
 
@@ -344,6 +266,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             }
             is Stmt.Module -> {
                 val moduleFields = mutableMapOf<String, Type>()
+                stmt.classes.forEach { declareClass(it) }
 
                 stmt.classes.forEach {
                     typeCheck(it)
@@ -378,7 +301,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 }
 
 
-                val type = Type.ModuleType(stmt.name, moduleFields)
+                val type = Type.ModuleType(moduleFields)
                 environment.defineValue(stmt.name.lexeme, type)
                 environment.defineType(stmt.name.lexeme, type)
             }
@@ -386,17 +309,6 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
     }
 
-    private fun typeCheckConstructorDeclaration(stmt: Stmt.ConstructorDeclaration) {
-        stmt.parameters.forEachIndexed { index, pair ->
-            if (stmt.fields.containsKey(index)) {
-                environment.defineValue(pair.first.lexeme, pair.second)
-            }
-        }
-
-        stmt.parameters.forEach { pair ->
-            environment.defineValue(pair.first.lexeme, pair.second)
-        }
-    }
 
     private fun typeCheckConstructor(stmt: Stmt.Constructor) {
         stmt.parameters.forEachIndexed { index, pair ->
@@ -410,11 +322,13 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
     }
 
     private fun typeCheckClassDeclaration(stmt: Stmt.ClassDeclaration) {
-        val typeParameters = stmt.constructor.typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) }
-        val previous = environment
-        this.environment = TypeScope(previous)
+        val instanceType = getClassDeclarationType(stmt)
+        environment.defineValue(stmt.name.lexeme, Type.ClassType(instanceType.className))
+        environment.defineType(stmt.name.lexeme, instanceType)
+    }
 
-        typeParameters.forEach { environment.defineType(it.identifier.name.lexeme, it) }
+    private fun getClassDeclarationType(stmt: Stmt.ClassDeclaration): Type.InstanceType {
+        val typeParameters = stmt.constructor.typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) }
 
         val memberMap = mutableMapOf<String, Type>()
         val params = mutableListOf<Type>()
@@ -423,11 +337,8 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
 
         stmt.methods.forEach {
-            checkDeclarations(it)
             memberMap[it.name.lexeme] = it.type
         }
-
-        checkDeclarations(stmt.constructor)
 
         stmt.constructor.parameters.forEachIndexed { index, pair ->
             params.add(pair.second)
@@ -436,7 +347,6 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             }
         }
 
-        this.environment = previous
         val instanceType = Type.InstanceType(
             Expr.Variable(stmt.name),
             params,
@@ -446,8 +356,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             null,
             emptyList()
         )
-        environment.defineValue(stmt.name.lexeme, Type.ClassType(instanceType.className))
-        environment.defineType(stmt.name.lexeme, instanceType)
+        return instanceType
     }
 
     private fun typeCheckClass(stmt: Stmt.Class) {
@@ -1024,7 +933,12 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
 
         val hasElse = expr.elseBranch != null
-        if (!isTypeMatchExhuastive(expr.variable.type, expr.conditions.map { resolveInstanceType(it.first) }, hasElse)) {
+        if (!isTypeMatchExhuastive(
+                expr.variable.type,
+                expr.conditions.map { resolveInstanceType(it.first) },
+                hasElse
+            )
+        ) {
             typeErrors.add(CompileError.TypeError("Typematch is not exhuastive"))
         }
         expr.type = flattenTypes(types)
@@ -1139,7 +1053,6 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             } else false
         }
     }
-
 
 
     private fun isArrayType(type: Type): Boolean =
