@@ -9,6 +9,8 @@ sealed interface Type {
 
     fun getMemberType(member: String): Type
 
+    fun resolveTypeArguments(args: Map<String, Type>): Type
+
     class UnionType(val types: List<Type>) : Type {
         override fun canAssignTo(otherType: Type): Boolean =
             if (otherType is UnionType)
@@ -20,6 +22,9 @@ sealed interface Type {
             types.all { it.hasMemberType(member, otherType) }
 
         override fun getMemberType(member: String): Type = NullType()
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
+        }
 
         override fun toString(): String = types.joinToString("|")
     }
@@ -35,6 +40,10 @@ sealed interface Type {
 
         override fun getMemberType(member: String): Type {
             return NullType()
+        }
+
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
         }
 
     }
@@ -91,6 +100,33 @@ sealed interface Type {
             else
                 superclass?.getMemberType(member) ?: NullType()
 
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            val superArgs: MutableMap<String, Type> = superclass?.typeParams?.zip(superTypeArgs)?.associate {
+                var paramType = it.second
+                if (paramType is Type.UnresolvedType) {
+                    if (args.containsKey(paramType.identifier.name.lexeme))
+                        paramType = args[paramType.identifier.name.lexeme]!!
+                }
+                Pair(it.first.identifier.name.lexeme, paramType)
+            }?.toMutableMap()
+                ?: mutableMapOf()
+
+            val typeArguments = typeParams.map {
+                args[it.identifier.name.lexeme]
+            }.filterNotNull()
+            return InstanceType(
+                className,
+                params.map { it.resolveTypeArguments(args) },
+                typeParams, typeArguments,
+                members.map {
+                    Pair(it.key, it.value.resolveTypeArguments(args))
+
+                }.toMap(),
+                if (superclass != null) superclass.resolveTypeArguments(superArgs) as InstanceType else null,
+                superTypeArgs.map { it.resolveTypeArguments(args) }
+            )
+        }
+
 
         override fun toString(): String {
             val typeArgs = if (typeArguments.isEmpty()) "" else
@@ -111,6 +147,10 @@ sealed interface Type {
                 members[member] ?: NullType()
             } else NullType()
 
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
+        }
+
     }
 
     class NullType : Type {
@@ -119,6 +159,9 @@ sealed interface Type {
         override fun hasMemberType(member: String, type: Type): Boolean = false
 
         override fun getMemberType(member: String): Type = NullType()
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
+        }
 
         override fun toString(): String = "null"
     }
@@ -130,6 +173,9 @@ sealed interface Type {
         override fun hasMemberType(member: String, type: Type): Boolean = false
 
         override fun getMemberType(member: String): Type = NullType()
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
+        }
 
         override fun toString(): String = "Any"
     }
@@ -145,6 +191,13 @@ sealed interface Type {
         override fun hasMemberType(member: String, type: Type): Boolean = false
 
         override fun getMemberType(member: String): Type = NullType()
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return FunctionType(
+                params.resolveTypeArguments(args) as TupleType,
+                typeParams,
+                result.resolveTypeArguments(args)
+            )
+        }
 
         override fun toString(): String = "${params}:${result}"
     }
@@ -153,6 +206,9 @@ sealed interface Type {
         override fun canAssignTo(otherType: Type): Boolean = true
         override fun hasMemberType(member: String, type: Type): Boolean = false
         override fun getMemberType(member: String): Type = NullType()
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
+        }
     }
 
     class UnresolvedType(var identifier: Expr.Variable, val typeArguments: List<Type>) : Type {
@@ -161,6 +217,10 @@ sealed interface Type {
         override fun hasMemberType(member: String, type: Type): Boolean = false
 
         override fun getMemberType(member: String): Type = NullType()
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return if (args.containsKey(identifier.name.lexeme)) args[identifier.name.lexeme] ?: this
+            else this
+        }
 
         override fun toString(): String {
             val typeArgs = if (typeArguments.isEmpty()) "" else
@@ -185,6 +245,10 @@ sealed interface Type {
                 return EnumType(this)
             } else NullType()
         }
+
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
+        }
     }
 
     class EnumType(val parent: EnumContainer) : Type {
@@ -197,6 +261,9 @@ sealed interface Type {
 
 
         override fun getMemberType(member: String) = NullType()
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
+        }
 
 
     }
@@ -219,6 +286,10 @@ sealed interface Type {
             return NullType()
         }
 
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return TupleType(types.map { it.resolveTypeArguments(args) })
+        }
+
 
         override fun toString(): String = "(${types.joinToString(",")})"
 
@@ -236,6 +307,33 @@ sealed interface Type {
 
         override fun getMemberType(member: String): Type {
             return members[member] ?: NullType()
+        }
+
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
+        }
+
+    }
+
+    class GenericType(val bodyType: Type) : Type {
+        override fun canAssignTo(otherType: Type): Boolean {
+            if (otherType is GenericType) {
+                return true
+            } else {
+                return false
+            }
+        }
+
+        override fun hasMemberType(member: String, type: Type): Boolean {
+            return true
+        }
+
+        override fun getMemberType(member: String): Type {
+            return NullType()
+        }
+
+        override fun resolveTypeArguments(args: Map<String, Type>): Type {
+            return this
         }
 
     }

@@ -517,48 +517,8 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
     }
 
-    override fun resolveTypeArgument(args: Map<String, Type>, type: Type): Type {
-        return when (type) {
-            is Type.UnresolvedType -> {
-                if (args.containsKey(type.identifier.name.lexeme)) args[type.identifier.name.lexeme] ?: type
-                else type
-            }
-            is Type.TupleType -> Type.TupleType(type.types.map { resolveTypeArgument(args, it) })
-            is Type.FunctionType -> Type.FunctionType(
-                resolveTypeArgument(args, type.params) as Type.TupleType,
-                type.typeParams,
-                resolveTypeArgument(args, type.result)
-            )
-            is Type.InstanceType -> {
-                val superClass = type.superclass
-                val superArgs: MutableMap<String, Type> = superClass?.typeParams?.zip(type.superTypeArgs)?.associate {
-                    var paramType = it.second
-                    if (paramType is Type.UnresolvedType) {
-                        if (args.containsKey(paramType.identifier.name.lexeme))
-                            paramType = args[paramType.identifier.name.lexeme]!!
-                    }
-                    Pair(it.first.identifier.name.lexeme, paramType)
-                }?.toMutableMap()
-                    ?: mutableMapOf()
+    override fun resolveTypeArgument(args: Map<String, Type>, type: Type): Type = type.resolveTypeArguments(args)
 
-                val typeArguments = type.typeParams.map {
-                    args[it.identifier.name.lexeme]
-                }.filterNotNull()
-                Type.InstanceType(
-                    type.className,
-                    type.params.map { resolveTypeArgument(args, it) },
-                    type.typeParams, typeArguments,
-                    type.members.map {
-                        Pair(it.key, resolveTypeArgument(args, it.value))
-
-                    }.toMap(),
-                    if (superClass != null) resolveTypeArgument(superArgs, superClass) as Type.InstanceType else null,
-                    type.superTypeArgs.map { resolveTypeArgument(args, it) }
-                )
-            }
-            else -> type
-        }
-    }
 
     fun typeCheck(expr: Expr): Type {
         return when (expr) {
