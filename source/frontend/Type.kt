@@ -315,7 +315,7 @@ sealed interface Type {
 
     }
 
-    class GenericType(val bodyType: Type) : Type {
+    class GenericType(val params: List<UnresolvedType>, val bodyType: Type) : Type {
         override fun canAssignTo(otherType: Type): Boolean {
             if (otherType is GenericType) {
                 return true
@@ -333,7 +333,7 @@ sealed interface Type {
         }
 
         override fun resolveTypeArguments(args: Map<String, Type>): Type {
-            return this
+            return GenericType(params, bodyType.resolveTypeArguments(args))
         }
 
     }

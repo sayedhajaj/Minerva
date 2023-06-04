@@ -739,9 +739,28 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         val calleeType = typeCheck(expr.callee)
         expr.arguments.forEach { typeCheck(it) }
 
+
         return when (calleeType) {
             is Type.FunctionType -> typeCheckFunctionCall(expr, calleeType)
             is Type.ClassType -> typeCheckInstanceCall(calleeType, expr)
+            is Type.GenericType -> {
+                val bodyType = calleeType.bodyType
+                if (bodyType is Type.FunctionType) {
+                    val params = (resolveInstanceType(bodyType.params) as Type.TupleType).types
+                    val typeArguments =
+                        inferTypeArguments(expr.typeArguments, bodyType.typeParams, params, expr.arguments)
+                            .map { lookupInitialiserType(it) }
+
+                    bodyType.typeParams.forEachIndexed { index, typeParam ->
+                        environment.defineType(typeParam.identifier.name.lexeme, typeArguments[index])
+                    }
+
+                    checkGenericCall(expr.arguments, params)
+
+                    return typeCheckFunctionCall(expr, bodyType)
+                }
+                calleeType.bodyType
+            }
             else -> calleeType
         }
     }
@@ -768,23 +787,10 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
     private fun typeCheckFunctionCall(expr: Expr.Call, calleeType: Type.FunctionType): Type {
         val arguments = expr.arguments
         val params = (resolveInstanceType(calleeType.params) as Type.TupleType).types
-        val typeParams = calleeType.typeParams
-        val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments)
-            .map { lookupInitialiserType(it) }
 
         typeCheckArguments(params, arguments)
 
-        typeParams.forEachIndexed { index, typeParam ->
-            environment.defineType(typeParam.identifier.name.lexeme, typeArguments[index])
-        }
-
-        val args = typeParams.zip(typeArguments).associate {
-            Pair(it.first.identifier.name.lexeme, it.second)
-        }.toMap()
-
         val resultType = lookupInitialiserType(calleeType.result)
-
-        checkGenericCall(arguments, params)
 
         val thisType = lookupInitialiserType(resultType)
         expr.type = thisType
@@ -929,7 +935,8 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
 
         val returnType = if (definition.result is Type.InferrableType) blockReturnType else definition.result
 
-        expr.type = Type.FunctionType(Type.TupleType(paramTypes), typeParameters, returnType)
+        expr.type =
+            wrapGeneric(Type.FunctionType(Type.TupleType(paramTypes), typeParameters, returnType), typeParameters)
 
         return expr.type
     }
@@ -974,7 +981,6 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         arguments.forEachIndexed { index, arg ->
             val paramType = params[index]
             if (paramType is Type.UnresolvedType) {
-
                 var expectedType = lookupInitialiserType(paramType)
                 if (expectedType is Type.UnresolvedType) {
                     if (typeExists(expectedType.identifier.name, expectedType.identifier)) {
@@ -1119,5 +1125,10 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         this.environment = previous
 
         return lastExpr
+    }
+
+    fun wrapGeneric(type: Type, params: List<Type.UnresolvedType>): Type {
+        return if (params.isEmpty()) type
+        else Type.GenericType(params, type)
     }
 }
