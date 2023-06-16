@@ -170,7 +170,7 @@ class Parser(private val tokens: List<Token>) {
 
     private fun classDeclaration(): Stmt.Class {
         val name = consume(TokenType.IDENTIFIER, "Expect class name.")
-        val interfaces = mutableListOf<Token>()
+        val interfaces = mutableListOf<Pair<Token, List<Type>>>()
 
         val typeParameters = if (match(TokenType.LESS)) {
             genericDeclaration()
@@ -210,10 +210,11 @@ class Parser(private val tokens: List<Token>) {
         if (match(TokenType.IMPLEMENTS)) {
             do {
                 val interfaceName = consume(TokenType.IDENTIFIER, "Expect interface name.")
+                var args = emptyList<Type>()
                 if (match(TokenType.LESS)) {
-                    genericCall()
+                     args = genericCall()
                 }
-                interfaces.add(interfaceName)
+                interfaces.add(Pair(interfaceName, args))
             } while (match(TokenType.COMMA))
         }
 

@@ -59,4 +59,5 @@ var lst = LinkedList<Int>();
 lst.add(3);
 lst.add(5);
 lst.add(7);
+
 iterate<Int>(lst, function(num: Int) => {var result = num*2; print result; result;});

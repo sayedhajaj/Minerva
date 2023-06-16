@@ -17,7 +17,6 @@ val operatorMethods = mapOf(
     TokenType.STAR to "multiply",
     TokenType.MODULO to "rem"
 )
-
 class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
 
     val globals = TypeScope()
@@ -122,20 +121,25 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             members[it.name.lexeme] = it.type
         }
 
-        environment.defineType(stmt.name.lexeme, Type.InterfaceType(members))
+        val typeParameters = stmt.typeParameters.map { Type.UnresolvedType(Expr.Variable(it), emptyList()) }
+
+        val wrapped = wrapGeneric(Type.InterfaceType(members), typeParameters, emptyList())
+
+        environment.defineType(stmt.name.lexeme, wrapped)
     }
 
     private fun declareClass(stmt: Stmt.Class) {
         val instance = declareClassSignature(stmt)
+        val wrappedInstance = wrapGeneric(instance, instance.typeParams, emptyList())
 
         environment.defineValue(
             stmt.name.lexeme,
-            Type.ClassType(instance.className)
+            wrapGeneric(Type.ClassType(instance.className), instance.typeParams, emptyList())
         )
 
         environment.defineType(
             stmt.name.lexeme,
-            instance
+            wrappedInstance
         )
     }
 
@@ -219,27 +223,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                 }
                 typeCheck(stmt.body)
             }
-            is Stmt.ForEach -> {
-                val iterableType = typeCheck(stmt.iterable)
-                val iterableInterface = lookUpType(
-                    Token(TokenType.IDENTIFIER, "Iterable", null, -1)
-                )
-
-                if (!iterableInterface.canAssignTo(iterableType)) {
-                    typeErrors.add(CompileError.TypeError("$iterableType is not iterable"))
-                }
-
-                val previous = environment
-                this.environment = TypeScope(environment)
-                val iterator = ((iterableType as Type.InstanceType).members["iterator"] as Type.FunctionType).result
-                val resolvedIterator = (iterator as Type.UnresolvedType).typeArguments[0]
-
-                environment.defineValue(stmt.name.lexeme, lookupInitialiserType(resolvedIterator))
-
-                typeCheck(stmt.body)
-
-                this.environment = previous
-            }
+            is Stmt.ForEach -> typeCheckForEach(stmt)
             is Stmt.VarDeclaration -> {
             }
 
@@ -309,6 +293,30 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
     }
 
+    private fun typeCheckForEach(stmt: Stmt.ForEach) {
+        val iterableType = typeCheck(stmt.iterable)
+        val iterableInterface = lookUpType(
+            Token(TokenType.IDENTIFIER, "Iterable", null, -1)
+        )
+
+        if (!iterableInterface.canAssignTo(iterableType)) {
+            typeErrors.add(CompileError.TypeError("$iterableType is not iterable"))
+        }
+
+        val previous = environment
+        this.environment = TypeScope(environment)
+
+        val iterator = (iterableType.getMemberType("iterator") as Type.FunctionType).result
+
+        val resolvedIterator = (iterator as Type.UnresolvedType).typeArguments[0]
+
+        environment.defineValue(stmt.name.lexeme, lookupInitialiserType(resolvedIterator))
+
+        typeCheck(stmt.body)
+
+        this.environment = previous
+    }
+
 
     private fun typeCheckConstructor(stmt: Stmt.Constructor) {
         stmt.parameters.forEachIndexed { index, pair ->
@@ -323,8 +331,9 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
 
     private fun typeCheckClassDeclaration(stmt: Stmt.ClassDeclaration) {
         val instanceType = getClassDeclarationType(stmt)
-        environment.defineValue(stmt.name.lexeme, Type.ClassType(instanceType.className))
-        environment.defineType(stmt.name.lexeme, instanceType)
+
+        environment.defineValue(stmt.name.lexeme, wrapGeneric(Type.ClassType(instanceType.className), instanceType.typeParams, emptyList()))
+        environment.defineType(stmt.name.lexeme, wrapGeneric(instanceType, instanceType.typeParams, emptyList()))
     }
 
     private fun getClassDeclarationType(stmt: Stmt.ClassDeclaration): Type.InstanceType {
@@ -359,11 +368,17 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         return instanceType
     }
 
+    override fun lookupInstance(name: Token): Type.InstanceType {
+        val referencedInstance = environment.getType(name)
+        return if (referencedInstance is Type.GenericType) referencedInstance.bodyType as Type.InstanceType
+        else referencedInstance as Type.InstanceType
+    }
+
     private fun typeCheckClass(stmt: Stmt.Class) {
         val previous = this.environment
         this.environment = TypeScope(this.environment)
 
-        val referencedInstance = environment.getType(stmt.name) as Type.InstanceType
+        val referencedInstance = lookupInstance(stmt.name)
         this.environment.defineValue("this", referencedInstance)
 
         val members = mutableMapOf<String, Type>()
@@ -414,30 +429,33 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             superclass, superTypeArgs
         )
 
+        val wrapped = wrapGeneric(instance, typeParameters, emptyList())
+
         environment.defineValue(
             "this",
-            instance
+            wrapped
         )
 
         this.environment = previous
 
         environment.defineValue(
             stmt.name.lexeme,
-            Type.ClassType(instance.className)
+            wrapGeneric(Type.ClassType(instance.className), instance.typeParams, emptyList())
         )
 
         environment.defineType(
             stmt.name.lexeme,
-            instance
+            wrapped
         )
 
         stmt.interfaces.forEach {
+            val interfaceName = it.first
             val referencedInterface =
-                resolveInstanceType(environment.getType(it) as Type.InterfaceType) as Type.InterfaceType
+                resolveInstanceType(environment.getType(interfaceName) as Type) as Type.InterfaceType
 
             referencedInterface.members.entries.forEach { }
             if (!referencedInterface.canAssignTo(instance)) {
-                typeErrors.add(CompileError.TypeError("Cannot assign ${stmt.name.lexeme} to ${it.lexeme}"))
+                typeErrors.add(CompileError.TypeError("Cannot assign ${stmt.name.lexeme} to ${interfaceName.lexeme}"))
                 val missing = referencedInterface.members.filter { !instance.hasMemberType(it.key, it.value) }
                 missing.entries.forEach {
                     typeErrors.add(CompileError.TypeError("${stmt.name.lexeme} is missing ${it.key}, ${it.value}"))
@@ -462,12 +480,20 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                         }
                         resolveTypeArgument(args, resolvedType)
                     } else resolvedType
+                } else if (resolvedType is Type.GenericType) {
+                    if (type.typeArguments.size == resolvedType.params.size) {
+                        val args = mutableMapOf<String, Type>()
+                        resolvedType.params.forEachIndexed { index, unresolvedType ->
+                            args[unresolvedType.identifier.name.lexeme] =
+                                lookupInitialiserType(type.typeArguments[index])
+                        }
+                        resolveTypeArgument(args, resolvedType)
+                    } else resolvedType
                 } else resolvedType
             }
         }
         is Type.InstanceType -> {
             val typeArguments = type.typeArguments.map { lookupInitialiserType(it) }
-
             type.copy(typeArguments = typeArguments)
         }
         else -> type
@@ -487,6 +513,14 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                             args[unresolvedType.identifier.name.lexeme] = resolveInstanceType(type.typeArguments[index])
                         }
                         resolveTypeArgument(args, resolvedType)
+                    } else resolvedType
+                } else if (resolvedType is Type.GenericType) {
+                    if (type.typeArguments.size == resolvedType.params.size) {
+                        val args = mutableMapOf<String, Type>()
+                        resolvedType.params.forEachIndexed { index, unresolvedType ->
+                            args[unresolvedType.identifier.name.lexeme] = resolveInstanceType(type.typeArguments[index])
+                        }
+                        (resolveTypeArgument(args, resolvedType) as Type.GenericType).bodyType
                     } else resolvedType
                 } else resolvedType
             }
@@ -512,6 +546,9 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             }
             is Type.TupleType -> {
                 return Type.TupleType(type.types.map { resolveInstanceType(it) })
+            }
+            is Type.GenericType -> {
+                return resolveInstanceType(type.bodyType)
             }
             else -> type
         }
@@ -755,9 +792,41 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
                         environment.defineType(typeParam.identifier.name.lexeme, typeArguments[index])
                     }
 
+                    val args = bodyType.typeParams.zip(typeArguments).associate {
+                        Pair(it.first.identifier.name.lexeme, it.second)
+                    }.toMap()
+
                     checkGenericCall(expr.arguments, params)
 
-                    return typeCheckFunctionCall(expr, bodyType)
+                    val resultType = typeCheckFunctionCall(expr, bodyType)
+                    val unpackedType = resultType.resolveTypeArguments(args)
+                    expr.type = resultType
+                    return expr.type
+                } else if (bodyType is Type.ClassType) {
+                    val classInstance = lookupInstance(bodyType.className.name)
+                    val typeParams = classInstance.typeParams
+                    val params = classInstance.params
+                    val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments).map {
+                        resolveInstanceType(it)
+                    }
+
+                    typeParams.forEachIndexed { index, typeParam ->
+                        environment.defineType(typeParam.identifier.name.lexeme, typeArguments[index])
+                    }
+
+                    checkGenericCall(expr.arguments, params)
+
+                    val args = typeParams.zip(typeArguments).associate {
+                        Pair(it.first.identifier.name.lexeme, it.second)
+                    }.toMap()
+
+                    val modifiedInstance = classInstance.resolveTypeArguments(args) as Type.InstanceType
+                    val modifiedParams = modifiedInstance.params
+                    typeCheckArguments(modifiedParams, expr.arguments)
+                    expr.type = modifiedInstance
+
+
+                    return modifiedInstance
                 }
                 calleeType.bodyType
             }
@@ -767,20 +836,10 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
 
     private fun typeCheckInstanceCall(calleeType: Type.ClassType, expr: Expr.Call): Type {
         val classInstance = lookUpType(calleeType.className.name) as Type.InstanceType
-        val typeParams = classInstance.typeParams
         val params = classInstance.params
-        val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments)
+        typeCheckArguments(params, expr.arguments)
 
-        val args = typeParams.zip(typeArguments).associate {
-            Pair(it.first.identifier.name.lexeme, it.second)
-        }.toMap()
-
-        val modifiedClass = resolveTypeArgument(args, classInstance)
-        typeCheckArguments((modifiedClass as Type.InstanceType).params, expr.arguments)
-
-        checkGenericCall(expr.arguments, (modifiedClass).params)
-
-        expr.type = modifiedClass
+        expr.type = classInstance
         return expr.type
     }
 
@@ -936,7 +995,7 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         val returnType = if (definition.result is Type.InferrableType) blockReturnType else definition.result
 
         expr.type =
-            wrapGeneric(Type.FunctionType(Type.TupleType(paramTypes), typeParameters, returnType), typeParameters)
+            wrapGeneric(Type.FunctionType(Type.TupleType(paramTypes), typeParameters, returnType), typeParameters, emptyList())
 
         return expr.type
     }
@@ -1024,12 +1083,11 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
     private fun isArrayType(type: Type): Boolean =
         type is Type.InstanceType && type.className.name.lexeme == "Array"
 
-    override fun createArrayType(type: Type): Type = resolveInstanceType(
-        Type.UnresolvedType(
-            Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)),
-            listOf(type)
-        )
-    )
+    override fun createArrayType(type: Type): Type {
+        val arrayClass = lookupInstance(Expr.Variable(Token(TokenType.IDENTIFIER, "Array", null, -1)).name)
+        return arrayClass.resolveTypeArguments(mapOf("T" to type))
+    }
+
 
     fun createIntegerType() =
         lookUpType(
@@ -1127,8 +1185,9 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
         return lastExpr
     }
 
-    fun wrapGeneric(type: Type, params: List<Type.UnresolvedType>): Type {
+    fun wrapGeneric(type: Type, params: List<Type.UnresolvedType>, args: List<Type>): Type {
         return if (params.isEmpty()) type
-        else Type.GenericType(params, type)
+        else Type.GenericType(params, args, type)
     }
 }
+

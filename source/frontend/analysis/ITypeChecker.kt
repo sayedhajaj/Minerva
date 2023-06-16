@@ -16,4 +16,5 @@ interface ITypeChecker {
     fun lookUpType(name: Token): Type
 
     fun resolveTypeArgument(args: Map<String, Type>, type: Type): Type
+    fun lookupInstance(name: Token): Type.InstanceType
 }

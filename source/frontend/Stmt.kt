@@ -7,7 +7,7 @@ sealed class Stmt {
         val constructor: Constructor,
         val methods: List<Method>,
         val fields: List<Var>,
-        val interfaces: List<Token>
+        val interfaces: List<Pair<Token, List<Type>>>
     ) : Stmt()
 
     class ClassDeclaration(

@@ -129,9 +129,8 @@ sealed interface Type {
 
 
         override fun toString(): String {
-            val typeArgs = if (typeArguments.isEmpty()) "" else
-                "<" + typeArguments.joinToString(",") + ">"
-            return "${className.name.lexeme}$typeArgs"
+
+            return "${className.name.lexeme}"
         }
     }
 
@@ -148,7 +147,8 @@ sealed interface Type {
             } else NullType()
 
         override fun resolveTypeArguments(args: Map<String, Type>): Type {
-            return this
+            val newMembers = members.entries.associate { Pair(it.key, it.value.resolveTypeArguments(args)) }
+            return InterfaceType(newMembers)
         }
 
     }
@@ -315,13 +315,9 @@ sealed interface Type {
 
     }
 
-    class GenericType(val params: List<UnresolvedType>, val bodyType: Type) : Type {
+    class GenericType(val params: List<UnresolvedType>, val typeArguments: List<Type>, val bodyType: Type) : Type {
         override fun canAssignTo(otherType: Type): Boolean {
-            if (otherType is GenericType) {
-                return true
-            } else {
-                return false
-            }
+            return bodyType.canAssignTo(otherType)
         }
 
         override fun hasMemberType(member: String, type: Type): Boolean {
@@ -329,11 +325,24 @@ sealed interface Type {
         }
 
         override fun getMemberType(member: String): Type {
-            return NullType()
+            return bodyType.getMemberType(member)
         }
 
         override fun resolveTypeArguments(args: Map<String, Type>): Type {
-            return GenericType(params, bodyType.resolveTypeArguments(args))
+            val newTypeArguments = params.mapNotNull {
+                args[it.identifier.name.lexeme]
+            }
+            return GenericType(params, newTypeArguments, bodyType.resolveTypeArguments(args))
+        }
+
+        override fun toString(): String {
+            val joinedArgs = typeArguments.joinToString(",")
+            val joinedParams = params.joinToString(",")
+            val bodyParams = joinedArgs.ifEmpty { joinedParams }
+
+            val typeArgs = if (bodyParams.isEmpty()) "" else
+                "<$bodyParams>"
+            return "${bodyType}$typeArgs"
         }
 
     }
