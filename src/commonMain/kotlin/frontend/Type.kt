@@ -103,7 +103,7 @@ sealed interface Type {
         override fun resolveTypeArguments(args: Map<String, Type>): Type {
             val superArgs: MutableMap<String, Type> = superclass?.typeParams?.zip(superTypeArgs)?.associate {
                 var paramType = it.second
-                if (paramType is Type.UnresolvedType) {
+                if (paramType is UnresolvedType) {
                     if (args.containsKey(paramType.identifier.name.lexeme))
                         paramType = args[paramType.identifier.name.lexeme]!!
                 }

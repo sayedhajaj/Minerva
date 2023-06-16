@@ -3,7 +3,6 @@ package backends.treewalk
 import backends.treewalk.natives.*
 import frontend.analysis.Environment
 import frontend.Type
-import frontend.analysis.TypeChecker
 import frontend.Expr
 import frontend.Stmt
 import frontend.Token

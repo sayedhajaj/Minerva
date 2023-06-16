@@ -11,7 +11,8 @@ sealed class Expr(var type: Type) {
     class Function(
         val parameters: List<Token>,
         val typeParameters: List<Token>,
-        val body: Expr)
+        val body: Expr
+    )
         : Expr(Type.AnyType())
     class If(val condition: Expr, val thenBranch: Expr, val elseBranch: Expr): Expr(Type.AnyType())
     class Literal(val value: Any?) : Expr(Type.AnyType())
@@ -19,8 +20,20 @@ sealed class Expr(var type: Type) {
     class Match(val expr: Expr, val branches: List<Pair<Expr, Expr>>, val elseBranch: Expr): Expr(Type.AnyType())
     class Set(val obj: Expr, val name: Token, val value: Expr, val index: Expr?): Expr(Type.AnyType())
     class Super(val keyword: Token, val method: Token): Expr(Type.AnyType())
-    class This(val keyword: Token): Expr(Type.InstanceType(Variable(keyword), emptyList(), emptyList(), emptyList(), emptyMap(), null, emptyList()))
-    class TypeMatch(val variable: Variable, var conditions: List<Triple<Type, Expr, Token?>>, val elseBranch: Expr?): Expr(Type.AnyType())
+    class This(val keyword: Token): Expr(
+        Type.InstanceType(
+            Variable(keyword),
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            emptyMap(),
+            null,
+            emptyList()
+        )
+    )
+    class TypeMatch(val variable: Variable, var conditions: List<Triple<Type, Expr, Token?>>, val elseBranch: Expr?): Expr(
+        Type.AnyType()
+    )
     class Unary(val operator: Token, val right: Expr, val postfix: Boolean) : Expr(Type.AnyType())
     class Variable(val name: Token): Expr(Type.AnyType())
 
