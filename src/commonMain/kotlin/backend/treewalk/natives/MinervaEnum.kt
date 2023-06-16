@@ -1,4 +1,4 @@
-package backends.treewalk.natives
+package backend.treewalk.natives
 
 import frontend.Token
 

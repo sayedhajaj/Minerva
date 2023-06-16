@@ -1,4 +1,4 @@
-import backends.treewalk.Interpreter
+import backend.treewalk.Interpreter
 import frontend.*
 import frontend.analysis.ITypeChecker
 import frontend.analysis.Resolver

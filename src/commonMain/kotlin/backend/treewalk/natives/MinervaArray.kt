@@ -1,9 +1,9 @@
-package backends.treewalk.natives
+package backend.treewalk.natives
 
-import backends.treewalk.Interpreter
-import backends.treewalk.MinervaCallable
-import backends.treewalk.MinervaFunction
-import backends.treewalk.MinervaInstance
+import backend.treewalk.Interpreter
+import backend.treewalk.MinervaCallable
+import backend.treewalk.MinervaFunction
+import backend.treewalk.MinervaInstance
 import frontend.Token
 
 class MinervaArray(val elements: Array<Any?>, interpreter: Interpreter) : MinervaInstance(null, interpreter) {

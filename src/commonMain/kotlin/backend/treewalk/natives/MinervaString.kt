@@ -1,13 +1,13 @@
-package backends.treewalk.natives
+package backend.treewalk.natives
 
-import backends.treewalk.*
+import backend.treewalk.*
 import frontend.analysis.Environment
 import frontend.Expr
 import frontend.Token
 
-class MinervaChar(val value: Char, interpreter: Interpreter) : MinervaInstance(
+class MinervaString(val value: String, interpreter: Interpreter) : MinervaInstance(
     MinervaClass(
-        "Char", null, emptyList(),
+        "String", null, emptyList(),
         MinervaConstructor(
             emptyMap(), emptyList(),
             Expr.Block(emptyList()),
@@ -23,11 +23,20 @@ class MinervaChar(val value: Char, interpreter: Interpreter) : MinervaInstance(
     override fun get(name: Token): Any? {
         return when (name.lexeme) {
 
+            "add" -> object : MinervaCallable {
+                override fun arity() = 1
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val right = arguments[0] as MinervaString
+                    return MinervaString(value + right.value, interpreter)
+                }
+            }
+
             "equals" -> object : MinervaCallable {
                 override fun arity() = 1
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaChar
+                    val right = arguments[0] as MinervaString
                     return MinervaBoolean(value == right.value, interpreter)
                 }
             }

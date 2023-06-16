@@ -1,4 +1,4 @@
-package backends.treewalk
+package backend.treewalk
 
 import frontend.analysis.Environment
 import frontend.Expr

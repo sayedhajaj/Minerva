@@ -1,6 +1,4 @@
-package backends.treewalk
-
-import backends.treewalk.Interpreter
+package backend.treewalk
 
 interface MinervaCallable {
 

@@ -1,7 +1,7 @@
-package backends.treewalk.natives
+package backend.treewalk.natives
 
-import backends.treewalk.Interpreter
-import backends.treewalk.MinervaInstance
+import backend.treewalk.Interpreter
+import backend.treewalk.MinervaInstance
 
 class MinervaModule(val members: Map<String, Any?>, interpreter: Interpreter) : MinervaInstance(null, interpreter) {
     init {

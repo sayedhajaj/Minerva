@@ -1,13 +1,13 @@
-package backends.treewalk.natives
+package backend.treewalk.natives
 
-import backends.treewalk.*
+import backend.treewalk.*
 import frontend.analysis.Environment
 import frontend.Expr
 import frontend.Token
 
-class MinervaBoolean(val value: Boolean, interpreter: Interpreter) : MinervaInstance(
+class MinervaChar(val value: Char, interpreter: Interpreter) : MinervaInstance(
     MinervaClass(
-        "Boolean", null, emptyList(),
+        "Char", null, emptyList(),
         MinervaConstructor(
             emptyMap(), emptyList(),
             Expr.Block(emptyList()),
@@ -27,17 +27,8 @@ class MinervaBoolean(val value: Boolean, interpreter: Interpreter) : MinervaInst
                 override fun arity() = 1
 
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    val right = arguments[0] as MinervaBoolean
+                    val right = arguments[0] as MinervaChar
                     return MinervaBoolean(value == right.value, interpreter)
-                }
-            }
-
-
-            "not" -> object : MinervaCallable {
-                override fun arity() = 0
-
-                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
-                    return MinervaBoolean(!value, interpreter)
                 }
             }
 
