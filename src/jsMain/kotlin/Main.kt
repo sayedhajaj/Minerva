@@ -2,6 +2,8 @@ import backend.treewalk.Interpreter
 import backend.treewalk.MinervaCallable
 import backend.treewalk.natives.MinervaInteger
 import kotlinx.browser.document
+import kotlinx.dom.clear
+import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLTextAreaElement
 
@@ -12,6 +14,16 @@ fun main() {
 
         val compiler = MinervaCompiler(code)
 
+        val canvas = document.getElementById("canvas") as HTMLCanvasElement
+        canvas.width = canvas.width
+
+        compiler.defineNative("getCanvas", object: MinervaCallable {
+            override fun arity(): Int = 0
+
+            override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                return MinervaCanvas(canvas, interpreter)
+            }
+        })
 
         val output = compiler.interpret()
         println(output)

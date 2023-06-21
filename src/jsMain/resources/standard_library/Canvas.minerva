@@ -1,0 +1,6 @@
+
+external class Canvas {
+    function fillRect(x: Int, y: Int, width: Int, height: Int);
+}
+
+external function getCanvas(): Canvas;

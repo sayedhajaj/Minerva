@@ -5,5 +5,6 @@ actual fun getStandardLibrary(): String {
             js("require('./standard_library/char.minerva')") as String +
             js("require('./standard_library/iterable.minerva')") as String +
             js("require('./standard_library/string.minerva')") as String +
-            js("require('./standard_library/array.minerva')") as String
+            js("require('./standard_library/array.minerva')") as String +
+            js("require('./standard_library/Canvas.minerva')") as String
 }
