@@ -17,7 +17,7 @@ val operatorMethods = mapOf(
     TokenType.STAR to "multiply",
     TokenType.MODULO to "rem"
 )
-class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
+class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
 
     val globals = TypeScope()
     var environment = globals

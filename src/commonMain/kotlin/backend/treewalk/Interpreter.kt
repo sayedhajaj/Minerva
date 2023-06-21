@@ -9,7 +9,7 @@ import frontend.Token
 import frontend.TokenType
 import frontend.analysis.ITypeChecker
 
-class Interpreter(val locals: MutableMap<Expr, Int>, val typeChecker: ITypeChecker) {
+class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeChecker) {
 
     val globals = Environment()
     var environment = globals
@@ -57,6 +57,10 @@ class Interpreter(val locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
                 }
             }
         ), this))
+    }
+
+    fun defineGlobal(name: String, value: Any?) {
+        globals.define(name, value)
     }
 
     fun interpet(statements: List<Stmt>) {

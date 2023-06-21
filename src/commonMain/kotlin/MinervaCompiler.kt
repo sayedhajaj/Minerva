@@ -7,6 +7,13 @@ import frontend.parsing.Parser
 import frontend.parsing.Scanner
 
 class MinervaCompiler(val source: String) {
+    val resolver = Resolver()
+    val typeChecker = TypeChecker(resolver.locals)
+    val interpreter = Interpreter(typeChecker.locals, typeChecker)
+
+    fun defineNative(name: String, value: Any?) {
+        interpreter.defineGlobal(name, value)
+    }
 
 
     fun getSyntaxTree(source: String): Pair<List<Stmt>, List<CompileError>> {
@@ -20,24 +27,24 @@ class MinervaCompiler(val source: String) {
         return Pair(tree, parseErrors)
     }
 
-    fun frontEndPass(): Triple<List<CompileError>, ITypeChecker, List<Stmt>> {
-        val resolver = Resolver()
+    fun frontEndPass(): Pair<List<CompileError>, List<Stmt>> {
         val (syntaxTree, parseErrors) = getSyntaxTree(getStandardLibrary() +source)
         resolver.resolve(syntaxTree)
-        val typeChecker = TypeChecker(resolver.locals)
+        typeChecker.locals = resolver.locals
+
         typeChecker.typeCheck(syntaxTree)
         val compileErrors = parseErrors + typeChecker.typeErrors
         compileErrors.forEach {
             println(it.message)
         }
-        return Triple(compileErrors.toList(), typeChecker, syntaxTree)
+        return Pair(compileErrors.toList(), syntaxTree)
 
     }
 
     fun interpret(): List<String> {
-        val (compileErrors, typeChecker, syntaxTree) = frontEndPass()
+        val (compileErrors, syntaxTree) = frontEndPass()
         return if (compileErrors.isEmpty()) {
-            val interpreter = Interpreter(typeChecker.locals, typeChecker)
+            interpreter.locals = typeChecker.locals
             interpreter.interpet(syntaxTree)
             interpreter.printStatements
         } else {
