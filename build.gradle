@@ -22,6 +22,14 @@ kotlin {
         }
     }
 
+    js(IR) {
+        browser {
+
+        }
+        binaries.executable()
+
+    }
+
 
 
     sourceSets {
@@ -44,6 +52,12 @@ kotlin {
         jvmTest {
             dependencies {
 //                testImplementation 'org.jetbrains.kotlin:kotlin-test'
+            }
+        }
+
+        jsMain {
+            dependencies {
+                implementation kotlin('stdlib-js')
             }
         }
 

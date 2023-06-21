@@ -8,19 +8,10 @@ import frontend.parsing.Scanner
 
 class MinervaCompiler(val source: String) {
 
-    fun getStandardLibrary() =
-        MinervaCompiler::class.java.getResource("standard_library/boolean.minerva").readText() +
-                MinervaCompiler::class.java.getResource("standard_library/integer.minerva").readText() +
-                MinervaCompiler::class.java.getResource("standard_library/decimal.minerva").readText() +
-                MinervaCompiler::class.java.getResource("standard_library/char.minerva").readText() +
-                MinervaCompiler::class.java.getResource("standard_library/iterable.minerva").readText() +
-                MinervaCompiler::class.java.getResource("standard_library/string.minerva").readText() +
-                MinervaCompiler::class.java.getResource("standard_library/array.minerva").readText()
 
-
-    fun getSyntaxTree(): Pair<List<Stmt>, List<CompileError>> {
+    fun getSyntaxTree(source: String): Pair<List<Stmt>, List<CompileError>> {
         val parseErrors = mutableListOf<CompileError>()
-        val scanner = Scanner(getStandardLibrary()+source)
+        val scanner = Scanner(source)
         val tokens = scanner.scanTokens()
         parseErrors.addAll(scanner.scannerErrors)
         val parser = Parser(tokens)
@@ -31,7 +22,7 @@ class MinervaCompiler(val source: String) {
 
     fun frontEndPass(): Triple<List<CompileError>, ITypeChecker, List<Stmt>> {
         val resolver = Resolver()
-        val (syntaxTree, parseErrors) = getSyntaxTree()
+        val (syntaxTree, parseErrors) = getSyntaxTree(getStandardLibrary() +source)
         resolver.resolve(syntaxTree)
         val typeChecker = TypeChecker(resolver.locals)
         typeChecker.typeCheck(syntaxTree)
@@ -43,20 +34,15 @@ class MinervaCompiler(val source: String) {
 
     }
 
-    fun compile() {
-
-    }
-
     fun interpret(): List<String> {
         val (compileErrors, typeChecker, syntaxTree) = frontEndPass()
         return if (compileErrors.isEmpty()) {
-            val interpreter = Interpreter(syntaxTree, typeChecker.locals, typeChecker)
-            interpreter.interpet()
+            val interpreter = Interpreter(typeChecker.locals, typeChecker)
+            interpreter.interpet(syntaxTree)
             interpreter.printStatements
         } else {
             emptyList()
         }
     }
-
-
 }
+

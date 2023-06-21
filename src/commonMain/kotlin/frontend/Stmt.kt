@@ -1,9 +1,12 @@
 package frontend
 
+import kotlin.js.JsName
+
 sealed class Stmt {
     class Class(
         val name: Token,
         val superclass: Expr.Variable?,
+        @JsName("classConstructor")
         val constructor: Constructor,
         val methods: List<Method>,
         val fields: List<Var>,
@@ -12,6 +15,7 @@ sealed class Stmt {
 
     class ClassDeclaration(
         val name: Token,
+        @JsName("classConstructor")
         val constructor: ConstructorDeclaration,
         val methods: List<FunctionDeclaration>,
         val fields: List<VarDeclaration>

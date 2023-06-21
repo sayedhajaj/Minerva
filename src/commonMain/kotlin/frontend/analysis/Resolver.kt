@@ -3,11 +3,10 @@ package frontend.analysis
 import frontend.Expr
 import frontend.Stmt
 import frontend.Token
-import java.util.*
 
 class Resolver {
 
-    val scopes: Stack<MutableMap<String, Boolean>> = Stack()
+    val scopes: ArrayDeque<MutableMap<String, Boolean>> = ArrayDeque()
     val locals: MutableMap<Expr, Int> = mutableMapOf()
 
     fun resolve(statements: List<Stmt>) {
@@ -27,11 +26,11 @@ class Resolver {
                     resolve(stmt.superclass)
                     beginScope()
 
-                    scopes.peek()["super"] = true
+                    scopes.last()["super"] = true
                 }
 
                 beginScope()
-                scopes.peek().put("this", true)
+                scopes.last().put("this", true)
 
                 resolve(stmt.constructor)
 
@@ -180,7 +179,7 @@ class Resolver {
             }
             is Expr.Unary -> resolve(expr.right)
             is Expr.Variable -> {
-                if (scopes.isNotEmpty() && scopes.peek()[expr.name.lexeme] == false) {
+                if (scopes.isNotEmpty() && scopes.first()[expr.name.lexeme] == false) {
                     // error
                 }
                 resolveLocal(expr, expr.name)
@@ -241,22 +240,22 @@ class Resolver {
     }
 
     fun beginScope() {
-        scopes.push(mutableMapOf())
+        scopes.add(mutableMapOf())
     }
 
     fun endScope() {
-        scopes.pop()
+        scopes.removeLast()
     }
 
     fun declare(name: Token) {
-        if (scopes.empty()) return
-        val scope = scopes.peek()
+        if (scopes.isEmpty()) return
+        val scope = scopes.last()
         scope[name.lexeme] = false
     }
 
     fun define(name: Token) {
-        if (scopes.empty()) return
-        scopes.peek()[name.lexeme] = true
+        if (scopes.isEmpty()) return
+        scopes.last()[name.lexeme] = true
     }
 
     fun resolveLocal(expr: Expr, name: Token) {

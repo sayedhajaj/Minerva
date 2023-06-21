@@ -603,8 +603,8 @@ class TypeChecker(override val locals: MutableMap<Expr, Int>) : ITypeChecker {
             is Expr.Literal -> {
                 val type = when (expr.value) {
                     is String -> createStringType()
-                    is Double -> createDecimalType()
                     is Int -> createIntegerType()
+                    is Double -> createDecimalType()
                     is Boolean -> createBooleanType()
                     is Char -> createCharType()
                     else -> Type.NullType()

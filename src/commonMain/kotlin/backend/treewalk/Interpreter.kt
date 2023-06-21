@@ -9,7 +9,7 @@ import frontend.Token
 import frontend.TokenType
 import frontend.analysis.ITypeChecker
 
-class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>, val typeChecker: ITypeChecker) {
+class Interpreter(val locals: MutableMap<Expr, Int>, val typeChecker: ITypeChecker) {
 
     val globals = Environment()
     var environment = globals
@@ -59,7 +59,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
         ), this))
     }
 
-    fun interpet() {
+    fun interpet(statements: List<Stmt>) {
         statements.forEach {
             execute(it)
         }
@@ -471,7 +471,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
 
         val current = environment.get(expr.name) as MinervaInstance
 
-        if (expr.equals.type in listOf(
+        if (expr.operator.type in listOf(
                 TokenType.PLUS_EQUAL,
                 TokenType.MINUS_EQUAL,
                 TokenType.SLASH_EQUAL,
@@ -487,7 +487,7 @@ class Interpreter(val statements: List<Stmt>, val locals: MutableMap<Expr, Int>,
                 TokenType.MODULO_EQUAL to "rem"
             )
 
-            val operatorName = operatorMethods[expr.equals.type]
+            val operatorName = operatorMethods[expr.operator.type]
 
             if (operatorName != null) {
                 val token = Token(TokenType.IDENTIFIER, operatorName, operatorName, -1)

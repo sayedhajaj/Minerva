@@ -1,11 +1,13 @@
 package backend.treewalk
 
 import frontend.Expr
+import kotlin.js.JsName
 
 class MinervaClass(
     val name: String,
     val superClass: MinervaClass?,
     val superArguments: List<Expr>,
+    @JsName("classConstructor")
     val constructor: MinervaConstructor,
     val methods: Map<String, MinervaFunction>,
     val fields: Map<String, Expr>
