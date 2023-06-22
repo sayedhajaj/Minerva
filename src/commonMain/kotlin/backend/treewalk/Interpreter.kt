@@ -57,6 +57,11 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
                 }
             }
         ), this))
+
+        globals.define("Math", MinervaMath(this))
+
+
+        globals.define("Random", MinervaRandom(this))
     }
 
     fun defineGlobal(name: String, value: Any?) {
@@ -233,6 +238,11 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
                 is String -> MinervaString(expr.value, this)
                 is Boolean -> MinervaBoolean(expr.value, this)
                 is Char -> MinervaChar(expr.value, this)
+                is MinervaInteger -> {
+                    val b = expr.type
+                    expr.value
+
+                }
                 else -> expr.value
             }
         }

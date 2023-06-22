@@ -17,6 +17,8 @@ fun main() {
         val canvas = document.getElementById("canvas") as HTMLCanvasElement
         canvas.width = canvas.width
 
+
+
         compiler.defineNative("getCanvas", object: MinervaCallable {
             override fun arity(): Int = 0
 

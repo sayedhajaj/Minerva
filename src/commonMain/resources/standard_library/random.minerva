@@ -1,0 +1,3 @@
+external module Random {
+    function nextInt(min: Int, max: Int): Int;
+}

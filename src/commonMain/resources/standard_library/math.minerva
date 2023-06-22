@@ -1,0 +1,3 @@
+external module Math {
+    function hypot(x: Decimal, y: Decimal): Decimal;
+}

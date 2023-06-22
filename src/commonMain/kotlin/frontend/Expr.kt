@@ -15,7 +15,7 @@ sealed class Expr(var type: Type) {
     )
         : Expr(Type.AnyType())
     class If(val condition: Expr, val thenBranch: Expr, val elseBranch: Expr): Expr(Type.AnyType())
-    class Literal(val value: Any?) : Expr(Type.AnyType())
+    class Literal(val value: Any?, val tokenType: TokenType) : Expr(Type.AnyType())
     class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr(Type.AnyType())
     class Match(val expr: Expr, val branches: List<Pair<Expr, Expr>>, val elseBranch: Expr): Expr(Type.AnyType())
     class Set(val obj: Expr, val name: Token, val value: Expr, val index: Expr?): Expr(Type.AnyType())

@@ -1,6 +1,9 @@
 
 external class Canvas {
     function fillRect(x: Int, y: Int, width: Int, height: Int);
+    function drawRect(x: Int, y: Int, width: Int, height: Int);
+
+    function setColor(r: Int, g: Int, b: Int, a: Int);
 }
 
 external function getCanvas(): Canvas;

@@ -603,11 +603,13 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             is Expr.Literal -> {
                 val type = when (expr.value) {
                     is String -> createStringType()
-                    is Int -> createIntegerType()
-                    is Double -> createDecimalType()
                     is Boolean -> createBooleanType()
                     is Char -> createCharType()
-                    else -> Type.NullType()
+                    else -> when (expr.tokenType) {
+                            TokenType.INTEGER -> createIntegerType()
+                            TokenType.DECIMAL -> createDecimalType()
+                            else -> Type.NullType()
+                        }
                 }
                 expr.type = type
                 expr.type
@@ -735,6 +737,9 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
     private fun getBinaryOperatorType(expr: Expr.Binary, left: Type.InstanceType, right: Type): Type? {
         if (expr.operator.type in arithmeticOperators) {
             val methodName = operatorMethods[expr.operator.type]!!
+            if (left.className.name.lexeme == "Decimal") {
+                val members = left.members
+            }
             val method = left.getMemberType(methodName) as Type.FunctionType?
             val allowed = operatorOperandAllowed(expr.operator.type, method, right)
             if (allowed) {

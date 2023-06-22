@@ -411,7 +411,7 @@ class Parser(private val tokens: List<Token>) {
 
         val branches = mutableListOf<Pair<Expr, Expr>>()
 
-        var elseBranch: Expr = Expr.Literal(2)
+        var elseBranch: Expr = Expr.Literal(2, TokenType.INTEGER)
         var hasElse = false
 
         while (!match(TokenType.RIGHT_BRACE)) {
@@ -777,15 +777,17 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun primary(): Expr = when {
-        match(TokenType.TRUE) -> Expr.Literal(true)
-        match(TokenType.FALSE) -> Expr.Literal(false)
+        match(TokenType.TRUE) -> Expr.Literal(true, TokenType.TRUE)
+        match(TokenType.FALSE) -> Expr.Literal(false, TokenType.FALSE)
         match(
             TokenType.DECIMAL,
             TokenType.INTEGER,
             TokenType.STRING,
             TokenType.CHAR
-        ) -> Expr.Literal(previous().literal)
-        match(TokenType.NULL) -> Expr.Literal(null)
+        ) -> {
+            Expr.Literal(previous().literal, previous().type)
+        }
+        match(TokenType.NULL) -> Expr.Literal(null, previous().type)
         match(TokenType.SUPER) -> {
             val keyword = previous()
             consume(TokenType.DOT, "Expect '.' after 'super'.")
@@ -823,7 +825,7 @@ class Parser(private val tokens: List<Token>) {
         match(TokenType.TYPEMATCH) -> typeMatchExpr()
         match(TokenType.MATCH) -> matchExpression()
         match(TokenType.FUNCTION) -> lambdaExpression()
-        else -> Expr.Literal(null)
+        else -> Expr.Literal(null, TokenType.NULL)
     }
 
 

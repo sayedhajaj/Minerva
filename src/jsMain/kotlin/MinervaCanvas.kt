@@ -27,6 +27,38 @@ class MinervaCanvas(canvas: HTMLCanvasElement
                     return null
                 }
             }
+
+            "drawRect" -> object : MinervaCallable {
+                override fun arity() = 4
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val x = (arguments[0] as MinervaInteger).value.toDouble()
+                    val y = (arguments[1] as MinervaInteger).value.toDouble()
+                    val width = (arguments[2] as MinervaInteger).value.toDouble()
+                    val height = (arguments[3] as MinervaInteger).value.toDouble()
+
+                    context.strokeRect(x, y, width, height)
+
+                    return null
+                }
+            }
+
+            "setColor" -> object : MinervaCallable {
+                override fun arity() = 4
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val r = (arguments[0] as MinervaInteger).value.toDouble()
+                    val g = (arguments[1] as MinervaInteger).value.toDouble()
+                    val b = (arguments[2] as MinervaInteger).value.toDouble()
+                    val a = (arguments[3] as MinervaInteger).value.toDouble()
+
+                    context.fillStyle = "rgba($r, $g, $b, $a)"
+                    context.strokeStyle = "rgba($r, $g, $b, $a)"
+
+                    return null
+                }
+            }
+
             else -> null
         }
     }
