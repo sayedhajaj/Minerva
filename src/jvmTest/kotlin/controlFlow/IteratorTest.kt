@@ -2,7 +2,7 @@ package controlFlow
 
 import HelloWorldTest
 import MinervaCompiler
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertContentEquals
 
 class IteratorTest {

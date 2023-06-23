@@ -8,3 +8,7 @@ actual fun getStandardLibrary() =
             MinervaCompiler::class.java.getResource("standard_library/array.minerva").readText() +
             MinervaCompiler::class.java.getResource("standard_library/random.minerva").readText() +
             MinervaCompiler::class.java.getResource("standard_library/math.minerva").readText()
+
+actual fun loadSource(path: String): String {
+    return MinervaCompiler::class.java.getResource(path).readText()
+}

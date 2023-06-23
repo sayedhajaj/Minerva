@@ -10,3 +10,8 @@ actual fun getStandardLibrary(): String {
             js("require('./standard_library/random.minerva')") as String +
             js("require('./standard_library/Canvas.minerva')") as String
 }
+
+actual fun loadSource(path: String): String {
+    val fullPath = "./$path"
+    return js("require(fullPath)") as String
+}

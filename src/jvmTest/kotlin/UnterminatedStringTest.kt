@@ -1,5 +1,5 @@
 import frontend.parsing.Scanner
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 

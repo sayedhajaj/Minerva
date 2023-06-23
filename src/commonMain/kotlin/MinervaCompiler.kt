@@ -28,7 +28,9 @@ class MinervaCompiler(val source: String) {
     }
 
     fun frontEndPass(): Pair<List<CompileError>, List<Stmt>> {
-        val (syntaxTree, parseErrors) = getSyntaxTree(getStandardLibrary() +source)
+        val standardLibrary = getStandardLibrary()
+
+        val (syntaxTree, parseErrors) = getSyntaxTree(standardLibrary +source)
         resolver.resolve(syntaxTree)
         typeChecker.locals = resolver.locals
 
