@@ -43,6 +43,115 @@ class MinervaCanvas(canvas: HTMLCanvasElement
                 }
             }
 
+            "beginPath" -> object : MinervaCallable {
+                override fun arity() = 0
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    context.beginPath()
+                    return null
+                }
+            }
+
+            "closePath" -> object : MinervaCallable {
+                override fun arity() = 0
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    context.closePath()
+                    return null
+                }
+            }
+
+            "fillPath" -> object : MinervaCallable {
+                override fun arity() = 0
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    context.fill()
+                    return null
+                }
+            }
+
+            "drawPath" -> object : MinervaCallable {
+                override fun arity() = 0
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    context.stroke()
+                    return null
+                }
+            }
+
+            "moveTo" -> object : MinervaCallable {
+                override fun arity() = 2
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val x = (arguments[0] as MinervaInteger).value.toDouble()
+                    val y = (arguments[1] as MinervaInteger).value.toDouble()
+                    context.moveTo(x, y)
+                    return null
+                }
+            }
+
+            "lineTo" -> object : MinervaCallable {
+                override fun arity() = 2
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val x = (arguments[0] as MinervaInteger).value.toDouble()
+                    val y = (arguments[1] as MinervaInteger).value.toDouble()
+                    context.lineTo(x, y)
+                    return null
+                }
+            }
+
+            "quadraticCurveTo" -> object : MinervaCallable {
+                override fun arity() = 4
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val xControl = (arguments[0] as MinervaInteger).value.toDouble()
+                    val yControl = (arguments[1] as MinervaInteger).value.toDouble()
+                    val xEnd = (arguments[2] as MinervaInteger).value.toDouble()
+                    val yEnd = (arguments[3] as MinervaInteger).value.toDouble()
+
+                    context.quadraticCurveTo(xControl, yControl, xEnd, yEnd)
+                    return null
+                }
+            }
+
+            "bezierCurveTo" -> object : MinervaCallable {
+                override fun arity() = 4
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val xControl = (arguments[0] as MinervaInteger).value.toDouble()
+                    val yControl = (arguments[1] as MinervaInteger).value.toDouble()
+
+                    val xControl2 = (arguments[2] as MinervaInteger).value.toDouble()
+                    val yControl2 = (arguments[3] as MinervaInteger).value.toDouble()
+
+                    val xEnd = (arguments[4] as MinervaInteger).value.toDouble()
+                    val yEnd = (arguments[5] as MinervaInteger).value.toDouble()
+
+                    context.bezierCurveTo(xControl, yControl, xControl2, yControl2, xEnd, yEnd)
+                    return null
+                }
+            }
+
+            "arcTo" -> object : MinervaCallable {
+                override fun arity() = 5
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val x1 = (arguments[0] as MinervaInteger).value.toDouble()
+                    val y1 = (arguments[1] as MinervaInteger).value.toDouble()
+
+                    val x2 = (arguments[2] as MinervaInteger).value.toDouble()
+                    val y2 = (arguments[3] as MinervaInteger).value.toDouble()
+
+                    val radius = (arguments[4] as MinervaInteger).value.toDouble()
+
+
+                    context.arcTo(x1, y1, x2, y2, radius)
+                    return null
+                }
+            }
+
+
             "setColor" -> object : MinervaCallable {
                 override fun arity() = 4
 

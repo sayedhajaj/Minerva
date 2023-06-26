@@ -3,7 +3,27 @@ external class Canvas {
     function fillRect(x: Int, y: Int, width: Int, height: Int);
     function drawRect(x: Int, y: Int, width: Int, height: Int);
 
+    function beginPath();
+
+    function closePath();
+
+    function fillPath();
+
+    function drawPath();
+
+    function moveTo(x: Int, y: Int);
+
+    function lineTo(x: Int, y: Int);
+
+    function quadraticCurveTo(xControl: Int, yControl: Int, xEnd: Int, yEnd: Int);
+
+    function bezierCurveTo(xControl: Int, yControl: Int, xControl2: Int, yControl2: Int, xEnd: Int, yEnd: Int);
+
+    function arcTo(x1: Int, y1: Int, x2: Int, y2: Int, radius: Int);
+
     function setColor(r: Int, g: Int, b: Int, a: Int);
+
+
 }
 
 external function getCanvas(): Canvas;

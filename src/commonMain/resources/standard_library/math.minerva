@@ -1,3 +1,11 @@
 external module Math {
     function hypot(x: Decimal, y: Decimal): Decimal;
+
+    function toRadians(degrees: Decimal): Decimal;
+
+    function toDegrees(radians: Decimal): Decimal;
+
+    function sin(angle: Decimal): Decimal;
+
+    function cos(angle: Decimal): Decimal;
 }

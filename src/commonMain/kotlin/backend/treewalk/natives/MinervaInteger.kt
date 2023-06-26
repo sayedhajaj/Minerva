@@ -108,6 +108,15 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                     return MinervaInteger(value-1, interpreter)
                 }
             }
+
+            "toDecimal" -> object : MinervaCallable {
+                override fun arity() = 0
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    return MinervaDecimal(value.toDouble(), interpreter)
+                }
+            }
+
             else -> null
         }
     }
