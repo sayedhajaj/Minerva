@@ -23,4 +23,13 @@ class ClassesTest {
         val output = compiler.interpret().toTypedArray()
         assertContentEquals(arrayOf("John", "Garfield"), output, "")
     }
+
+    @Test
+    internal fun testConstructorFields() {
+        val source = HelloWorldTest::class.java.getResource("examples/classes/constructor_fields.minerva").readText()
+        val compiler = MinervaCompiler(source)
+
+        val output = compiler.interpret().toTypedArray()
+        assertContentEquals(arrayOf("12"), output, "")
+    }
 }

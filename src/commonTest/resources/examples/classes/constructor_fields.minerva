@@ -1,0 +1,7 @@
+class Order(quantity: Int, price: Int)  {
+    var total = quantity * price;
+}
+
+var order = Order(3, 4);
+
+print order.total; // expect 12

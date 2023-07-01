@@ -24,6 +24,7 @@ class MinervaConstructor(
             environment.define(parameters[i].lexeme, arguments[i])
         }
 
+
         interpreter.executeBlock(body.statements, environment)
         return null
     }

@@ -233,16 +233,32 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
         }
         is Expr.Literal -> {
             when (expr.value) {
-                is Int, Double -> {
-                    if (expr.tokenType == TokenType.INTEGER) {
-                        MinervaInteger(expr.value as Int, this)
-                    } else {
-                        MinervaDecimal(expr.value as Double, this)
+                is Int -> {
+                    when (expr.tokenType) {
+                        TokenType.DECIMAL -> {
+                            MinervaDecimal(expr.value as Double, this)
+                        }
+                        TokenType.INTEGER -> {
+                            MinervaInteger(expr.value, this)
+                        }
+                        else -> expr.value
+                    }
+                }
+                is Double -> {
+                    when (expr.tokenType) {
+                        TokenType.DECIMAL -> {
+                            MinervaDecimal(expr.value, this)
+                        }
+                        TokenType.INTEGER -> {
+                            MinervaInteger(expr.value as Int, this)
+                        }
+                        else -> expr.value
                     }
                 }
                 is String -> MinervaString(expr.value, this)
                 is Boolean -> MinervaBoolean(expr.value, this)
                 is Char -> MinervaChar(expr.value, this)
+                is MinervaInteger, is MinervaDecimal ->  expr.value
 
                 else -> expr.value
             }

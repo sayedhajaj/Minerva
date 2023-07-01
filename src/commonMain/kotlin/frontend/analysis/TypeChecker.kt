@@ -402,18 +402,19 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
 
         typeCheck(stmt.constructor)
 
+        stmt.constructor.parameters.forEachIndexed { index, pair ->
+            params.add(pair.second)
+            environment.defineValue(pair.first.lexeme, resolveInstanceType(pair.second))
+            if (stmt.constructor.fields.containsKey(index)) {
+                members[pair.first.lexeme] = pair.second
+
+            }
+        }
+
         stmt.fields.forEach {
             typeCheck(it)
             members[it.name.lexeme] = it.type
             environment.defineValue(it.name.lexeme, it.type)
-        }
-
-        stmt.constructor.parameters.forEachIndexed { index, pair ->
-            params.add(pair.second)
-            if (stmt.constructor.fields.containsKey(index)) {
-                members[pair.first.lexeme] = pair.second
-                environment.defineValue(pair.first.lexeme, pair.second)
-            }
         }
 
         stmt.methods.forEach {

@@ -18,8 +18,8 @@ class MinervaClass(
     override fun call(interpreter: Interpreter, arguments: List<Any?>): MinervaInstance {
         val instance = MinervaInstance(this, interpreter)
         initConstructorFields(interpreter, arguments, instance)
-        instance.initialise(constructor.closure)
         callConstructor(interpreter, arguments, instance)
+
         return instance
     }
 
@@ -71,6 +71,7 @@ class MinervaClass(
         boundConstructor.instance = instance
 
         boundConstructor.call(interpreter, arguments)
+        instance.initialise(boundConstructor.closure)
     }
 
     override fun toString(): String = name

@@ -27,7 +27,7 @@ open class MinervaInstance(val klass: MinervaClass?, val interpreter: Interprete
             setUpFields(currentClass.superClass, interpreter, closure)
         }
 
-        val environment = Environment(closure)
+        val environment = closure
         environment.define("this", this)
 
         currentClass.fields.entries.forEach {
