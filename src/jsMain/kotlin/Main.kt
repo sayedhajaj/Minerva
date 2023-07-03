@@ -7,15 +7,20 @@ import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLTextAreaElement
 
-
 fun main() {
+
+    val blah = js("require('./editor.js')")
+
     document.getElementById("run")?.addEventListener("click", {
-        val code = (document.getElementById("code") as HTMLTextAreaElement).value
+
+        val lines = blah.getEditorState() as Array<String>
+        val code = lines.joinToString("\n")
 
         val compiler = MinervaCompiler(code)
 
         val canvas = document.getElementById("canvas") as HTMLCanvasElement
         canvas.width = canvas.width
+
 
 
 

@@ -24,10 +24,13 @@ kotlin {
 
     js(IR) {
         browser {
-
+            webpackTask {
+                output.libraryTarget = "commonjs2"
+            }
         }
         binaries.executable()
 
+        useCommonJs()
     }
 
 
@@ -57,6 +60,9 @@ kotlin {
         jsMain {
             dependencies {
                 implementation kotlin('stdlib-js')
+                implementation npm("codemirror", "6.0.1")
+                implementation npm("@codemirror/view", "6.14.0")
+                implementation npm("@codemirror/commands", "6.2.4")
             }
         }
 
