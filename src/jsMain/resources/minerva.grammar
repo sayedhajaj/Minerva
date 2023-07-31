@@ -1,0 +1,136 @@
+@top File { statement* }
+
+@precedence {
+    member,
+    call,
+    times @left,
+    plus @left,
+    rel @left,
+
+    else,
+
+    statement @cut
+}
+
+@tokens {
+  Identifier { $[A-Za-z_]+ }
+  Integer { $[0-9]+ }
+  String { '"' !["]* '"' }
+}
+
+
+kw<term> { @specialize[@name={term}]<Identifier, term> }
+
+statement[@isGroup=Statement] {
+    ClassDeclaration |
+    InterfaceDeclaration |
+    ModuleDeclaration |
+    EnumDeclaration |
+    FunctionDeclaration |
+    VariableDeclaration |
+    ForStatement |
+    IfStatement |
+    WhileStatement |
+    UntilStatement |
+    PrintStatement |
+    MatchStatement |
+    ExpressionStatement { expression ";" }
+}
+
+ClassDeclaration {
+    kw<"class"> Identifier ParamList "{" "}"
+}
+
+InterfaceDeclaration {
+    kw<"interface"> Identifier "{" "}"
+}
+
+ModuleDeclaration {
+    kw<"module"> Identifier "{" "}"
+}
+
+EnumDeclaration {
+    kw<"enum"> Identifier "{" commaSep<"..."? Identifier>  "}"
+}
+
+IfStatement {
+    kw<"if"> ParenthesizedExpression statement (!else kw<"else"> statement)?
+}
+
+WhileStatement {
+    kw<"while"> ParenthesizedExpression statement
+}
+
+UntilStatement {
+    kw<"until"> ParenthesizedExpression statement
+}
+
+ForStatement {
+    kw<"for"> "(" (VariableDeclaration | expression ";")? expression? ";" expression? ")"
+}
+
+MatchStatement {
+    kw<"match"> "{" MatchCase+ "}"
+}
+
+MatchCase {
+    Literal "=>" expression ";"
+}
+
+FunctionDeclaration {
+  !statement kw<"function"> Identifier ParamList "=>" expression
+}
+
+PrintStatement {
+    kw<"print"> expression ";"
+}
+
+ParamList {
+  "(" commaSep<"..."? Identifier> ")"
+}
+
+commaSep<content> {
+  (content ("," content)*)?
+}
+
+expression[@isGroup=Expression] {
+    kw<"this"> |
+    UnaryExpression |
+    BinaryExpression |
+    ParenthesizedExpression | Literal |
+    CallExpression {
+        expression !call ArgList
+    }
+}
+
+Literal {
+    Integer | String
+}
+
+ParenthesizedExpression { "(" expression ")" }
+
+ArgList { "(" commaSep<"..."? expression> ")" }
+
+VariableDeclaration {
+  ( kw<"var"> | kw<"const">) "=" expression
+}
+
+UnaryExpression {
+  (LogicOp<"!"> | ArithOp<"+" | "-">)
+  expression
+}
+
+BinaryExpression {
+  expression !times (ArithOp<"/"> | ArithOp<"%"> | ArithOp<"*">) expression |
+  expression !plus ArithOp<"+" | "-"> expression |
+  expression !rel CompareOp expression
+}
+
+  ArithOp<expr> { expr }
+  LogicOp<expr> { expr }
+
+  UpdateOp { $[+\-/%*] "=" }
+
+  CompareOp { ("<" | ">" | "==" | "!=") "="? }
+
+@external propSource highlighting from "./highlight.js"
