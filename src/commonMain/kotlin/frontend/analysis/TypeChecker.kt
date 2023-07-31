@@ -25,6 +25,96 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
     override val typeErrors: MutableList<CompileError.TypeError> = mutableListOf()
 
     fun typeCheck(statements: List<Stmt>) {
+        preVisitDeclarations(statements)
+
+        statements.forEach { typeCheck(it) }
+    }
+
+    fun typeCheck(stmt: Stmt) {
+        when (stmt) {
+            is Stmt.Class -> typeCheckClass(stmt)
+            is Stmt.Constructor -> typeCheckConstructor(stmt)
+            is Stmt.ConstructorDeclaration, is Stmt.ClassDeclaration, is Stmt.FunctionDeclaration, is Stmt.VarDeclaration -> {}
+            is Stmt.Expression -> typeCheck(stmt.expression)
+            is Stmt.Function -> {
+                environment.defineValue(stmt.name.lexeme, stmt.functionBody.type)
+                val type = typeCheck(stmt.functionBody)
+                environment.defineValue(stmt.name.lexeme, type)
+            }
+            is Stmt.If -> typeCheckIfStmt(stmt)
+            is Stmt.Print -> typeCheck(stmt.expression)
+            is Stmt.PrintType -> typeCheck(stmt.expression)
+            is Stmt.Var -> typeCheckVarStmt(stmt)
+            is Stmt.While -> {
+                typeCheck(stmt.condition)
+
+                if (!isBooleanType(stmt.condition.type)) {
+                    typeErrors.add(CompileError.TypeError("While condition should be boolean"))
+                }
+                typeCheck(stmt.body)
+            }
+            is Stmt.ForEach -> typeCheckForEach(stmt)
+            is Stmt.Destructure -> typeCheckDestructure(stmt)
+            is Stmt.Module -> typeCheckModuleStmt(stmt)
+            else -> {}
+        }
+    }
+
+    fun typeCheck(expr: Expr): Type {
+        return when (expr) {
+            is Expr.Get -> typeCheckGet(expr)
+            is Expr.Array -> typeCheckArray(expr)
+            is Expr.Assign -> typeCheckAssign(expr)
+            is Expr.Binary -> typeCheckBinary(expr)
+            is Expr.Block -> {
+                val thisType = getBlockType(expr.statements, TypeScope(environment))
+                expr.type = thisType
+                thisType
+            }
+            is Expr.Call -> typeCheckCall(expr)
+            is Expr.Function -> typeCheckFunction(expr)
+            is Expr.Grouping -> {
+                expr.type = typeCheck(expr.expr)
+                expr.type
+            }
+            is Expr.If -> typeCheckIfExpr(expr)
+            is Expr.Literal -> typeCheckLiteral(expr)
+            is Expr.Logical -> typeCheckLogical(expr)
+            is Expr.Set -> typeCheckSet(expr)
+            is Expr.Super -> {
+                val distance = locals[expr]
+                val superclass = distance?.let { environment.getValueAt(it - 1, "super") } as Type.InstanceType
+                val thisType = (superclass).getMemberType(expr.method.lexeme)
+                expr.type = thisType
+                thisType
+            }
+            is Expr.This -> {
+                val thisType = lookUpVariableType(expr.keyword, expr)
+                expr.type = thisType
+                thisType
+            }
+            is Expr.Unary -> typeCheckUnary(expr)
+            is Expr.Variable -> {
+                val type = lookUpVariableType(expr.name, expr)
+                expr.type = type
+                type
+            }
+            is Expr.TypeMatch -> getTypeMatchType(expr)
+            is Expr.Match -> getMatchType(expr)
+            is Expr.Tuple -> {
+                val elementTypes = expr.values.map { typeCheck(it) }
+                val thisType = Type.TupleType(elementTypes)
+                expr.type = thisType
+                return thisType
+            }
+        }
+    }
+
+    /*
+    You can use a function or class or module when it's defined later on in the code
+    To do this I have to iterate through these declarations first before checking the rest of the code
+     */
+    private fun preVisitDeclarations(statements: List<Stmt>) {
         statements.filterIsInstance<Stmt.ClassDeclaration>().forEach { typeCheckClassDeclaration(it) }
         statements.filterIsInstance<Stmt.Enum>().forEach {
             val container = Type.EnumContainer(it.name, it.members)
@@ -56,11 +146,6 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             environment.defineValue(module.name.lexeme, type)
             environment.defineType(module.name.lexeme, type)
         }
-
-//        classes.forEach { typeCheck(it) }
-//        functions.forEach { typeCheck(it) }
-
-        statements.forEach { typeCheck(it) }
     }
 
     private fun getModuleSignature(module: Stmt.Module): Type.ModuleType {
@@ -181,116 +266,93 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         return instance
     }
 
-    fun typeCheck(stmt: Stmt) {
-        when (stmt) {
-            is Stmt.Class -> typeCheckClass(stmt)
-            is Stmt.Constructor -> typeCheckConstructor(stmt)
-            is Stmt.ConstructorDeclaration, is Stmt.ClassDeclaration, is Stmt.FunctionDeclaration -> {}
-            is Stmt.Expression -> typeCheck(stmt.expression)
-            is Stmt.Function -> {
-                environment.defineValue(stmt.name.lexeme, stmt.functionBody.type)
-                val type = typeCheck(stmt.functionBody)
-                environment.defineValue(stmt.name.lexeme, type)
+
+
+    private fun typeCheckModuleStmt(stmt: Stmt.Module) {
+        val moduleFields = mutableMapOf<String, Type>()
+        stmt.classes.forEach { declareClass(it) }
+
+        stmt.classes.forEach {
+            typeCheck(it)
+            environment.getValue(it.name)?.let { cls ->
+                moduleFields[it.name.lexeme] = cls
             }
-            is Stmt.If -> {
-                typeCheck(stmt.condition)
-                typeCheck(stmt.thenBranch)
-                if (!isBooleanType(stmt.condition.type)) {
-                    typeErrors.add(CompileError.TypeError("If condition should be boolean"))
-                }
-                stmt.elseBranch?.let { typeCheck(it) }
+        }
+        stmt.enums.forEach {
+            typeCheck(it)
+            environment.getValue(it.name)?.let { e ->
+                moduleFields[it.name.lexeme] = e
             }
-            is Stmt.Print -> typeCheck(stmt.expression)
-            is Stmt.PrintType -> typeCheck(stmt.expression)
-            is Stmt.Var -> {
-                val initialiserType = lookupInitialiserType(stmt.type)
-                val assignedType = typeCheck(stmt.initializer)
-                val type = if (stmt.type is Type.InferrableType)
-                    assignedType else resolveInstanceType(initialiserType)
-                val canAssign = initialiserType.canAssignTo(assignedType)
+        }
+        stmt.functions.forEach {
+            typeCheck(it)
+            environment.getValue(it.name)?.let { fn ->
+                moduleFields[it.name.lexeme] = fn
+            }
+        }
+        stmt.fields.forEach {
+            typeCheck(it)
+            environment.getValue(it.name)?.let { field ->
+                moduleFields[it.name.lexeme] = field
+            }
+        }
+
+        stmt.modules.forEach {
+            typeCheck(it)
+            environment.getValue(it.name)?.let { module ->
+                moduleFields[it.name.lexeme] = module
+            }
+        }
+
+
+        val type = Type.ModuleType(moduleFields)
+        environment.defineValue(stmt.name.lexeme, type)
+        environment.defineType(stmt.name.lexeme, type)
+    }
+
+    private fun typeCheckDestructure(stmt: Stmt.Destructure) {
+        val assignedType = typeCheck(stmt.initializer)
+        if (assignedType is Type.TupleType) {
+
+            stmt.names.forEachIndexed { index, varDeclaration ->
+                val sliceType = assignedType.types[index]
+                val declaredType = if (varDeclaration.type is Type.InferrableType)
+                    sliceType else resolveInstanceType(varDeclaration.type)
+                val canAssign = declaredType.canAssignTo(sliceType)
 
                 if (!canAssign) {
-                    typeErrors.add(CompileError.TypeError("Cannot assign ${assignedType} to $initialiserType"))
+                    typeErrors.add(CompileError.TypeError("Cannot assign $sliceType to $declaredType"))
                 }
-                stmt.type = type
-                environment.defineValue(stmt.name.lexeme, type)
+
+                environment.defineValue(varDeclaration.name.lexeme, declaredType)
+
             }
-            is Stmt.While -> {
-                typeCheck(stmt.condition)
-
-                if (!isBooleanType(stmt.condition.type)) {
-                    typeErrors.add(CompileError.TypeError("While condition should be boolean"))
-                }
-                typeCheck(stmt.body)
-            }
-            is Stmt.ForEach -> typeCheckForEach(stmt)
-            is Stmt.VarDeclaration -> {
-            }
-
-            is Stmt.Destructure -> {
-                val assignedType = typeCheck(stmt.initializer)
-                if (assignedType is Type.TupleType) {
-
-                    stmt.names.forEachIndexed { index, varDeclaration ->
-                        val sliceType = assignedType.types[index]
-                        val declaredType = if (varDeclaration.type is Type.InferrableType)
-                            sliceType else resolveInstanceType(varDeclaration.type)
-                        val canAssign = declaredType.canAssignTo(sliceType)
-
-                        if (!canAssign) {
-                            typeErrors.add(CompileError.TypeError("Cannot assign ${sliceType} to $declaredType"))
-                        }
-
-                        environment.defineValue(varDeclaration.name.lexeme, declaredType)
-
-                    }
-                } else {
-                    typeErrors.add(CompileError.TypeError("Can only destructure tuples"))
-                }
-            }
-            is Stmt.Module -> {
-                val moduleFields = mutableMapOf<String, Type>()
-                stmt.classes.forEach { declareClass(it) }
-
-                stmt.classes.forEach {
-                    typeCheck(it)
-                    environment.getValue(it.name)?.let { cls ->
-                        moduleFields[it.name.lexeme] = cls
-                    }
-                }
-                stmt.enums.forEach {
-                    typeCheck(it)
-                    environment.getValue(it.name)?.let { e ->
-                        moduleFields[it.name.lexeme] = e
-                    }
-                }
-                stmt.functions.forEach {
-                    typeCheck(it)
-                    environment.getValue(it.name)?.let { fn ->
-                        moduleFields[it.name.lexeme] = fn
-                    }
-                }
-                stmt.fields.forEach {
-                    typeCheck(it)
-                    environment.getValue(it.name)?.let { field ->
-                        moduleFields[it.name.lexeme] = field
-                    }
-                }
-
-                stmt.modules.forEach {
-                    typeCheck(it)
-                    environment.getValue(it.name)?.let { module ->
-                        moduleFields[it.name.lexeme] = module
-                    }
-                }
-
-
-                val type = Type.ModuleType(moduleFields)
-                environment.defineValue(stmt.name.lexeme, type)
-                environment.defineType(stmt.name.lexeme, type)
-            }
-            else -> {}
+        } else {
+            typeErrors.add(CompileError.TypeError("Can only destructure tuples"))
         }
+    }
+
+    private fun typeCheckIfStmt(stmt: Stmt.If) {
+        typeCheck(stmt.condition)
+        typeCheck(stmt.thenBranch)
+        if (!isBooleanType(stmt.condition.type)) {
+            typeErrors.add(CompileError.TypeError("If condition should be boolean"))
+        }
+        stmt.elseBranch?.let { typeCheck(it) }
+    }
+
+    private fun typeCheckVarStmt(stmt: Stmt.Var) {
+        val initialiserType = lookupInitialiserType(stmt.type)
+        val assignedType = typeCheck(stmt.initializer)
+        val type = if (stmt.type is Type.InferrableType)
+            assignedType else resolveInstanceType(initialiserType)
+        val canAssign = initialiserType.canAssignTo(assignedType)
+
+        if (!canAssign) {
+            typeErrors.add(CompileError.TypeError("Cannot assign ${assignedType} to $initialiserType"))
+        }
+        stmt.type = type
+        environment.defineValue(stmt.name.lexeme, type)
     }
 
     private fun typeCheckForEach(stmt: Stmt.ForEach) {
@@ -454,15 +516,13 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             val referencedInterface =
                 resolveInstanceType(environment.getType(interfaceName) as Type) as Type.InterfaceType
 
-            referencedInterface.members.entries.forEach { }
             if (!referencedInterface.canAssignTo(instance)) {
                 typeErrors.add(CompileError.TypeError("Cannot assign ${stmt.name.lexeme} to ${interfaceName.lexeme}"))
-                val missing = referencedInterface.members.filter { !instance.hasMemberType(it.key, it.value) }
-                missing.entries.forEach {
-                    typeErrors.add(CompileError.TypeError("${stmt.name.lexeme} is missing ${it.key}, ${it.value}"))
+                val missing = referencedInterface.getMissingMembers(instance)
+                missing.entries.forEach {(key, value) ->
+                    typeErrors.add(CompileError.TypeError("${stmt.name.lexeme} is missing $key, $value"))
                 }
             }
-
         }
     }
 
@@ -558,117 +618,79 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
     override fun resolveTypeArgument(args: Map<String, Type>, type: Type): Type = type.resolveTypeArguments(args)
 
 
-    fun typeCheck(expr: Expr): Type {
-        return when (expr) {
-            is Expr.Get -> typeCheckGet(expr)
-            is Expr.Array -> {
-                val elementTypes = expr.values.map { typeCheck(it) }
-                val type = flattenTypes(elementTypes)
-                val thisType = createArrayType(type)
-                expr.type = thisType
-                return thisType
-            }
-            is Expr.Assign -> {
-                val left = lookUpVariableType(expr.name, expr)
-                typeCheck(expr.value)
-                if (!left.canAssignTo(expr.value.type)) {
-                    typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to ${left}"))
-                }
-                val thisType = expr.value.type
-                thisType
-            }
-            is Expr.Binary -> typeCheckBinary(expr)
-            is Expr.Block -> {
-                val thisType = getBlockType(expr.statements, TypeScope(environment))
-                expr.type = thisType
-                thisType
-            }
-            is Expr.Call -> typeCheckCall(expr)
-            is Expr.Function -> typeCheckFunction(expr)
-            is Expr.Grouping -> {
-                expr.type = typeCheck(expr.expr)
-                expr.type
-            }
-            is Expr.If -> {
-                typeCheck(expr.condition)
-                if (!isBooleanType(expr.condition.type)) {
-                    typeErrors.add(CompileError.TypeError("If condition should be boolean"))
-                }
-                val thenType = typeCheck(expr.thenBranch)
-                val elseType = typeCheck(expr.elseBranch)
-                val thisType =
-                    if (thenType::class == elseType::class) thenType else Type.UnionType(listOf(thenType, elseType))
-                expr.type = thisType
-                thisType
-            }
-            is Expr.Literal -> {
-                val type = when (expr.value) {
-                    is String -> createStringType()
-                    is Boolean -> createBooleanType()
-                    is Char -> createCharType()
-                    else -> when (expr.tokenType) {
-                            TokenType.INTEGER -> createIntegerType()
-                            TokenType.DECIMAL -> createDecimalType()
-                            else -> Type.NullType()
-                        }
-                }
-                expr.type = type
-                expr.type
-            }
-            is Expr.Logical -> {
-                val left = typeCheck(expr.left)
-                val right = typeCheck(expr.right)
-                if (!isBooleanType(left) || !isBooleanType(right)) {
-                    typeErrors.add(CompileError.TypeError("Logical expression should have boolean left and right"))
-                }
-                val thisType = createBooleanType()
-                expr.type = thisType
-                thisType
-            }
-            is Expr.Set -> typeCheckSet(expr)
-            is Expr.Super -> {
-                val distance = locals[expr]
-                val superclass = distance?.let { environment.getValueAt(it - 1, "super") } as Type.InstanceType
-                val thisType = (superclass).getMemberType(expr.method.lexeme)
-                expr.type = thisType
-                thisType
-            }
-            is Expr.This -> {
-                val thisType = lookUpVariableType(expr.keyword, expr)
-                expr.type = thisType
-                thisType
-            }
-            is Expr.Unary -> {
-                val operandType = typeCheck(expr.right)
-                if (operandType is Type.InstanceType) {
-                    val returnType = getUnaryReturnType(expr, operandType)
-                    if (returnType != null) {
-                        val resolved = resolveInstanceType(returnType)
-                        expr.type = resolved
-                        resolved
-                    } else {
-                        expr.type = operandType
-                        operandType
-                    }
-                } else {
-                    expr.type = operandType
-                    operandType
-                }
-            }
-            is Expr.Variable -> {
-                val type = lookUpVariableType(expr.name, expr)
-                expr.type = type
-                type
-            }
-            is Expr.TypeMatch -> getTypeMatchType(expr)
-            is Expr.Match -> getMatchType(expr)
-            is Expr.Tuple -> {
-                val elementTypes = expr.values.map { typeCheck(it) }
-                val thisType = Type.TupleType(elementTypes)
-                expr.type = thisType
-                return thisType
+    private fun typeCheckLogical(expr: Expr.Logical): Type {
+        val left = typeCheck(expr.left)
+        val right = typeCheck(expr.right)
+        if (!isBooleanType(left) || !isBooleanType(right)) {
+            typeErrors.add(CompileError.TypeError("Logical expression should have boolean left and right"))
+        }
+        val thisType = createBooleanType()
+        expr.type = thisType
+        return thisType
+    }
+
+    private fun typeCheckLiteral(expr: Expr.Literal): Type {
+        val type = when (expr.value) {
+            is String -> createStringType()
+            is Boolean -> createBooleanType()
+            is Char -> createCharType()
+            else -> when (expr.tokenType) {
+                TokenType.INTEGER -> createIntegerType()
+                TokenType.DECIMAL -> createDecimalType()
+                else -> Type.NullType()
             }
         }
+        expr.type = type
+        return expr.type
+    }
+
+    private fun typeCheckAssign(expr: Expr.Assign): Type {
+        val left = lookUpVariableType(expr.name, expr)
+        typeCheck(expr.value)
+        if (!left.canAssignTo(expr.value.type)) {
+            typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $left"))
+        }
+        val thisType = expr.value.type
+        return thisType
+    }
+
+    private fun typeCheckUnary(expr: Expr.Unary): Type {
+        val operandType = typeCheck(expr.right)
+        return if (operandType is Type.InstanceType) {
+            val returnType = getUnaryReturnType(expr, operandType)
+            if (returnType != null) {
+                val resolved = resolveInstanceType(returnType)
+                expr.type = resolved
+                resolved
+            } else {
+                expr.type = operandType
+                operandType
+            }
+        } else {
+            expr.type = operandType
+            operandType
+        }
+    }
+
+    private fun typeCheckIfExpr(expr: Expr.If): Type {
+        typeCheck(expr.condition)
+        if (!isBooleanType(expr.condition.type)) {
+            typeErrors.add(CompileError.TypeError("If condition should be boolean"))
+        }
+        val thenType = typeCheck(expr.thenBranch)
+        val elseType = typeCheck(expr.elseBranch)
+        val thisType =
+            if (thenType::class == elseType::class) thenType else Type.UnionType(listOf(thenType, elseType))
+        expr.type = thisType
+        return thisType
+    }
+
+    private fun typeCheckArray(expr: Expr.Array): Type {
+        val elementTypes = expr.values.map { typeCheck(it) }
+        val type = flattenTypes(elementTypes)
+        val thisType = createArrayType(type)
+        expr.type = thisType
+        return thisType
     }
 
     private fun getUnaryReturnType(expr: Expr.Unary, operandType: Type): Type? {

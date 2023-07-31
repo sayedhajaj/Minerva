@@ -138,6 +138,8 @@ sealed interface Type {
         override fun canAssignTo(otherType: Type): Boolean =
             members.all { otherType.hasMemberType(it.key, it.value) }
 
+        fun getMissingMembers(otherType: Type) = members.filter { !otherType.hasMemberType(it.key, it.value) }
+
         override fun hasMemberType(member: String, type: Type): Boolean =
             members.containsKey(member) && members[member]!!.canAssignTo(type)
 
