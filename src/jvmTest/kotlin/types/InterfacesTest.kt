@@ -1,4 +1,4 @@
-package classes
+package types
 
 import HelloWorldTest
 import MinervaCompiler
@@ -9,7 +9,7 @@ import kotlin.test.assertContentEquals
 class InterfacesTest {
     @Test
     internal fun testInterfaces() {
-        val source = HelloWorldTest::class.java.getResource("examples/interfaces/basic_interfaces.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/types/interfaces/basic_interfaces.minerva").readText()
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()
@@ -18,7 +18,7 @@ class InterfacesTest {
 
     @Test
     internal fun testUnimplimented() {
-        val source = HelloWorldTest::class.java.getResource("examples/interfaces/unimplimented_method.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/types/interfaces/unimplimented_method.minerva").readText()
         val compiler = MinervaCompiler(source)
 
         val output = compiler.frontEndPass().first.map { it.message }.toTypedArray()
@@ -27,7 +27,7 @@ class InterfacesTest {
 
     @Test
     internal fun testAcceptInterface() {
-        val source = HelloWorldTest::class.java.getResource("examples/interfaces/accept_interface.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/types/interfaces/accept_interface.minerva").readText()
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()
@@ -36,7 +36,7 @@ class InterfacesTest {
 
     @Test
     internal fun testGenericInterface() {
-        val source = HelloWorldTest::class.java.getResource("examples/interfaces/generic_interface.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/types/interfaces/generic_interface.minerva").readText()
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()

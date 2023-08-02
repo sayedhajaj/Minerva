@@ -1,11 +1,13 @@
-
+package primitives
+import HelloWorldTest
+import MinervaCompiler
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 
 class ArraysTest {
     @Test
     internal fun testArrays() {
-        val source = HelloWorldTest::class.java.getResource("examples/arrays.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/primitives/arrays.minerva").readText()
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()

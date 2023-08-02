@@ -1,4 +1,6 @@
-
+package types
+import HelloWorldTest
+import MinervaCompiler
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 
