@@ -1,0 +1,5 @@
+var text = "hello";
+
+print text == "hello";
+
+print text + " world";
