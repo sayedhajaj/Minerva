@@ -1,0 +1,10 @@
+class Bar(var name: String) {
+}
+
+class Foo(var name: String) {
+
+}
+
+var blah: Foo|Bar = Bar("Bob");
+
+print blah.name;
