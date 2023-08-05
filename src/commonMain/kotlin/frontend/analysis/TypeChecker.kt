@@ -603,12 +603,8 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
                 val params = resolveInstanceType(type.params) as Type.TupleType
                 return Type.FunctionType(params, type.typeParams, result)
             }
-            is Type.TupleType -> {
-                return Type.TupleType(type.types.map { resolveInstanceType(it) })
-            }
-            is Type.GenericType -> {
-                return resolveInstanceType(type.bodyType)
-            }
+            is Type.TupleType -> Type.TupleType(type.types.map { resolveInstanceType(it) })
+            is Type.GenericType -> resolveInstanceType(type.bodyType)
             else -> type
         }
     }
@@ -759,39 +755,56 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             val methodName = operatorMethods[expr.operator.type]!!
             val method = left.getMemberType(methodName) as Type.FunctionType?
             val allowed = operatorOperandAllowed(expr.operator.type, method, right)
-            if (allowed) {
-                return method?.result!!
+            if (allowed) return method?.result!!
+        }
+        return getComparisonOperatorType(left, expr, right)
+    }
+
+    private fun getComparisonOperatorType(
+        left: Type.InstanceType,
+        expr: Expr.Binary,
+        right: Type
+    ): Type {
+        val methodName = "compareTo"
+        if (left.hasMember(methodName)) {
+            checkCompare(left, methodName, expr, right)
+        } else {
+            checkEquals(left, expr, right)
+        }
+        return createBooleanType()
+    }
+
+    private fun checkCompare(
+        left: Type.InstanceType,
+        methodName: String,
+        expr: Expr.Binary,
+        right: Type
+    ) {
+        val method = left.getMemberType(methodName) as Type.FunctionType
+        val allowed = operatorOperandAllowed(expr.operator.type, method, right)
+        if (allowed) {
+            if (!isIntegerType(method.result)) {
+                typeErrors.add(CompileError.TypeError("Return type of compare method should be integer"))
             }
         } else {
-            val methodName = "compareTo"
-            if (left.hasMember(methodName)) {
-                val method = left.getMemberType(methodName) as Type.FunctionType
-                val allowed = operatorOperandAllowed(expr.operator.type, method, right)
-                if (allowed) {
-                    if (!isIntegerType(method.result)) {
-                        typeErrors.add(CompileError.TypeError("Return type of compare method should be integer"))
-                    }
-                } else {
-                    if (expr.operator.type !in listOf(
-                            TokenType.EQUAL_EQUAL,
-                            TokenType.BANG_EQUAL
-                        )
-                    ) {
-                        typeErrors.add(CompileError.TypeError("CompareTo not implemented for $this"))
-                    }
-                }
-            } else {
-                val equalMethod = left.getMemberType("equals") as Type.FunctionType?
-                val allowed = operatorOperandAllowed(expr.operator.type, equalMethod, right)
-                if (allowed) {
-                    if (!isBooleanType(equalMethod!!.result)) {
-                        typeErrors.add(CompileError.TypeError("Return type of equals method should be boolean"))
-                    }
-                }
+            if (expr.operator.type !in listOf(
+                    TokenType.EQUAL_EQUAL,
+                    TokenType.BANG_EQUAL
+                )
+            ) {
+                typeErrors.add(CompileError.TypeError("CompareTo not implemented for $this"))
             }
-            return createBooleanType()
         }
-        return null
+    }
+
+    private fun checkEquals(left: Type.InstanceType, expr: Expr.Binary, right: Type) {
+        val equalMethod = left.getMemberType("equals") as Type.FunctionType?
+        val allowed = operatorOperandAllowed(expr.operator.type, equalMethod, right)
+        if (allowed) {
+            if (!isBooleanType(equalMethod!!.result)) {
+                typeErrors.add(CompileError.TypeError("Return type of equals method should be boolean"))
+            }
+        }
     }
 
     private fun typeCheckCall(expr: Expr.Call): Type {
@@ -1248,4 +1261,3 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         else Type.GenericType(params, args, type)
     }
 }
-
