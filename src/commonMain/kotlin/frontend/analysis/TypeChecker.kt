@@ -17,6 +17,7 @@ val operatorMethods = mapOf(
     TokenType.STAR to "multiply",
     TokenType.MODULO to "rem"
 )
+
 class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
 
     val globals = TypeScope()
@@ -265,7 +266,6 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
     }
 
 
-
     private fun typeCheckModuleStmt(stmt: Stmt.Module) {
         val moduleFields = mutableMapOf<String, Type>()
         stmt.classes.forEach { declareClass(it) }
@@ -392,7 +392,10 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
     private fun typeCheckClassDeclaration(stmt: Stmt.ClassDeclaration) {
         val instanceType = getClassDeclarationType(stmt)
 
-        environment.defineValue(stmt.name.lexeme, wrapGeneric(Type.ClassType(instanceType.className), instanceType.typeParams, emptyList()))
+        environment.defineValue(
+            stmt.name.lexeme,
+            wrapGeneric(Type.ClassType(instanceType.className), instanceType.typeParams, emptyList())
+        )
         environment.defineType(stmt.name.lexeme, wrapGeneric(instanceType, instanceType.typeParams, emptyList()))
     }
 
@@ -516,7 +519,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             if (!referencedInterface.canAssignTo(instance)) {
                 typeErrors.add(CompileError.TypeError("Cannot assign ${stmt.name.lexeme} to ${interfaceName.lexeme}"))
                 val missing = referencedInterface.getMissingMembers(instance)
-                missing.entries.forEach {(key, value) ->
+                missing.entries.forEach { (key, value) ->
                     typeErrors.add(CompileError.TypeError("${stmt.name.lexeme} is missing $key, $value"))
                 }
             }
@@ -888,51 +891,73 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
 
     private fun typeCheckGet(expr: Expr.Get): Type {
         typeCheck(expr.obj)
-        return if (isArrayType(expr.obj.type) && expr.index != null) {
-            val thisType = (expr.obj.type as Type.InstanceType).typeArguments[0]
-            typeCheck(expr.index)
-            if (!isIntegerType(expr.index.type)) {
-                typeErrors.add(CompileError.TypeError("Array index should be an integer"))
-            }
+        return if (isArrayType(expr.obj.type) && expr.index != null) typeCheckArrayGet(
+            expr,
+            expr.index
+        ) else typeCheckFieldGet(expr)
+    }
 
-            expr.type = thisType
-            thisType
-        } else {
-            val calleeType = typeCheck(expr.obj)
-            val thisType = calleeType.getMemberType(expr.name.lexeme)
-            val resolved = if (thisType is Type.UnresolvedType) resolveInstanceType(thisType)
-            else thisType
-            expr.type = resolved
-            resolved
+    private fun typeCheckFieldGet(expr: Expr.Get): Type {
+        val calleeType = typeCheck(expr.obj)
+        val thisType = calleeType.getMemberType(expr.name.lexeme)
+        val resolved = if (thisType is Type.UnresolvedType) resolveInstanceType(thisType)
+        else thisType
+        expr.type = resolved
+        return resolved
+    }
+
+    private fun typeCheckArrayGet(
+        expr: Expr.Get,
+        index: Expr
+    ): Type {
+        val thisType = (expr.obj.type as Type.InstanceType).typeArguments[0]
+        typeCheck(index)
+        if (!isIntegerType(index.type)) {
+            typeErrors.add(CompileError.TypeError("Array index should be an integer"))
         }
+
+        expr.type = thisType
+        return thisType
     }
 
     private fun typeCheckSet(expr: Expr.Set): Type {
         typeCheck(expr.obj)
         val left = expr.obj.type
         return if (isArrayType(left)) {
-            typeCheck(expr.value)
-            val arrType = (left as Type.InstanceType).typeArguments[0]
-            if (expr.index != null) {
-                typeCheck(expr.index)
-                if (!isIntegerType(expr.index.type)) {
-                    typeErrors.add(CompileError.TypeError("Array index should be integer"))
-                }
-            }
-            if (!arrType.canAssignTo(expr.value.type)) {
-                typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $arrType"))
-            }
-            val thisType = expr.value.type
-            thisType
+            typeCheckArraySet(expr, left)
         } else {
-            val field = left.getMemberType(expr.name.lexeme)
-            typeCheck(expr.value)
-            if (!field.canAssignTo(expr.value.type)) {
-                typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $field"))
-            }
-            val thisType = expr.value.type
-            thisType
+            typeCheckFieldSet(left, expr)
         }
+    }
+
+    private fun typeCheckFieldSet(
+        left: Type,
+        expr: Expr.Set
+    ): Type {
+        val field = left.getMemberType(expr.name.lexeme)
+        typeCheck(expr.value)
+        if (!field.canAssignTo(expr.value.type)) {
+            typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $field"))
+        }
+        return expr.value.type
+    }
+
+    private fun typeCheckArraySet(
+        expr: Expr.Set,
+        left: Type,
+    ): Type {
+        typeCheck(expr.value)
+        val arrType = (left as Type.InstanceType).typeArguments[0]
+        if (expr.index != null) {
+            typeCheck(expr.index)
+            if (!isIntegerType(expr.index.type)) {
+                typeErrors.add(CompileError.TypeError("Array index should be integer"))
+            }
+        }
+        if (!arrType.canAssignTo(expr.value.type)) {
+            typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $arrType"))
+        }
+        return expr.value.type
     }
 
     private fun getMatchType(expr: Expr.Match): Type {
@@ -1024,7 +1049,11 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         val returnType = if (definition.result is Type.InferrableType) blockReturnType else definition.result
 
         expr.type =
-            wrapGeneric(Type.FunctionType(Type.TupleType(paramTypes), typeParameters, returnType), typeParameters, emptyList())
+            wrapGeneric(
+                Type.FunctionType(Type.TupleType(paramTypes), typeParameters, returnType),
+                typeParameters,
+                emptyList()
+            )
 
         return expr.type
     }
