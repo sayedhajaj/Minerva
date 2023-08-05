@@ -193,8 +193,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
 
 
-        val type = Type.ModuleType(moduleFields)
-        return type
+        return Type.ModuleType(moduleFields)
     }
 
     private fun declareInterface(stmt: Stmt.Interface) {
@@ -254,7 +253,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             }
         }
 
-        val instance = Type.InstanceType(
+        return Type.InstanceType(
             Expr.Variable(stmt.name),
             params,
             typeParameters,
@@ -263,7 +262,6 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             null,
             emptyList()
         )
-        return instance
     }
 
 
@@ -349,7 +347,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         val canAssign = initialiserType.canAssignTo(assignedType)
 
         if (!canAssign) {
-            typeErrors.add(CompileError.TypeError("Cannot assign ${assignedType} to $initialiserType"))
+            typeErrors.add(CompileError.TypeError("Cannot assign $assignedType to $initialiserType"))
         }
         stmt.type = type
         environment.defineValue(stmt.name.lexeme, type)
@@ -418,7 +416,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             }
         }
 
-        val instanceType = Type.InstanceType(
+        return Type.InstanceType(
             Expr.Variable(stmt.name),
             params,
             typeParameters,
@@ -427,7 +425,6 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             null,
             emptyList()
         )
-        return instanceType
     }
 
     override fun lookupInstance(name: Token): Type.InstanceType {
@@ -648,8 +645,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         if (!left.canAssignTo(expr.value.type)) {
             typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $left"))
         }
-        val thisType = expr.value.type
-        return thisType
+        return expr.value.type
     }
 
     private fun typeCheckUnary(expr: Expr.Unary): Type {
@@ -799,62 +795,72 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         val calleeType = typeCheck(expr.callee)
         expr.arguments.forEach { typeCheck(it) }
 
-
         return when (calleeType) {
             is Type.FunctionType -> typeCheckFunctionCall(expr, calleeType)
             is Type.ClassType -> typeCheckInstanceCall(calleeType, expr)
-            is Type.GenericType -> {
-                val bodyType = calleeType.bodyType
-                if (bodyType is Type.FunctionType) {
-                    val params = (resolveInstanceType(bodyType.params) as Type.TupleType).types
-                    val typeArguments =
-                        inferTypeArguments(expr.typeArguments, bodyType.typeParams, params, expr.arguments)
-                            .map { lookupInitialiserType(it) }
-
-                    bodyType.typeParams.forEachIndexed { index, typeParam ->
-                        environment.defineType(typeParam.identifier.name.lexeme, typeArguments[index])
-                    }
-
-                    val args = bodyType.typeParams.zip(typeArguments).associate {
-                        Pair(it.first.identifier.name.lexeme, it.second)
-                    }.toMap()
-
-                    checkGenericCall(expr.arguments, params)
-
-                    val resultType = typeCheckFunctionCall(expr, bodyType)
-                    val unpackedType = resultType.resolveTypeArguments(args)
-                    expr.type = resultType
-                    return expr.type
-                } else if (bodyType is Type.ClassType) {
-                    val classInstance = lookupInstance(bodyType.className.name)
-                    val typeParams = classInstance.typeParams
-                    val params = classInstance.params
-                    val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments).map {
-                        resolveInstanceType(it)
-                    }
-
-                    typeParams.forEachIndexed { index, typeParam ->
-                        environment.defineType(typeParam.identifier.name.lexeme, typeArguments[index])
-                    }
-
-                    checkGenericCall(expr.arguments, params)
-
-                    val args = typeParams.zip(typeArguments).associate {
-                        Pair(it.first.identifier.name.lexeme, it.second)
-                    }.toMap()
-
-                    val modifiedInstance = classInstance.resolveTypeArguments(args) as Type.InstanceType
-                    val modifiedParams = modifiedInstance.params
-                    typeCheckArguments(modifiedParams, expr.arguments)
-                    expr.type = modifiedInstance
-
-
-                    return modifiedInstance
-                }
-                calleeType.bodyType
-            }
+            is Type.GenericType -> typeCheckCall(calleeType, expr)
             else -> calleeType
         }
+    }
+
+    private fun typeCheckCall(
+        calleeType: Type.GenericType,
+        expr: Expr.Call
+    ): Type {
+        return when (val bodyType = calleeType.bodyType) {
+            is Type.FunctionType -> checkGenericFunctionCall(bodyType, expr)
+            is Type.ClassType -> checkGenericInstanceCall(bodyType, expr)
+            else -> calleeType.bodyType
+        }
+    }
+
+    private fun checkGenericInstanceCall(
+        bodyType: Type.ClassType,
+        expr: Expr.Call
+    ): Type.InstanceType {
+        val classInstance = lookupInstance(bodyType.className.name)
+        val typeParams = classInstance.typeParams
+        val params = classInstance.params
+        val typeArguments = inferTypeArguments(expr.typeArguments, typeParams, params, expr.arguments).map {
+            resolveInstanceType(it)
+        }
+
+        typeParams.forEachIndexed { index, typeParam ->
+            environment.defineType(typeParam.identifier.name.lexeme, typeArguments[index])
+        }
+
+        checkGenericCall(expr.arguments, params)
+
+        val args = typeParams.zip(typeArguments).associate {
+            Pair(it.first.identifier.name.lexeme, it.second)
+        }.toMap()
+
+        val modifiedInstance = classInstance.resolveTypeArguments(args) as Type.InstanceType
+        val modifiedParams = modifiedInstance.params
+        typeCheckArguments(modifiedParams, expr.arguments)
+        expr.type = modifiedInstance
+
+        return modifiedInstance
+    }
+
+    private fun checkGenericFunctionCall(
+        bodyType: Type.FunctionType,
+        expr: Expr.Call
+    ): Type {
+        val params = (resolveInstanceType(bodyType.params) as Type.TupleType).types
+        val typeArguments =
+            inferTypeArguments(expr.typeArguments, bodyType.typeParams, params, expr.arguments)
+                .map { lookupInitialiserType(it) }
+
+        bodyType.typeParams.forEachIndexed { index, typeParam ->
+            environment.defineType(typeParam.identifier.name.lexeme, typeArguments[index])
+        }
+
+        checkGenericCall(expr.arguments, params)
+
+        val resultType = typeCheckFunctionCall(expr, bodyType)
+        expr.type = resultType
+        return expr.type
     }
 
     private fun typeCheckInstanceCall(calleeType: Type.ClassType, expr: Expr.Call): Type {
@@ -914,7 +920,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
                 }
             }
             if (!arrType.canAssignTo(expr.value.type)) {
-                typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to ${arrType}"))
+                typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $arrType"))
             }
             val thisType = expr.value.type
             thisType
