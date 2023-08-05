@@ -67,48 +67,60 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             is Expr.Array -> typeCheckArray(expr)
             is Expr.Assign -> typeCheckAssign(expr)
             is Expr.Binary -> typeCheckBinary(expr)
-            is Expr.Block -> {
-                val thisType = getBlockType(expr.statements, TypeScope(environment))
-                expr.type = thisType
-                thisType
-            }
+            is Expr.Block -> typeCheck(expr)
             is Expr.Call -> typeCheckCall(expr)
             is Expr.Function -> typeCheckFunction(expr)
-            is Expr.Grouping -> {
-                expr.type = typeCheck(expr.expr)
-                expr.type
-            }
+            is Expr.Grouping -> typeCheck(expr)
             is Expr.If -> typeCheckIfExpr(expr)
             is Expr.Literal -> typeCheckLiteral(expr)
             is Expr.Logical -> typeCheckLogical(expr)
             is Expr.Set -> typeCheckSet(expr)
-            is Expr.Super -> {
-                val distance = locals[expr]
-                val superclass = distance?.let { environment.getValueAt(it - 1, "super") } as Type.InstanceType
-                val thisType = (superclass).getMemberType(expr.method.lexeme)
-                expr.type = thisType
-                thisType
-            }
-            is Expr.This -> {
-                val thisType = lookUpVariableType(expr.keyword, expr)
-                expr.type = thisType
-                thisType
-            }
+            is Expr.Super -> typeCheck(expr)
+            is Expr.This -> typeCheck(expr)
             is Expr.Unary -> typeCheckUnary(expr)
-            is Expr.Variable -> {
-                val type = lookUpVariableType(expr.name, expr)
-                expr.type = type
-                type
-            }
+            is Expr.Variable -> typeCheck(expr)
             is Expr.TypeMatch -> getTypeMatchType(expr)
             is Expr.Match -> getMatchType(expr)
-            is Expr.Tuple -> {
-                val elementTypes = expr.values.map { typeCheck(it) }
-                val thisType = Type.TupleType(elementTypes)
-                expr.type = thisType
-                return thisType
-            }
+            is Expr.Tuple -> typeCheck(expr)
         }
+    }
+
+    private fun typeCheck(expr: Expr.Grouping): Type {
+        expr.type = typeCheck(expr.expr)
+        return expr.type
+    }
+
+    private fun typeCheck(expr: Expr.Block): Type {
+        val thisType = getBlockType(expr.statements, TypeScope(environment))
+        expr.type = thisType
+        return thisType
+    }
+
+    private fun typeCheck(expr: Expr.Variable): Type {
+        val type = lookUpVariableType(expr.name, expr)
+        expr.type = type
+        return type
+    }
+
+    private fun typeCheck(expr: Expr.Tuple): Type.TupleType {
+        val elementTypes = expr.values.map { typeCheck(it) }
+        val thisType = Type.TupleType(elementTypes)
+        expr.type = thisType
+        return thisType
+    }
+
+    private fun typeCheck(expr: Expr.This): Type {
+        val thisType = lookUpVariableType(expr.keyword, expr)
+        expr.type = thisType
+        return thisType
+    }
+
+    private fun typeCheck(expr: Expr.Super): Type {
+        val distance = locals[expr]
+        val superclass = distance?.let { environment.getValueAt(it - 1, "super") } as Type.InstanceType
+        val thisType = (superclass).getMemberType(expr.method.lexeme)
+        expr.type = thisType
+        return thisType
     }
 
     /*
