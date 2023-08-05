@@ -529,7 +529,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
 
     private fun lookupInitialiserType(type: Type): Type = when (type) {
         is Type.UnresolvedType -> {
-            if (!typeExists(type.identifier.name, type.identifier)) resolveInstanceType(type)
+            if (!typeExists(type.identifier.name)) resolveInstanceType(type)
             else {
                 val resolvedType = lookUpType(type.identifier.name)
                 if (resolvedType is Type.InstanceType) {
@@ -560,39 +560,37 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         else -> type
     }
 
-    private fun resolveInstanceType(type: Type): Type {
-        return when (type) {
-            is Type.UnresolvedType -> {
-                if (!exists(type.identifier.name, type.identifier)) {
-                    return type
-                }
-                val resolvedType = lookUpType(type.identifier.name)
-                if (resolvedType is Type.InstanceType) {
-                    if (type.typeArguments.size == resolvedType.typeParams.size) {
-                        val args = mutableMapOf<String, Type>()
-                        resolvedType.typeParams.forEachIndexed { index, unresolvedType ->
-                            args[unresolvedType.identifier.name.lexeme] = resolveInstanceType(type.typeArguments[index])
-                        }
-                        resolveTypeArgument(args, resolvedType)
-                    } else resolvedType
-                } else if (resolvedType is Type.GenericType) {
-                    if (type.typeArguments.size == resolvedType.params.size) {
-                        val args = mutableMapOf<String, Type>()
-                        resolvedType.params.forEachIndexed { index, unresolvedType ->
-                            args[unresolvedType.identifier.name.lexeme] = resolveInstanceType(type.typeArguments[index])
-                        }
-                        (resolveTypeArgument(args, resolvedType) as Type.GenericType).bodyType
-                    } else resolvedType
+    private fun resolveInstanceType(type: Type.UnresolvedType): Type {
+        if (!exists(type.identifier.name, type.identifier)) {
+            return type
+        }
+        when (val resolvedType = lookUpType(type.identifier.name)) {
+            is Type.InstanceType -> {
+                return if (type.typeArguments.size == resolvedType.typeParams.size) {
+                    val args = mutableMapOf<String, Type>()
+                    resolvedType.typeParams.forEachIndexed { index, unresolvedType ->
+                        args[unresolvedType.identifier.name.lexeme] = resolveInstanceType(type.typeArguments[index])
+                    }
+                    resolveTypeArgument(args, resolvedType)
                 } else resolvedType
             }
+            is Type.GenericType -> {
+                return if (type.typeArguments.size == resolvedType.params.size) {
+                    val args = mutableMapOf<String, Type>()
+                    resolvedType.params.forEachIndexed { index, unresolvedType ->
+                        args[unresolvedType.identifier.name.lexeme] = resolveInstanceType(type.typeArguments[index])
+                    }
+                    (resolveTypeArgument(args, resolvedType) as Type.GenericType).bodyType
+                } else resolvedType
+            }
+            else -> return resolvedType
+        }
+    }
+
+    private fun resolveInstanceType(type: Type): Type {
+        return when (type) {
+            is Type.UnresolvedType -> resolveInstanceType(type)
             is Type.UnionType -> Type.UnionType(type.types.map { resolveInstanceType(it) })
-//            is Type.InstanceType -> {
-//                val newMembers = type.members.entries.associate {
-//                    val newType = resolveInstanceType(it.value)
-//                    it.key to newType
-//                }
-//                return type.copy(members = newMembers)
-//            }
             is Type.InterfaceType -> {
                 val newMembers = type.members.entries.associate {
                     val newType = resolveInstanceType(it.value)
@@ -760,9 +758,6 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
     private fun getBinaryOperatorType(expr: Expr.Binary, left: Type.InstanceType, right: Type): Type? {
         if (expr.operator.type in arithmeticOperators) {
             val methodName = operatorMethods[expr.operator.type]!!
-            if (left.className.name.lexeme == "Decimal") {
-                val members = left.members
-            }
             val method = left.getMemberType(methodName) as Type.FunctionType?
             val allowed = operatorOperandAllowed(expr.operator.type, method, right)
             if (allowed) {
@@ -774,7 +769,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
                 val method = left.getMemberType(methodName) as Type.FunctionType
                 val allowed = operatorOperandAllowed(expr.operator.type, method, right)
                 if (allowed) {
-                    if (!isIntegerType(method!!.result)) {
+                    if (!isIntegerType(method.result)) {
                         typeErrors.add(CompileError.TypeError("Return type of compare method should be integer"))
                     }
                 } else {
@@ -1070,7 +1065,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             if (paramType is Type.UnresolvedType) {
                 var expectedType = lookupInitialiserType(paramType)
                 if (expectedType is Type.UnresolvedType) {
-                    if (typeExists(expectedType.identifier.name, expectedType.identifier)) {
+                    if (typeExists(expectedType.identifier.name)) {
                         expectedType = lookupInitialiserType(expectedType)
                     }
                 }
@@ -1180,7 +1175,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             globals.getValue(name) != null
     }
 
-    fun typeExists(name: Token, expr: Expr): Boolean {
+    fun typeExists(name: Token): Boolean {
         return environment.getType(name) != null
     }
 
