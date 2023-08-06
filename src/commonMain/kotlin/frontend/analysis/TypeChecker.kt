@@ -1171,49 +1171,29 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         return arrayClass.resolveTypeArguments(mapOf("T" to type))
     }
 
+    fun createLiteralType(name: String) = lookUpType(Token(TokenType.IDENTIFIER, name, null, -1))
 
-    fun createIntegerType() =
-        lookUpType(
-            Token(TokenType.IDENTIFIER, "Int", null, -1)
-        )
+    fun createIntegerType() = createLiteralType("Int")
 
-    fun createDecimalType() =
-        lookUpType(
-            Token(TokenType.IDENTIFIER, "Decimal", null, -1)
-        )
+    fun createDecimalType() = createLiteralType("Decimal")
 
-    fun createStringType() =
-        lookUpType(
-            Token(TokenType.IDENTIFIER, "String", null, -1)
-        )
+    fun createStringType() = createLiteralType("String")
 
-    fun createBooleanType() =
-        lookUpType(Token(TokenType.IDENTIFIER, "Boolean", null, -1))
+    fun createBooleanType() = createLiteralType("Boolean")
 
-    fun createCharType() =
-        lookUpType(Token(TokenType.IDENTIFIER, "Char", null, -1))
+    fun createCharType() = createLiteralType("Char")
 
-    fun isIntegerType(type: Type): Boolean = when (type) {
-        is Type.InstanceType -> type.className.name.lexeme == "Int"
-        is Type.UnresolvedType -> isIntegerType(lookupInitialiserType(type))
-        else -> false
-    }
+    fun isIntegerType(type: Type): Boolean = isLiteralType(type, "Int")
 
-    fun isDecimalType(type: Type): Boolean = when (type) {
-        is Type.InstanceType -> type.className.name.lexeme == "Decimal"
-        is Type.UnresolvedType -> isDecimalType(lookupInitialiserType(type))
-        else -> false
-    }
+    fun isDecimalType(type: Type): Boolean = isLiteralType(type, "Decimal")
 
-    fun isStringType(type: Type): Boolean = when (type) {
-        is Type.InstanceType -> type.className.name.lexeme == "String"
-        is Type.UnresolvedType -> isStringType(lookupInitialiserType(type))
-        else -> false
-    }
+    fun isStringType(type: Type): Boolean = isLiteralType(type, "String")
 
-    fun isBooleanType(type: Type): Boolean = when (type) {
-        is Type.InstanceType -> type.className.name.lexeme == "Boolean"
-        is Type.UnresolvedType -> isBooleanType(lookupInitialiserType(type))
+    fun isBooleanType(type: Type): Boolean = isLiteralType(type, "Boolean")
+
+    fun isLiteralType(type: Type, name: String): Boolean = when (type) {
+        is Type.InstanceType -> type.className.name.lexeme == name
+        is Type.UnresolvedType -> isLiteralType(lookupInitialiserType(type), name)
         else -> false
     }
 
