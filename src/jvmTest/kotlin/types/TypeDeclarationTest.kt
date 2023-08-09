@@ -13,4 +13,16 @@ class TypeDeclarationTest {
         val output = compiler.interpret().toTypedArray()
         assertContentEquals(arrayOf("50"), output, "")
     }
+
+
+    @Test
+    internal fun testEvalExpr() {
+        val source = HelloWorldTest::class.java.getResource("examples/types/expr.minerva").readText()
+        val compiler = MinervaCompiler(source)
+
+        val output = compiler.interpret().toTypedArray()
+        assertContentEquals(arrayOf("6"), output, "")
+    }
+
+
 }
