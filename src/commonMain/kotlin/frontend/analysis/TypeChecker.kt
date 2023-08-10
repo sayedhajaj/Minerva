@@ -97,7 +97,11 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
     }
 
     private fun typeCheck(expr: Expr.Variable): Type {
-        val type = symbolTable.lookUpVariableType(expr.name, expr)
+        val type = if (symbolTable.exists(expr.name, expr)) symbolTable.lookUpVariableType(expr.name, expr)
+        else {
+            typeErrors.add(CompileError.TypeError("Variable ${expr.name.lexeme} is not defined"))
+            Type.NullType()
+        }
         expr.type = type
         return type
     }

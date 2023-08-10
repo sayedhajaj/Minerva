@@ -32,7 +32,6 @@ const editor = new EditorView({
     parent: document.getElementById("codemirror")
 });
 
-console.log(parser.parse('"hello";').toString());
 
 export function getEditorState(){
    return editor.state.doc.text;

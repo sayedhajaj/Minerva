@@ -50,7 +50,7 @@ class MinervaCompiler(val source: String) {
             interpreter.interpet(syntaxTree)
             interpreter.printStatements
         } else {
-            emptyList()
+            compileErrors.map { it.message }
         }
     }
 }
