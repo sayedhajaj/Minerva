@@ -234,6 +234,13 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
                     null
             }
         }
+        is Expr.While -> {
+            val outputs = mutableListOf<Any?>()
+            while ((evaluate(expr.condition) as MinervaBoolean).value) {
+                outputs.add(evaluate(expr.body))
+            }
+            MinervaArray(outputs.toTypedArray(), this)
+        }
         is Expr.Literal -> {
             when (expr.value) {
                 is Int -> {

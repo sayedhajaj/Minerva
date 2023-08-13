@@ -173,6 +173,10 @@ class Resolver {
                 if (expr.elseBranch != null)
                     resolve(expr.elseBranch)
             }
+            is Expr.While -> {
+                resolve(expr.condition)
+                resolve(expr.body)
+            }
             is Expr.Literal -> {}
             is Expr.Logical -> {
                 resolve(expr.left)

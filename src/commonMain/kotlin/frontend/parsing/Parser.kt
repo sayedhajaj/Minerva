@@ -379,6 +379,14 @@ class Parser(private val tokens: List<Token>) {
         return Expr.If(condition, thenBranch, elseBranch)
     }
 
+    private fun whileExpr(): Expr {
+        consume(TokenType.LEFT_PAREN, "Expect  '(' after 'while'.")
+        val condition = expression()
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.")
+        val body = expression()
+        return Expr.While(condition, body)
+    }
+
     private fun typeMatchExpr(): Expr {
         consume(TokenType.LEFT_PAREN, "Expect  '(' after 'typematch'.")
         val variable = Expr.Variable(consume(TokenType.IDENTIFIER, "Expect variable"))
@@ -821,6 +829,7 @@ class Parser(private val tokens: List<Token>) {
         }
         match(TokenType.LEFT_BRACE) -> Expr.Block(block())
         match(TokenType.IF) -> ifExpr()
+        match(TokenType.WHILE) -> whileExpr()
         match(TokenType.TYPEMATCH) -> typeMatchExpr()
         match(TokenType.MATCH) -> matchExpression()
         match(TokenType.FUNCTION) -> lambdaExpression()

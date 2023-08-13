@@ -71,6 +71,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             is Expr.Function -> typeCheckFunction(expr)
             is Expr.Grouping -> typeCheck(expr)
             is Expr.If -> typeCheckIfExpr(expr)
+            is Expr.While -> typeCheckWhileExpr(expr)
             is Expr.Literal -> typeCheckLiteral(expr)
             is Expr.Logical -> typeCheckLogical(expr)
             is Expr.Set -> typeCheckSet(expr)
@@ -82,6 +83,19 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             is Expr.Match -> getMatchType(expr)
             is Expr.Tuple -> typeCheck(expr)
         }
+    }
+
+    private fun typeCheckWhileExpr(expr: Expr.While): Type {
+        typeCheck(expr.condition)
+
+        if (!isBooleanType(expr.condition.type)) {
+            typeErrors.add(CompileError.TypeError("While condition should be boolean"))
+        }
+        val bodyType = typeCheck(expr.body)
+
+        val thisType = createArrayType(bodyType)
+        expr.type = thisType
+        return thisType
     }
 
     private fun typeCheck(expr: Expr.Grouping): Type {
