@@ -683,7 +683,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             typeErrors.add(CompileError.TypeError("If condition should be boolean"))
         }
         val thenType = typeCheck(expr.thenBranch)
-        val elseType = typeCheck(expr.elseBranch)
+        val elseType = if (expr.elseBranch != null ) typeCheck(expr.elseBranch) else Type.NullType()
         val thisType =
             if (thenType::class == elseType::class) thenType else Type.UnionType(listOf(thenType, elseType))
         expr.type = thisType

@@ -228,7 +228,10 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
             if (condition.value) {
                 evaluate(expr.thenBranch)
             } else {
-                evaluate(expr.elseBranch)
+                if (expr.elseBranch != null)
+                    evaluate(expr.elseBranch)
+                else
+                    null
             }
         }
         is Expr.Literal -> {

@@ -375,8 +375,7 @@ class Parser(private val tokens: List<Token>) {
         val condition = expression()
         consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.")
         val thenBranch = expression()
-        consume(TokenType.ELSE, "Expect 'else' in if expression.")
-        val elseBranch = expression()
+        val elseBranch = if (match(TokenType.ELSE)) expression() else null
         return Expr.If(condition, thenBranch, elseBranch)
     }
 
