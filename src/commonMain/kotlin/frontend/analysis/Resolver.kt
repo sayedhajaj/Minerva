@@ -55,11 +55,6 @@ class Resolver {
                 define(stmt.name)
                 resolveFunctionBody(stmt.functionBody)
             }
-            is Stmt.If -> {
-                resolve(stmt.condition)
-                resolve(stmt.thenBranch)
-                if (stmt.elseBranch != null) resolve(stmt.elseBranch)
-            }
             is Stmt.Print -> {
                 resolve(stmt.expression)
             }

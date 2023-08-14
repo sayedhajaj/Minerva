@@ -10,8 +10,6 @@ class IfTest {
 
     @Test
     internal fun testIf() {
-
-
         val source = HelloWorldTest::class.java.getResource("examples/control_flow/if/if.minerva").readText()
         val compiler = MinervaCompiler(source)
 

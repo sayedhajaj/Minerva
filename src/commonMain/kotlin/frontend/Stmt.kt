@@ -69,9 +69,6 @@ sealed class Stmt {
 
     class Method(val function: Function, val isOperator: Boolean = false)
 
-
-    class If(val condition: Expr, val thenBranch: Stmt, val elseBranch: Stmt?) : Stmt()
-
     class Print(val expression: Expr) : Stmt()
 
     class PrintType(val expression: Expr) : Stmt()

@@ -117,13 +117,6 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
 
                 environment.assign(stmt.name, klass)
             }
-            is Stmt.If -> {
-                if ((evaluate(stmt.condition) as MinervaBoolean).value) {
-                    execute(stmt.thenBranch)
-                } else {
-                    stmt.elseBranch?.let { execute(it) }
-                }
-            }
             is Stmt.Print -> {
                 log(evaluate(stmt.expression).toString())
             }

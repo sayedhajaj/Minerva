@@ -41,7 +41,6 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
                 val type = typeCheck(stmt.functionBody)
                 symbolTable.defineValue(stmt.name.lexeme, type)
             }
-            is Stmt.If -> typeCheckIfStmt(stmt)
             is Stmt.Print -> typeCheck(stmt.expression)
             is Stmt.PrintType -> typeCheck(stmt.expression)
             is Stmt.Var -> typeCheckVarStmt(stmt)
@@ -352,14 +351,6 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
     }
 
-    private fun typeCheckIfStmt(stmt: Stmt.If) {
-        typeCheck(stmt.condition)
-        typeCheck(stmt.thenBranch)
-        if (!isBooleanType(stmt.condition.type)) {
-            typeErrors.add(CompileError.TypeError("If condition should be boolean"))
-        }
-        stmt.elseBranch?.let { typeCheck(it) }
-    }
 
     private fun typeCheckVarStmt(stmt: Stmt.Var) {
         val initialiserType = lookupInitialiserType(stmt.type)

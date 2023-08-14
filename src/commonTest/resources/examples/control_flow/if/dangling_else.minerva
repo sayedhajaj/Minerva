@@ -1,2 +1,10 @@
-if (true) if (false) print "bad"; else print "good"; // expect good
-if (false) if (true) print "bad"; else print "bad";
+function bad() => {
+    print "bad";
+};
+
+function good() => {
+    print "good";
+};
+
+if (true) if (false) bad() else good(); // expect good
+if (false) if (true) bad() else bad();
