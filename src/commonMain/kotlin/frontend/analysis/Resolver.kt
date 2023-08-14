@@ -68,10 +68,6 @@ class Resolver {
                 resolve(stmt.initializer)
                 define(stmt.name)
             }
-            is Stmt.While -> {
-                resolve(stmt.condition)
-                resolve(stmt.body)
-            }
             is Stmt.ForEach -> {
                 resolve(stmt.iterable)
                 beginScope()

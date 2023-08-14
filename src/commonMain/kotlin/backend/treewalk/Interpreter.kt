@@ -141,11 +141,6 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
                 )
             }
             is Stmt.Expression -> evaluate(stmt.expression)
-            is Stmt.While -> {
-                while ((evaluate(stmt.condition) as MinervaBoolean).value) {
-                    execute(stmt.body)
-                }
-            }
             is Stmt.ForEach -> {
                 val iterable = evaluate(stmt.iterable) as MinervaInstance
                 val iteratorFunction = iterable.get(Token(TokenType.IDENTIFIER, "iterator", "iterator", -1)) as MinervaCallable

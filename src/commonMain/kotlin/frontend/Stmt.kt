@@ -93,7 +93,6 @@ sealed class Stmt {
         val typeParameters: List<Token>,
     ) : Stmt()
 
-    class While(val condition: Expr, val body: Stmt) : Stmt()
     class ForEach(val name: Token, val iterable: Expr, val body: Stmt) : Stmt()
     class Destructure(val names: List<VarDeclaration>, val initializer: Expr, var type: Type) : Stmt()
 

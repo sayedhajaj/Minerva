@@ -45,14 +45,6 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             is Stmt.Print -> typeCheck(stmt.expression)
             is Stmt.PrintType -> typeCheck(stmt.expression)
             is Stmt.Var -> typeCheckVarStmt(stmt)
-            is Stmt.While -> {
-                typeCheck(stmt.condition)
-
-                if (!isBooleanType(stmt.condition.type)) {
-                    typeErrors.add(CompileError.TypeError("While condition should be boolean"))
-                }
-                typeCheck(stmt.body)
-            }
             is Stmt.ForEach -> typeCheckForEach(stmt)
             is Stmt.Destructure -> typeCheckDestructure(stmt)
             is Stmt.Module -> typeCheckModuleStmt(stmt)

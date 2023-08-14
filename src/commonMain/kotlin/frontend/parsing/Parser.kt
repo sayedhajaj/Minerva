@@ -123,15 +123,7 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.VarDeclaration(name, type)
     }
 
-    private fun whileStatement(): Stmt {
-        consume(TokenType.LEFT_PAREN, "Expect '(' after while.")
-        val condition = expression()
-        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
-        val body = statement()
-        return Stmt.While(condition, body)
-    }
-
-    private fun forStatement(): Stmt {
+    private fun forExpr(): Expr {
         consume(TokenType.LEFT_PAREN, "Expect '(' after for.")
         val initialiser = if (match(TokenType.SEMICOLON)) null
         else if (match(TokenType.VAR)) varInitialisation() else expressionStatement()
@@ -140,13 +132,13 @@ class Parser(private val tokens: List<Token>) {
         val increment = if (!check(TokenType.RIGHT_PAREN)) expression() else null
         consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
 
-        var body = statement()
+        var body = expression()
 
-        if (increment != null) body = Stmt.Expression(Expr.Block(listOf(body, Stmt.Expression(increment))))
+        if (increment != null) body = Expr.Block(listOf(Stmt.Expression(body), Stmt.Expression(increment)))
 
-        body = Stmt.While(condition, body)
+        body = Expr.While(condition, body)
 
-        if (initialiser != null) body = Stmt.Expression(Expr.Block(listOf(initialiser, body)))
+        if (initialiser != null) body = Expr.Block(listOf(initialiser, Stmt.Expression(body)))
         return body
     }
 
@@ -160,12 +152,12 @@ class Parser(private val tokens: List<Token>) {
         return Stmt.ForEach(identifier, iterable, body)
     }
 
-    private fun untilStatement(): Stmt {
+    private fun untilExpr(): Expr {
         consume(TokenType.LEFT_PAREN, "Expect '(' after until.")
         val condition = expression()
         consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
-        val body = statement()
-        return Stmt.While(Expr.Unary(Token(TokenType.BANG, "", null, -1), condition, false), body)
+        val body = expression()
+        return Expr.While(Expr.Unary(Token(TokenType.BANG, "", null, -1), condition, false), body)
     }
 
     private fun classDeclaration(): Stmt.Class {
@@ -354,10 +346,8 @@ class Parser(private val tokens: List<Token>) {
         match(TokenType.IF) -> ifStatement()
         match(TokenType.PRINT) -> printStatement()
         match(TokenType.PRINT_TYPE) -> printType()
-        match(TokenType.WHILE) -> whileStatement()
-        match(TokenType.FOR) -> forStatement()
+//        match(TokenType.WHILE) -> whileStatement()
         match(TokenType.FOREACH) -> forEachStatement()
-        match(TokenType.UNTIL) -> untilStatement()
         else -> expressionStatement()
     }
 
@@ -830,6 +820,8 @@ class Parser(private val tokens: List<Token>) {
         match(TokenType.LEFT_BRACE) -> Expr.Block(block())
         match(TokenType.IF) -> ifExpr()
         match(TokenType.WHILE) -> whileExpr()
+        match(TokenType.FOR) -> forExpr()
+        match(TokenType.UNTIL) -> untilExpr()
         match(TokenType.TYPEMATCH) -> typeMatchExpr()
         match(TokenType.MATCH) -> matchExpression()
         match(TokenType.FUNCTION) -> lambdaExpression()

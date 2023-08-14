@@ -1,0 +1,5 @@
+
+var nums = for (var iterations = 0; iterations < 10; iterations++) iterations;
+
+print nums[9];
+

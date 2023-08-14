@@ -9,7 +9,7 @@ class WhileTest {
 
     @Test
     internal fun testWhile() {
-        val source = HelloWorldTest::class.java.getResource("examples/control_flow/while.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/control_flow/iteration/while.minerva").readText()
 
         val compiler = MinervaCompiler(source)
 
@@ -19,7 +19,7 @@ class WhileTest {
 
     @Test
     internal fun testWhileExpr() {
-        val source = HelloWorldTest::class.java.getResource("examples/control_flow/while_expr.minerva").readText()
+        val source = HelloWorldTest::class.java.getResource("examples/control_flow/iteration/while_expr.minerva").readText()
 
         val compiler = MinervaCompiler(source)
 
