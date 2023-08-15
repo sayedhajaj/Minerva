@@ -142,16 +142,6 @@ class Parser(private val tokens: List<Token>) {
         return body
     }
 
-    private fun forEachStatement(): Stmt {
-        consume(TokenType.LEFT_PAREN, "Expect '(' after foreach.")
-        val identifier = consume(TokenType.IDENTIFIER, "Expect identifier")
-        consume(TokenType.IN, "Expect 'in' after identifier")
-        val iterable = expression()
-        consume(TokenType.RIGHT_PAREN, "Expect ')'")
-        val body = statement()
-        return Stmt.ForEach(identifier, iterable, body)
-    }
-
     private fun untilExpr(): Expr {
         consume(TokenType.LEFT_PAREN, "Expect '(' after until.")
         val condition = expression()
@@ -345,7 +335,6 @@ class Parser(private val tokens: List<Token>) {
     private fun statement(): Stmt = when {
         match(TokenType.PRINT) -> printStatement()
         match(TokenType.PRINT_TYPE) -> printType()
-        match(TokenType.FOREACH) -> forEachStatement()
         else -> expressionStatement()
     }
 

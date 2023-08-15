@@ -63,14 +63,6 @@ class Resolver {
                 resolve(stmt.initializer)
                 define(stmt.name)
             }
-            is Stmt.ForEach -> {
-                resolve(stmt.iterable)
-                beginScope()
-                declare(stmt.name)
-                define(stmt.name)
-                resolve(stmt.body)
-                endScope()
-            }
             is Stmt.Constructor -> {
                 stmt.fields.values.forEach {
                     declare(it)
