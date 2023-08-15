@@ -63,6 +63,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             is Expr.Grouping -> typeCheck(expr)
             is Expr.If -> typeCheckIfExpr(expr)
             is Expr.While -> typeCheckWhileExpr(expr)
+            is Expr.ForEach -> typeCheckForEachExpr(expr)
             is Expr.Literal -> typeCheckLiteral(expr)
             is Expr.Logical -> typeCheckLogical(expr)
             is Expr.Set -> typeCheckSet(expr)
@@ -88,6 +89,33 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         expr.type = thisType
         return thisType
     }
+
+    private fun typeCheckForEachExpr(expr: Expr.ForEach): Type {
+        typeCheck(expr.iterable)
+        val iterableType = expr.iterable.type
+
+        val iterableInterface = lookUpType(
+            Token(TokenType.IDENTIFIER, "Iterable", null, -1)
+        )
+
+        if (!iterableInterface.canAssignTo(iterableType)) {
+            typeErrors.add(CompileError.TypeError("$iterableType is not iterable"))
+        }
+
+        symbolTable.beginScope()
+        val iterator = (iterableType.getMemberType("iterator") as Type.FunctionType).result
+        val resolvedIterator = (iterator as Type.UnresolvedType).typeArguments[0]
+
+        symbolTable.defineValue(expr.name.lexeme, lookupInitialiserType(resolvedIterator))
+
+        val bodyType = typeCheck(expr.body)
+        symbolTable.endScope()
+        val thisType = createArrayType(bodyType)
+        expr.type = thisType
+        return thisType
+    }
+
+
 
     private fun typeCheck(expr: Expr.Grouping): Type {
         expr.type = typeCheck(expr.expr)

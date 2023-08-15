@@ -366,6 +366,16 @@ class Parser(private val tokens: List<Token>) {
         return Expr.While(condition, body)
     }
 
+    private fun foreachExpr(): Expr {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after foreach.")
+        val identifier = consume(TokenType.IDENTIFIER, "Expect identifier")
+        consume(TokenType.IN, "Expect 'in' after identifier")
+        val iterable = expression()
+        consume(TokenType.RIGHT_PAREN, "Expect ')'")
+        val body = expression()
+        return Expr.ForEach(identifier, iterable, body)
+    }
+
     private fun typeMatchExpr(): Expr {
         consume(TokenType.LEFT_PAREN, "Expect  '(' after 'typematch'.")
         val variable = Expr.Variable(consume(TokenType.IDENTIFIER, "Expect variable"))
@@ -809,6 +819,7 @@ class Parser(private val tokens: List<Token>) {
         match(TokenType.LEFT_BRACE) -> Expr.Block(block())
         match(TokenType.IF) -> ifExpr()
         match(TokenType.WHILE) -> whileExpr()
+        match(TokenType.FOREACH) -> foreachExpr()
         match(TokenType.FOR) -> forExpr()
         match(TokenType.UNTIL) -> untilExpr()
         match(TokenType.TYPEMATCH) -> typeMatchExpr()

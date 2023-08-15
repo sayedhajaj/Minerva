@@ -168,6 +168,14 @@ class Resolver {
                 resolve(expr.condition)
                 resolve(expr.body)
             }
+            is Expr.ForEach -> {
+                resolve(expr.iterable)
+                beginScope()
+                declare(expr.name)
+                define(expr.name)
+                resolve(expr.body)
+                endScope()
+            }
             is Expr.Literal -> {}
             is Expr.Logical -> {
                 resolve(expr.left)

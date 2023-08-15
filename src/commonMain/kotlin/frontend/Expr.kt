@@ -16,6 +16,7 @@ sealed class Expr(var type: Type) {
         : Expr(Type.AnyType())
     class If(val condition: Expr, val thenBranch: Expr, val elseBranch: Expr?): Expr(Type.AnyType())
     class While(val condition: Expr, val body: Expr): Expr(Type.AnyType())
+    class ForEach(val name: Token, val iterable: Expr, val body: Expr) : Expr(Type.AnyType())
     class Literal(val value: Any?, val tokenType: TokenType) : Expr(Type.AnyType())
     class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr(Type.AnyType())
     class Match(val expr: Expr, val branches: List<Pair<Expr, Expr>>, val elseBranch: Expr): Expr(Type.AnyType())

@@ -229,6 +229,26 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
             }
             MinervaArray(outputs.toTypedArray(), this)
         }
+        is Expr.ForEach -> {
+            val outputs = mutableListOf<Any?>()
+            val iterable = evaluate(expr.iterable) as MinervaInstance
+            val iteratorFunction = iterable.get(Token(TokenType.IDENTIFIER, "iterator", "iterator", -1)) as MinervaCallable
+            val iterator = iteratorFunction.call(this, emptyList()) as MinervaInstance
+            val hasNext = iterator.get(Token(TokenType.IDENTIFIER, "hasNext", "hasNext", -1)) as MinervaCallable
+
+            val previous = this.environment
+            this.environment = Environment(this.environment)
+
+            while ((hasNext.call(this, emptyList()) as MinervaBoolean).value) {
+                val getNext = iterator.get(Token(TokenType.IDENTIFIER, "next", "next", -1)) as MinervaCallable
+                val current = getNext.call(this, emptyList())
+                environment.define(expr.name.lexeme, current)
+                outputs.add(evaluate(expr.body))
+            }
+
+            this.environment = previous
+            MinervaArray(outputs.toTypedArray(), this)
+        }
         is Expr.Literal -> {
             when (expr.value) {
                 is Int -> {
