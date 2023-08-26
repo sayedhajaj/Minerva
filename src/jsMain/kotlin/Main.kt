@@ -14,7 +14,7 @@ fun main() {
     document.getElementById("run")?.addEventListener("click", {
 
         val lines = blah.getEditorState() as Array<String>
-        val code = lines.joinToString("\n")
+        val code = lines.joinToString("")
 
         val compiler = MinervaCompiler(code)
 
