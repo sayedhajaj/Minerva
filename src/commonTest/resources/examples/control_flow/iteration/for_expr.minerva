@@ -1,5 +1,5 @@
 
-var nums = for (var iterations = 0; iterations < 10; iterations++) iterations;
+var nums = for (var iterations = 0; iterations < 10; iterations++) iterations*2;
 
 print nums[9];
 

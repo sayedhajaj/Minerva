@@ -62,6 +62,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
             is Expr.Grouping -> typeCheck(expr)
             is Expr.If -> typeCheckIfExpr(expr)
             is Expr.While -> typeCheckWhileExpr(expr)
+            is Expr.For -> typeCheckForExpr(expr)
             is Expr.ForEach -> typeCheckForEachExpr(expr)
             is Expr.Literal -> typeCheckLiteral(expr)
             is Expr.Logical -> typeCheckLogical(expr)
@@ -84,6 +85,18 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         }
         val bodyType = typeCheck(expr.body)
 
+        val thisType = createArrayType(bodyType)
+        expr.type = thisType
+        return thisType
+    }
+
+    private fun typeCheckForExpr(expr: Expr.For): Type {
+        symbolTable.beginScope()
+        typeCheck(expr.initializer)
+        typeCheck(expr.condition)
+        typeCheck(expr.increment)
+        val bodyType = typeCheck(expr.body)
+        symbolTable.endScope()
         val thisType = createArrayType(bodyType)
         expr.type = thisType
         return thisType

@@ -211,6 +211,19 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
             }
             MinervaArray(outputs.toTypedArray(), this)
         }
+        is Expr.For -> {
+            val outputs = mutableListOf<Any?>()
+            val previous = this.environment
+            this.environment = Environment(this.environment)
+
+            execute(expr.initializer)
+            while ((evaluate(expr.condition) as MinervaBoolean).value) {
+                outputs.add(evaluate(expr.body))
+                evaluate(expr.increment)
+            }
+            this.environment = previous
+            MinervaArray(outputs.toTypedArray(), this)
+        }
         is Expr.ForEach -> {
             val outputs = mutableListOf<Any?>()
             val iterable = evaluate(expr.iterable) as MinervaInstance

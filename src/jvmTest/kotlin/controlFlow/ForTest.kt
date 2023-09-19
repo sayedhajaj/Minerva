@@ -23,6 +23,6 @@ class ForTest {
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()
-        assertContentEquals(arrayOf("9", ), output, "")
+        assertContentEquals(arrayOf("18", ), output, "")
     }
 }

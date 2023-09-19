@@ -124,22 +124,19 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun forExpr(): Expr {
+        val emptyStatement = Stmt.Expression(Expr.Block(emptyList()))
         consume(TokenType.LEFT_PAREN, "Expect '(' after for.")
-        val initialiser = if (match(TokenType.SEMICOLON)) null
+        val initialiser = if (match(TokenType.SEMICOLON)) emptyStatement
         else if (match(TokenType.VAR)) varInitialisation() else expressionStatement()
+
         val condition = expression()
         consume(TokenType.SEMICOLON, "Expect ';' after loop condition.")
-        val increment = if (!check(TokenType.RIGHT_PAREN)) expression() else null
+
+        val increment = if (!check(TokenType.RIGHT_PAREN)) expression() else Expr.Block(emptyList())
         consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
 
-        var body = expression()
-
-        if (increment != null) body = Expr.Block(listOf(Stmt.Expression(body), Stmt.Expression(increment)))
-
-        body = Expr.While(condition, body)
-
-        if (initialiser != null) body = Expr.Block(listOf(initialiser, Stmt.Expression(body)))
-        return body
+        val body = expression()
+        return Expr.For(initialiser, condition, increment, body)
     }
 
     private fun untilExpr(): Expr {

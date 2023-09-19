@@ -160,6 +160,14 @@ class Resolver {
                 resolve(expr.condition)
                 resolve(expr.body)
             }
+            is Expr.For -> {
+                beginScope()
+                resolve(expr.initializer)
+                resolve(expr.condition)
+                resolve(expr.increment)
+                resolve(expr.body)
+                endScope()
+            }
             is Expr.ForEach -> {
                 resolve(expr.iterable)
                 beginScope()
