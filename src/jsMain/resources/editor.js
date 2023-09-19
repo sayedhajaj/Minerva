@@ -35,5 +35,6 @@ const editor = new EditorView({
 
 export function getEditorState(){
    if (editor.state.text) return editor.state.text;
+   if (!editor.state.doc.children) return editor.state.doc.text;
    return editor.state.doc.children.reduce((prev, curr) => [...prev, ...curr], []);
 };
