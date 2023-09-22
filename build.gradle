@@ -36,7 +36,11 @@ kotlin {
         useCommonJs()
     }
 
-
+    mingwX64("native") {
+        binaries {
+            executable()
+        }
+    }
 
     sourceSets {
         commonMain {
@@ -52,6 +56,12 @@ kotlin {
 
         jvmMain {
             dependencies {
+            }
+        }
+
+        nativeMain {
+            dependencies {
+                implementation("com.squareup.okio:okio:3.2.0")
             }
         }
 
@@ -77,3 +87,9 @@ kotlin {
 }
 
 
+compileKotlinNative.doLast {
+    copy {
+        from ('src/commonMain/resources')
+        into 'build/bin/native/releaseExecutable'
+    }
+}
