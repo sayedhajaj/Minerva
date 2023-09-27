@@ -932,7 +932,7 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
 
     private fun typeCheckGet(expr: Expr.Get): Type {
         typeCheck(expr.obj)
-        return if (isArrayType(expr.obj.type) && expr.index != null) typeCheckArrayGet(
+        return if (expr.obj.type is Type.InstanceType && expr.index != null) typeCheckInstanceGet(
             expr,
             expr.index
         ) else typeCheckFieldGet(expr)
@@ -947,25 +947,28 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         return resolved
     }
 
-    private fun typeCheckArrayGet(
+    private fun typeCheckInstanceGet(
         expr: Expr.Get,
         index: Expr
     ): Type {
-        val thisType = (expr.obj.type as Type.InstanceType).typeArguments[0]
+        val getMethod = (expr.obj.type as Type.InstanceType).getMemberType("get") as Type.FunctionType
+        val getMethodReturn = getMethod.result
+
         typeCheck(index)
-        if (!isIntegerType(index.type)) {
-            typeErrors.add(CompileError.TypeError("Array index should be an integer"))
+        val indexType = resolveInstanceType(getMethod.params.types[0])
+        if (!index.type.canAssignTo(indexType)) {
+            typeErrors.add(CompileError.TypeError("Cannot assign ${index.type} to $indexType"))
         }
 
-        expr.type = thisType
-        return thisType
+        expr.type = getMethodReturn
+        return getMethodReturn
     }
 
     private fun typeCheckSet(expr: Expr.Set): Type {
         typeCheck(expr.obj)
         val left = expr.obj.type
-        return if (isArrayType(left)) {
-            typeCheckArraySet(expr, left)
+        return if (left is Type.InstanceType && expr.index != null) {
+            typeCheckInstanceSet(expr, left)
         } else {
             typeCheckFieldSet(left, expr)
         }
@@ -983,20 +986,24 @@ class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {
         return expr.value.type
     }
 
-    private fun typeCheckArraySet(
+    private fun typeCheckInstanceSet(
         expr: Expr.Set,
         left: Type,
     ): Type {
         typeCheck(expr.value)
-        val arrType = (left as Type.InstanceType).typeArguments[0]
+        val setMethod = (left as Type.InstanceType).getMemberType("set") as Type.FunctionType
+        val setMethodParam = setMethod.params.types[1]
+
+        val indexType = resolveInstanceType(setMethod.params.types[0])
+
         if (expr.index != null) {
             typeCheck(expr.index)
-            if (!isIntegerType(expr.index.type)) {
-                typeErrors.add(CompileError.TypeError("Array index should be integer"))
+            if (!expr.index.type.canAssignTo(indexType)) {
+                typeErrors.add(CompileError.TypeError("Cannot assign ${expr.index.type} to $indexType"))
             }
         }
-        if (!arrType.canAssignTo(expr.value.type)) {
-            typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $arrType"))
+        if (!setMethodParam.canAssignTo(expr.value.type)) {
+            typeErrors.add(CompileError.TypeError("Cannot assign ${expr.value.type} to $setMethodParam"))
         }
         return expr.value.type
     }

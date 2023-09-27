@@ -162,17 +162,17 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
 
                 stmt.classes.forEach {
                     execute(it)
-                    environment.get(it.name)?.let {cls -> members[it.name.lexeme] = cls}
+                    environment.get(it.name)?.let { cls -> members[it.name.lexeme] = cls }
                 }
 
                 stmt.functions.forEach {
                     execute(it)
-                    environment.get(it.name)?.let {fn -> members[it.name.lexeme] = fn}
+                    environment.get(it.name)?.let { fn -> members[it.name.lexeme] = fn }
                 }
 
                 stmt.enums.forEach {
                     execute(it)
-                    environment.get(it.name)?.let {e -> members[it.name.lexeme] = e}
+                    environment.get(it.name)?.let { e -> members[it.name.lexeme] = e }
                 }
 
                 stmt.modules.forEach {
@@ -227,7 +227,8 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
         is Expr.ForEach -> {
             val outputs = mutableListOf<Any?>()
             val iterable = evaluate(expr.iterable) as MinervaInstance
-            val iteratorFunction = iterable.get(Token(TokenType.IDENTIFIER, "iterator", "iterator", -1)) as MinervaCallable
+            val iteratorFunction =
+                iterable.get(Token(TokenType.IDENTIFIER, "iterator", "iterator", -1)) as MinervaCallable
             val iterator = iteratorFunction.call(this, emptyList()) as MinervaInstance
             val hasNext = iterator.get(Token(TokenType.IDENTIFIER, "hasNext", "hasNext", -1)) as MinervaCallable
 
@@ -271,7 +272,7 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
                 is String -> MinervaString(expr.value, this)
                 is Boolean -> MinervaBoolean(expr.value, this)
                 is Char -> MinervaChar(expr.value, this)
-                is MinervaInteger, is MinervaDecimal ->  expr.value
+                is MinervaInteger, is MinervaDecimal -> expr.value
 
                 else -> expr.value
             }
@@ -283,21 +284,28 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
         is Expr.Function -> MinervaFunction("", expr, environment)
         is Expr.Get -> {
             val obj = evaluate(expr.obj)
-            if (obj is MinervaArray && expr.index != null) {
-                val index = evaluate(expr.index) as MinervaInteger
-                obj.get(index.value)
+            if (obj is MinervaInstance) {
+                if (expr.index == null) {
+                    obj.get(expr.name)
+                } else {
+                    val index = evaluate(expr.index)
+                    val getMethod = obj.get(Token(TokenType.IDENTIFIER, "get", "get", -1)) as MinervaCallable
+                    getMethod.call(this, listOf(index))
+                }
             } else if (obj is MinervaEnum) obj.get(expr.name)
-            else if (obj is MinervaInstance) obj.get(expr.name)
             else null
         }
         is Expr.Set -> {
             val obj = evaluate(expr.obj)
-            if (obj is MinervaArray && expr.index != null) {
-                obj.set(((evaluate(expr.index) as MinervaInteger)).value, evaluate(expr.value))
-            } else if (obj is MinervaInstance) {
-                val value = evaluate(expr.value)
-                obj.set(expr.name, value)
-                value
+            if (obj is MinervaInstance) {
+                if (expr.index == null) {
+                    val value = evaluate(expr.value)
+                    obj.set(expr.name, value)
+                    value
+                } else {
+                    val setMethod = obj.get(Token(TokenType.IDENTIFIER, "set", "set", -1)) as MinervaCallable
+                    setMethod.call(this, listOf(evaluate(expr.index), evaluate(expr.value)))
+                }
             } else null
         }
         is Expr.This -> lookUpVariable(expr.keyword, expr)
@@ -446,22 +454,22 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
 
         val obj = left as MinervaInstance
         val operatorMethods = mapOf(
-                    TokenType.PLUS to "add",
-                    TokenType.MINUS to "subtract",
-                    TokenType.SLASH to "divide",
-                    TokenType.STAR to "multiply",
-                    TokenType.MODULO to "rem",
-                    TokenType.POWER to "power"
-                )
+            TokenType.PLUS to "add",
+            TokenType.MINUS to "subtract",
+            TokenType.SLASH to "divide",
+            TokenType.STAR to "multiply",
+            TokenType.MODULO to "rem",
+            TokenType.POWER to "power"
+        )
 
         val comparisonOperators = listOf(
-                    TokenType.LESS,
-                    TokenType.LESS_EQUAL,
-                    TokenType.GREATER,
-                    TokenType.GREATER_EQUAL,
-                    TokenType.EQUAL_EQUAL,
-                    TokenType.BANG_EQUAL
-                )
+            TokenType.LESS,
+            TokenType.LESS_EQUAL,
+            TokenType.GREATER,
+            TokenType.GREATER_EQUAL,
+            TokenType.EQUAL_EQUAL,
+            TokenType.BANG_EQUAL
+        )
 
         val operatorName = operatorMethods[expr.operator.type]
         if (operatorName != null) {
