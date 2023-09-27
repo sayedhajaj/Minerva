@@ -9,3 +9,5 @@ print 10 - 4; // expect 6
 print 15 / 3; // expect 5
 
 print 10 % 3; // expect 1
+
+print 2 ** 3; // expect 8

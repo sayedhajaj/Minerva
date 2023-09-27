@@ -5,6 +5,7 @@ external class Decimal {
     operator function subtract(other: Decimal): Decimal;
     operator function divide(other: Decimal): Decimal;
     operator function multiply(other: Decimal): Decimal;
+    operator function power(other: Decimal): Decimal;
 
     operator function compareTo(other: Decimal): Int;
 

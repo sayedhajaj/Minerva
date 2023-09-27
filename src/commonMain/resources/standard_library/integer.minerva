@@ -6,6 +6,7 @@ external class Int {
     operator function divide(other: Int): Int;
     operator function multiply(other: Int): Int;
     operator function rem(other: Int): Int;
+    operator function power(other: Int): Int;
 
     operator function compareTo(other: Int): Int;
 

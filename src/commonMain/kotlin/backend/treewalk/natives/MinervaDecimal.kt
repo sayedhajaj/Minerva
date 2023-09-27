@@ -4,6 +4,7 @@ import backend.treewalk.*
 import frontend.analysis.Environment
 import frontend.Expr
 import frontend.Token
+import kotlin.math.pow
 
 class MinervaDecimal(val value: Double, interpreter: Interpreter) : MinervaInstance(
     MinervaClass(
@@ -56,6 +57,15 @@ class MinervaDecimal(val value: Double, interpreter: Interpreter) : MinervaInsta
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
                     val right = arguments[0] as MinervaDecimal
                     return MinervaDecimal(value * right.value, interpreter)
+                }
+            }
+
+            "power" -> object: MinervaCallable {
+                override fun arity(): Int = 1
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val right = arguments[0] as MinervaDecimal
+                    return MinervaDecimal((value.pow(right.value)), interpreter)
                 }
             }
 

@@ -5,8 +5,6 @@ import frontend.Token
 import frontend.TokenType
 
 
-
-
 class Scanner(private val source: String) {
     private val tokens: MutableList<Token> = ArrayList()
     val scannerErrors: MutableList<CompileError.ScannerError> = ArrayList()
@@ -82,7 +80,14 @@ class Scanner(private val source: String) {
                 else -> addToken(TokenType.MINUS)
             }
 
-            '*' -> addToken(if (match('=')) TokenType.STAR_EQUAL else TokenType.STAR)
+            '*' -> {
+                if (match('=')) addToken(TokenType.STAR_EQUAL)
+                else if (match('*')) {
+                    addToken(if (match('=')) TokenType.POWER_EQUAL else TokenType.POWER)
+                } else {
+                    addToken(TokenType.STAR)
+                }
+            }
             '%' -> addToken(if (match('=')) TokenType.MODULO_EQUAL else TokenType.MODULO)
             '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
             '=' -> when {

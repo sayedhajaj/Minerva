@@ -4,6 +4,7 @@ import backend.treewalk.*
 import frontend.analysis.Environment
 import frontend.Expr
 import frontend.Token
+import kotlin.math.pow
 
 class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance(
     MinervaClass(
@@ -65,6 +66,15 @@ class MinervaInteger(val value: Int, interpreter: Interpreter) : MinervaInstance
                 override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
                     val right = arguments[0] as MinervaInteger
                     return MinervaInteger(value % right.value, interpreter)
+                }
+            }
+
+            "power" -> object: MinervaCallable {
+                override fun arity(): Int = 1
+
+                override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+                    val right = arguments[0] as MinervaInteger
+                    return MinervaInteger((value.toDouble().pow(right.value.toDouble())).toInt(), interpreter)
                 }
             }
 

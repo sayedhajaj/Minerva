@@ -519,7 +519,8 @@ class Parser(private val tokens: List<Token>) {
                 TokenType.MINUS_EQUAL,
                 TokenType.STAR_EQUAL,
                 TokenType.SLASH_EQUAL,
-                TokenType.MODULO_EQUAL
+                TokenType.MODULO_EQUAL,
+                TokenType.POWER_EQUAL
             )
         ) {
             val equals = previous()
@@ -592,12 +593,24 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun factor(): Expr {
-        var expr = unary()
+        var expr = exponent()
 
         while (match(TokenType.SLASH, TokenType.STAR)) {
             val operator = previous()
-            val right = unary()
+            val right = exponent()
             expr = Binary(expr, operator, right)
+        }
+
+        return expr
+    }
+
+    private fun exponent(): Expr {
+        val expr = unary()
+
+        while (match(TokenType.POWER)) {
+            val operator = previous()
+            val right = unary()
+            return Expr.Binary(expr, operator, right)
         }
 
         return expr

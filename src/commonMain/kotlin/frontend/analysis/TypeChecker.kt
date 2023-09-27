@@ -7,7 +7,8 @@ val arithmeticOperators = listOf(
     TokenType.MINUS,
     TokenType.SLASH,
     TokenType.STAR,
-    TokenType.MODULO
+    TokenType.MODULO,
+    TokenType.POWER
 )
 
 val operatorMethods = mapOf(
@@ -15,7 +16,8 @@ val operatorMethods = mapOf(
     TokenType.MINUS to "subtract",
     TokenType.SLASH to "divide",
     TokenType.STAR to "multiply",
-    TokenType.MODULO to "rem"
+    TokenType.MODULO to "rem",
+    TokenType.POWER to "power"
 )
 
 class TypeChecker(override var locals: MutableMap<Expr, Int>) : ITypeChecker {

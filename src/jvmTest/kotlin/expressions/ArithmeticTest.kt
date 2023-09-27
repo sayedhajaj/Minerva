@@ -13,6 +13,6 @@ class ArithmeticTest {
         val compiler = MinervaCompiler(source)
 
         val output = compiler.interpret().toTypedArray()
-        assertContentEquals(arrayOf("2", "3.0", "true", "6", "5", "1"), output, "")
+        assertContentEquals(arrayOf("2", "3.0", "true", "6", "5", "1", "8"), output, "")
     }
 }

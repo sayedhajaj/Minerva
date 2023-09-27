@@ -450,7 +450,8 @@ class Interpreter(var locals: MutableMap<Expr, Int>, val typeChecker: ITypeCheck
                     TokenType.MINUS to "subtract",
                     TokenType.SLASH to "divide",
                     TokenType.STAR to "multiply",
-                    TokenType.MODULO to "rem"
+                    TokenType.MODULO to "rem",
+                    TokenType.POWER to "power"
                 )
 
         val comparisonOperators = listOf(
